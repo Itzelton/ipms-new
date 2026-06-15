@@ -1,0 +1,460 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum RoleName {
+  STUDENT
+  SUPERVISOR
+  ADMIN
+  REVIEWER
+  GUEST
+}
+
+enum ProjectStatus {
+  PROPOSED
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum ProjectType {
+  RESEARCH
+  CAPSTONE
+  THESIS
+  INTERNSHIP
+  OTHER
+}
+
+enum MilestoneStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  BLOCKED
+}
+
+enum SubmissionStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REVISION_REQUIRED
+}
+
+enum EvidenceType {
+  DOCUMENT
+  GITHUB
+  WEBSITE
+  APK
+  SCREENSHOT
+  DEMO_VIDEO
+  MEETING_RECORD
+}
+
+enum NotificationType {
+  SYSTEM
+  REMINDER
+  REVIEW
+  ALERT
+}
+
+enum RiskSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ForecastHorizon {
+  SHORT_TERM
+  MEDIUM_TERM
+  LONG_TERM
+}
+
+enum ReportScope {
+  PROJECT
+  SUPERVISOR
+  COHORT
+  DEPARTMENT
+  ADMIN
+}
+
+model User {
+  id              String          @id @default(uuid())
+  email           String          @unique
+  password        String
+  firstName       String?
+  lastName        String?
+  preferredName   String?
+  phone           String?
+  isActive        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  deletedAt       DateTime?
+
+  roles           UserRole[]
+  studentProfile  StudentProfile?
+  supervisorProfile SupervisorProfile?
+  adminProfile    AdminProfile?
+  department      Department?     @relation(fields: [departmentId], references: [id])
+  departmentId    String?
+  cohort          Cohort?         @relation(fields: [cohortId], references: [id])
+  cohortId        String?
+  projects        Project[]       @relation("StudentProjects")
+  supervisedProjects Project[]     @relation("SupervisorProjects")
+  projectAssignments ProjectAssignment[]
+  submissions     Submission[]
+  submissionReviews SubmissionReview[]
+  submissionVersions SubmissionVersion[]
+  createdDiscussionThreads DiscussionThread[]
+  discussionMessages DiscussionMessage[]
+  supervisedReports Report[]        @relation("SupervisedReports")
+  notificationReceipts Notification[] @relation("RecipientNotifications")
+  auditLogs       AuditLog[]      @relation("ActorAuditLogs")
+  reports         Report[]        @relation("GeneratedReports")
+}
+
+model Role {
+  id          String      @id @default(uuid())
+  name        RoleName    @unique
+  description String?
+  createdAt   DateTime    @default(now())
+
+  userRoles   UserRole[]
+}
+
+model UserRole {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  role      Role     @relation(fields: [roleId], references: [id])
+  roleId    String
+  assignedAt DateTime @default(now())
+
+  @@unique([userId, roleId])
+}
+
+model Department {
+  id          String      @id @default(uuid())
+  name        String
+  code        String      @unique
+  description String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  users       User[]
+  cohorts     Cohort[]
+  projects    Project[]
+  admins      AdminProfile[]
+  reports     Report[]
+}
+
+model Cohort {
+  id          String      @id @default(uuid())
+  name        String
+  startDate   DateTime
+  endDate     DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  department  Department? @relation(fields: [departmentId], references: [id])
+  departmentId String?
+  users       User[]
+  students    StudentProfile[]
+  projects    Project[]
+  reports     Report[]
+}
+
+model StudentProfile {
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String   @unique
+  enrollmentId String  @unique
+  level       String?
+  major       String?
+  advisorId   String?
+  cohort      Cohort?  @relation(fields: [cohortId], references: [id])
+  cohortId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  projects    Project[]     @relation("StudentProfileProjects")
+  submissions Submission[]  @relation("StudentProfileSubmissions")
+}
+
+model SupervisorProfile {
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String   @unique
+  title       String?
+  office      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  supervisedProjects Project[] @relation("SupervisorProfileProjects")
+}
+
+model AdminProfile {
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String   @unique
+  title       String?
+  department  Department? @relation(fields: [departmentId], references: [id])
+  departmentId String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Project {
+  id              String           @id @default(uuid())
+  title           String
+  description     String?
+  status          ProjectStatus   @default(PROPOSED)
+  startDate       DateTime?
+  expectedEndDate DateTime?
+  actualEndDate   DateTime?
+  type            ProjectType      @default(OTHER)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  student         User?            @relation("StudentProjects", fields: [studentId], references: [id])
+  studentId       String?
+  studentProfile  StudentProfile?  @relation("StudentProfileProjects", fields: [studentProfileId], references: [id])
+  studentProfileId String?
+  supervisor      User?            @relation("SupervisorProjects", fields: [supervisorId], references: [id])
+  supervisorId    String?
+  supervisorProfile SupervisorProfile? @relation("SupervisorProfileProjects", fields: [supervisorProfileId], references: [id])
+  supervisorProfileId String?
+  department      Department?      @relation(fields: [departmentId], references: [id])
+  departmentId    String?
+  cohort          Cohort?          @relation(fields: [cohortId], references: [id])
+  cohortId        String?
+  assignments     ProjectAssignment[]
+  milestones      Milestone[]
+  submissions     Submission[]
+  discussionThreads DiscussionThread[]
+  notifications   Notification[]   @relation("ProjectNotifications")
+  analytics       AnalyticsSnapshot[]
+  healthScores    AIHealthScore[]
+  riskSignals     AIRiskSignal[]
+  recommendations AIRecommendation[]
+  forecasts       Forecast[]
+  reports         Report[]
+}
+
+model ProjectAssignment {
+  id          String   @id @default(uuid())
+  project     Project  @relation(fields: [projectId], references: [id])
+  projectId   String
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  role        RoleName
+  assignedAt  DateTime @default(now())
+
+  @@unique([projectId, userId, role])
+}
+
+model Milestone {
+  id          String          @id @default(uuid())
+  project     Project         @relation(fields: [projectId], references: [id])
+  projectId   String
+  title       String
+  description String?
+  dueDate     DateTime
+  status      MilestoneStatus @default(PENDING)
+  completedAt DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  submissions Submission[]
+}
+
+model Submission {
+  id          String           @id @default(uuid())
+  project     Project          @relation(fields: [projectId], references: [id])
+  projectId   String
+  milestone   Milestone?       @relation(fields: [milestoneId], references: [id])
+  milestoneId String?
+  author      User             @relation(fields: [authorId], references: [id])
+  authorId    String
+  studentProfile StudentProfile? @relation("StudentProfileSubmissions", fields: [studentProfileId], references: [id])
+  studentProfileId String?
+  content     String
+  evidenceType EvidenceType?
+  fileUrl     String?
+  metadata    Json?
+  status      SubmissionStatus @default(DRAFT)
+  grade       Float?
+  feedback    String?
+  submittedAt DateTime         @default(now())
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  discussionThread DiscussionThread?
+  reviews     SubmissionReview[]
+  versions    SubmissionVersion[]
+}
+
+model SubmissionReview {
+  id           String    @id @default(uuid())
+  submission   Submission @relation(fields: [submissionId], references: [id])
+  submissionId String
+  reviewer     User      @relation(fields: [reviewerId], references: [id])
+  reviewerId   String
+  comments     String
+  score        Float?
+  status       SubmissionStatus @default(UNDER_REVIEW)
+  reviewedAt   DateTime  @default(now())
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model SubmissionVersion {
+  id           String     @id @default(uuid())
+  submission   Submission @relation(fields: [submissionId], references: [id])
+  submissionId String
+  versionNumber Int
+  content      String
+  evidenceType EvidenceType?
+  fileUrl      String?
+  author       User       @relation(fields: [authorId], references: [id])
+  authorId     String
+  metadata     Json?
+  createdAt    DateTime   @default(now())
+
+  @@unique([submissionId, versionNumber])
+  @@index([submissionId])
+}
+
+model DiscussionThread {
+  id            String              @id @default(uuid())
+  project       Project             @relation(fields: [projectId], references: [id])
+  projectId     String
+  submission    Submission?         @relation(fields: [submissionId], references: [id])
+  submissionId  String?             @unique
+  title         String
+  createdBy     User                @relation(fields: [createdById], references: [id])
+  createdById   String
+  status        String              @default("OPEN")
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  messages      DiscussionMessage[]
+
+  @@index([submissionId])
+}
+
+model DiscussionMessage {
+  id              String            @id @default(uuid())
+  thread          DiscussionThread  @relation(fields: [threadId], references: [id])
+  threadId        String
+  author          User              @relation(fields: [authorId], references: [id])
+  authorId        String
+  content         String
+  parentMessageId String?
+  createdAt       DateTime          @default(now())
+
+  parentMessage   DiscussionMessage? @relation("MessageParent", fields: [parentMessageId], references: [id])
+  replies         DiscussionMessage[] @relation("MessageParent")
+}
+
+model Notification {
+  id          String            @id @default(uuid())
+  recipient   User              @relation("RecipientNotifications", fields: [recipientId], references: [id])
+  recipientId String
+  project     Project?          @relation("ProjectNotifications", fields: [projectId], references: [id])
+  projectId   String?
+  type        NotificationType  @default(SYSTEM)
+  title       String
+  message     String
+  link        String?
+  read        Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  deliveredAt DateTime?
+}
+
+model AnalyticsSnapshot {
+  id          String   @id @default(uuid())
+  project     Project  @relation(fields: [projectId], references: [id])
+  projectId   String
+  metrics     Json
+  recordedAt  DateTime @default(now())
+  note        String?
+}
+
+model AIHealthScore {
+  id          String      @id @default(uuid())
+  project     Project     @relation(fields: [projectId], references: [id])
+  projectId   String
+  score       Float
+  classification String?
+  source      String?
+  generatedAt DateTime    @default(now())
+}
+
+model AIRiskSignal {
+  id          String      @id @default(uuid())
+  project     Project     @relation(fields: [projectId], references: [id])
+  projectId   String
+  severity    RiskSeverity
+  description String
+  source      String?
+  generatedAt DateTime    @default(now())
+}
+
+model AIRecommendation {
+  id             String      @id @default(uuid())
+  project        Project     @relation(fields: [projectId], references: [id])
+  projectId      String
+  recommendation String
+  category       String?
+  source         String?
+  generatedAt    DateTime    @default(now())
+}
+
+model Forecast {
+  id          String         @id @default(uuid())
+  project     Project        @relation(fields: [projectId], references: [id])
+  projectId   String
+  horizon     ForecastHorizon
+  summary     String
+  details     Json?
+  generatedAt DateTime       @default(now())
+}
+
+model Report {
+  id            String      @id @default(uuid())
+  title         String
+  description   String?
+  generatedBy   User        @relation("GeneratedReports", fields: [generatedById], references: [id])
+  generatedById String
+  scope         ReportScope
+  project       Project?    @relation(fields: [projectId], references: [id])
+  projectId     String?
+  supervisor    User?       @relation("SupervisedReports", fields: [supervisorId], references: [id])
+  supervisorId  String?
+  cohort        Cohort?     @relation(fields: [cohortId], references: [id])
+  cohortId      String?
+  department    Department? @relation(fields: [departmentId], references: [id])
+  departmentId  String?
+  status        String      @default("PENDING")
+  createdAt     DateTime    @default(now())
+  completedAt   DateTime?
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  actor     User     @relation("ActorAuditLogs", fields: [actorId], references: [id])
+  actorId   String
+  action    String
+  entity    String
+  entityId  String?
+  data      Json?
+  createdAt DateTime @default(now())
+}

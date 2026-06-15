@@ -1,0 +1,71 @@
+import { Response } from 'express';
+import { ReportsService } from './reports.service';
+import { CreateReportDto } from './dto/create-report.dto';
+import { ReportsGenerationService } from './reports-generation.service';
+import { ExportStudentProgressReportDto } from './dto/export-student-progress.dto';
+import { ExportProjectHealthReportDto } from './dto/export-project-health.dto';
+import { ExportSupervisorPerformanceReportDto } from './dto/export-supervisor-performance.dto';
+export declare class ReportsController {
+    private readonly reportsService;
+    private readonly reportsGenerationService;
+    constructor(reportsService: ReportsService, reportsGenerationService: ReportsGenerationService);
+    findAll(scope?: string): Promise<{
+        id: string;
+        createdAt: Date;
+        departmentId: string | null;
+        cohortId: string | null;
+        description: string | null;
+        projectId: string | null;
+        title: string;
+        status: string;
+        scope: import(".prisma/client").$Enums.ReportScope;
+        generatedById: string;
+        supervisorId: string | null;
+        completedAt: Date | null;
+    }[]>;
+    findOne(id: string): Promise<{
+        id: string;
+        createdAt: Date;
+        departmentId: string | null;
+        cohortId: string | null;
+        description: string | null;
+        projectId: string | null;
+        title: string;
+        status: string;
+        scope: import(".prisma/client").$Enums.ReportScope;
+        generatedById: string;
+        supervisorId: string | null;
+        completedAt: Date | null;
+    } | null>;
+    create(createReportDto: CreateReportDto): Promise<{
+        id: string;
+        createdAt: Date;
+        departmentId: string | null;
+        cohortId: string | null;
+        description: string | null;
+        projectId: string | null;
+        title: string;
+        status: string;
+        scope: import(".prisma/client").$Enums.ReportScope;
+        generatedById: string;
+        supervisorId: string | null;
+        completedAt: Date | null;
+    }>;
+    remove(id: string): Promise<{
+        id: string;
+        createdAt: Date;
+        departmentId: string | null;
+        cohortId: string | null;
+        description: string | null;
+        projectId: string | null;
+        title: string;
+        status: string;
+        scope: import(".prisma/client").$Enums.ReportScope;
+        generatedById: string;
+        supervisorId: string | null;
+        completedAt: Date | null;
+    }>;
+    exportStudentProgress(dto: ExportStudentProgressReportDto, res: Response): Promise<Response<any, Record<string, any>>>;
+    exportProjectHealth(dto: ExportProjectHealthReportDto, res: Response): Promise<Response<any, Record<string, any>>>;
+    exportSupervisorPerformance(dto: ExportSupervisorPerformanceReportDto, res: Response): Promise<Response<any, Record<string, any>>>;
+}
