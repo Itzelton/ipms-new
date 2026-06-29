@@ -11,10 +11,20 @@ const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
 let PrismaService = class PrismaService extends client_1.PrismaClient {
     async onModuleInit() {
-        await this.$connect();
+        if (!process.env.DATABASE_URL) {
+            console.warn('DATABASE_URL is not configured. Skipping Prisma initialization.');
+            return;
+        }
+        try {
+            await this.$connect();
+        }
+        catch (error) {
+            console.warn('Prisma failed to connect. Running backend in fallback mode without a database.');
+            console.warn(error?.message ?? error);
+        }
     }
     async enableShutdownHooks(app) {
-        this.$on('beforeExit', async () => {
+        process.on('beforeExit', async () => {
             await app.close();
         });
     }

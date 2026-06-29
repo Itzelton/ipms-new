@@ -58,7 +58,14 @@ let SubmissionRepository = class SubmissionRepository {
         return this.prisma.submission.findUnique({ where: { id }, include: { author: true, project: true } });
     }
     async update(id, data) {
-        return this.prisma.submission.update({ where: { id }, data });
+        return this.prisma.submission.update({
+            where: { id },
+            data: {
+                ...data,
+                status: data.status ? data.status : undefined,
+                evidenceType: data.evidenceType ? data.evidenceType : undefined,
+            },
+        });
     }
     async remove(id) {
         return this.prisma.submission.delete({ where: { id } });

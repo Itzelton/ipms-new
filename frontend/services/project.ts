@@ -4,7 +4,9 @@ export async function getProjectDetails(projectId: string) {
   try {
     return await apiGet(`/api/v1/projects/${projectId}/details`);
   } catch (e) {
-    return {
+    // In development return sample data to aid local UI work, but in production surface the error
+    if (process.env.NODE_ENV !== 'production') {
+      return {
       id: projectId,
       title: 'Capstone Platform Modernization',
       description: 'A multi-phase project to modernize the student project management platform with analytics and AI-driven status tracking.',
@@ -68,6 +70,24 @@ export async function getProjectDetails(projectId: string) {
         ],
         summary: 'Resolve overdue work, review pending submissions, and keep communication active with the supervisor.',
       },
-    };
+      };
+    }
+    throw e;
+  }
+}
+
+export async function getProjectsForUser(role: 'STUDENT' | 'SUPERVISOR' | 'ADMIN' = 'STUDENT') {
+  try {
+    return await apiGet(`/api/v1/projects?role=${role}`);
+  } catch (e) {
+    if (process.env.NODE_ENV !== 'production') {
+      return [
+        { id: 'p1', title: 'Capstone Project', progress: 62, status: 'ACTIVE' },
+        { id: 'p2', title: 'Research Analytics', progress: 84, status: 'ACTIVE' },
+        { id: 'p3', title: 'AI Monitoring', progress: 40, status: 'AT_RISK' },
+      ];
+    }
+
+    throw e;
   }
 }

@@ -12,7 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersService = void 0;
 const common_1 = require("@nestjs/common");
 const user_repository_1 = require("./repositories/user.repository");
-const sanitize_user_util_1 = require("./utils/sanitize-user.util");
+const sanitize_user_util_1 = require("../common/utils/sanitize-user.util");
 let UsersService = class UsersService {
     userRepository;
     constructor(userRepository) {

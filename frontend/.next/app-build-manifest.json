@@ -1,26 +1,5 @@
 {
   "pages": {
-    "/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/css/app/layout.css",
-      "static/chunks/app/layout.js"
-    ],
-    "/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/page.js"
-    ],
-    "/(authentication)/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(authentication)/layout.js"
-    ],
-    "/(authentication)/login/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(authentication)/login/page.js"
-    ],
     "/student/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -30,6 +9,12 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/student/layout.js"
+    ],
+    "/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/layout.css",
+      "static/chunks/app/layout.js"
     ],
     "/student/projects/page": [
       "static/chunks/webpack.js",
@@ -41,30 +26,15 @@
       "static/chunks/main-app.js",
       "static/chunks/app/student/submissions/page.js"
     ],
-    "/student/discussions/page": [
+    "/(authentication)/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/student/discussions/page.js"
+      "static/chunks/app/(authentication)/layout.js"
     ],
-    "/student/settings/page": [
+    "/(authentication)/login/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/student/settings/page.js"
-    ],
-    "/supervisor/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/supervisor/page.js"
-    ],
-    "/supervisor/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/supervisor/layout.js"
-    ],
-    "/not-found": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/not-found.js"
+      "static/chunks/app/(authentication)/login/page.js"
     ]
   }
 }

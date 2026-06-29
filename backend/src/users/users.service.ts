@@ -37,7 +37,7 @@ export class UsersService {
     return this.sanitizeUser(user);
   }
 
-  sanitizeUser(user: Parameters<typeof sanitizeUser>[0]): AuthenticatedUser {
+  sanitizeUser(user: any): AuthenticatedUser {
     return sanitizeUser(user);
   }
 }

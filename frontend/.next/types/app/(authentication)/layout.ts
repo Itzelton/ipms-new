@@ -1,4 +1,4 @@
-// File: /Users/elton/Downloads/projects/ipms/frontend/app/(authentication)/layout.tsx
+// File: C:\Users\ACER\Desktop\ipms\frontend\app\(authentication)\layout.tsx
 import * as entry from '../../../../app/(authentication)/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

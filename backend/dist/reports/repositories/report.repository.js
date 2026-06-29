@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReportRepository = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../common/prisma/prisma.service");
+const client_1 = require("@prisma/client");
 let ReportRepository = class ReportRepository {
     prisma;
     constructor(prisma) {
@@ -19,7 +20,7 @@ let ReportRepository = class ReportRepository {
     }
     async findAll(scope) {
         return this.prisma.report.findMany({
-            where: scope ? { scope } : undefined,
+            where: scope ? { scope: scope } : undefined,
             orderBy: { createdAt: 'desc' },
         });
     }
@@ -27,7 +28,14 @@ let ReportRepository = class ReportRepository {
         return this.prisma.report.findUnique({ where: { id } });
     }
     async create(data) {
-        return this.prisma.report.create({ data });
+        return this.prisma.report.create({
+            data: {
+                title: data.title,
+                description: data.description,
+                generatedById: data.generatedById,
+                scope: data.scope || client_1.ReportScope.PROJECT,
+            },
+        });
     }
     async remove(id) {
         return this.prisma.report.delete({ where: { id } });

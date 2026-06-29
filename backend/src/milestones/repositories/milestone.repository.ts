@@ -3,10 +3,11 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateMilestoneDto } from '../dto/create-milestone.dto';
 import { UpdateMilestoneDto } from '../dto/update-milestone.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
+import { MilestoneStatus } from '@prisma/client';
 
 @Injectable()
 export class MilestoneRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(public readonly prisma: PrismaService) {}
 
   async create(data: CreateMilestoneDto) {
     return this.prisma.milestone.create({ data });
@@ -23,7 +24,13 @@ export class MilestoneRepository {
   }
 
   async update(id: string, data: UpdateMilestoneDto) {
-    return this.prisma.milestone.update({ where: { id }, data });
+    return this.prisma.milestone.update({
+      where: { id },
+      data: {
+        ...data,
+        status: data.status ? (data.status as MilestoneStatus) : undefined,
+      },
+    });
   }
 
   async remove(id: string) {

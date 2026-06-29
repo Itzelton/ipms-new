@@ -14,7 +14,7 @@ class SupervisorPerformanceGenerator {
         if (scope === 'COHORT' && cohortId) {
             const supervisors = await this.prisma.user.findMany({
                 where: {
-                    supervisorProfile: { some: {} },
+                    supervisorProfile: { isNot: null },
                     supervisedProjects: { some: { cohortId } },
                 },
                 select: { id: true, firstName: true, lastName: true, preferredName: true },
@@ -28,7 +28,7 @@ class SupervisorPerformanceGenerator {
         if (scope === 'DEPARTMENT' && departmentId) {
             const supervisors = await this.prisma.user.findMany({
                 where: {
-                    supervisorProfile: { some: {} },
+                    supervisorProfile: { isNot: null },
                     supervisedProjects: { some: { departmentId } },
                 },
                 select: { id: true, firstName: true, lastName: true, preferredName: true },
@@ -43,10 +43,10 @@ class SupervisorPerformanceGenerator {
             where: where.id
                 ? {
                     id: where.id,
-                    supervisorProfile: { some: {} },
+                    supervisorProfile: { isNot: null },
                 }
                 : {
-                    supervisorProfile: { some: {} },
+                    supervisorProfile: { isNot: null },
                 },
             select: { id: true, firstName: true, lastName: true, preferredName: true },
         });
@@ -71,7 +71,7 @@ class SupervisorPerformanceGenerator {
         });
         const grades = submissions.map((s) => s.grade).filter((g) => typeof g === 'number');
         const averageGrade = grades.length ? grades.reduce((a, b) => a + b, 0) / grades.length : undefined;
-        const healthScores = await this.prisma.aiHealthScore.findMany({
+        const healthScores = await this.prisma.aIHealthScore.findMany({
             where: { projectId: { in: projects.map((p) => p.id) } },
             select: { score: true },
         });

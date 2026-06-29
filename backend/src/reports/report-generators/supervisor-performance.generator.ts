@@ -30,7 +30,7 @@ export class SupervisorPerformanceGenerator {
       // filter via projects
       const supervisors = await this.prisma.user.findMany({
         where: {
-          supervisorProfile: { some: {} },
+          supervisorProfile: { isNot: null },
           supervisedProjects: { some: { cohortId } },
         },
         select: { id: true, firstName: true, lastName: true, preferredName: true },
@@ -46,7 +46,7 @@ export class SupervisorPerformanceGenerator {
     if (scope === 'DEPARTMENT' && departmentId) {
       const supervisors = await this.prisma.user.findMany({
         where: {
-          supervisorProfile: { some: {} },
+          supervisorProfile: { isNot: null },
           supervisedProjects: { some: { departmentId } },
         },
         select: { id: true, firstName: true, lastName: true, preferredName: true },
@@ -64,10 +64,10 @@ export class SupervisorPerformanceGenerator {
       where: where.id
         ? {
             id: where.id,
-            supervisorProfile: { some: {} },
+            supervisorProfile: { isNot: null },
           }
         : {
-            supervisorProfile: { some: {} },
+            supervisorProfile: { isNot: null },
           },
       select: { id: true, firstName: true, lastName: true, preferredName: true },
     });
@@ -97,12 +97,12 @@ export class SupervisorPerformanceGenerator {
     const grades = submissions.map((s) => s.grade).filter((g): g is number => typeof g === 'number');
     const averageGrade = grades.length ? grades.reduce((a, b) => a + b, 0) / grades.length : undefined;
 
-    const healthScores = await this.prisma.aiHealthScore.findMany({
+    const healthScores = await this.prisma.aIHealthScore.findMany({
       where: { projectId: { in: projects.map((p) => p.id) } },
       select: { score: true },
     });
     const avgHealthScore = healthScores.length
-      ? healthScores.reduce((a, s) => a + s.score, 0) / healthScores.length
+      ? healthScores.reduce((a: number, s: any) => a + s.score, 0) / healthScores.length
       : undefined;
 
     const riskSignalsCount = await this.prisma.aIRiskSignal.count({

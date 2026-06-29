@@ -26,7 +26,19 @@ let MilestonesService = class MilestonesService {
     async create(createMilestoneDto, actorId) {
         const m = await this.milestoneRepository.create(createMilestoneDto);
         await this.auditService.log(actorId || null, 'create_milestone', 'Milestone', m.id, { title: m.title });
-        await this.notificationsService.create({ recipientId: createMilestoneDto.projectId ? undefined : '', message: `Milestone created: ${m.title}`, link: `/projects/${createMilestoneDto.projectId}/milestones/${m.id}` });
+        let recipientId = '';
+        if (createMilestoneDto.projectId) {
+            const project = await this.milestoneRepository.prisma.project.findUnique({
+                where: { id: createMilestoneDto.projectId },
+                select: { studentId: true },
+            });
+            recipientId = project?.studentId || '';
+        }
+        await this.notificationsService.create({
+            recipientId,
+            message: `Milestone created: ${m.title}`,
+            link: `/projects/${createMilestoneDto.projectId}/milestones/${m.id}`,
+        });
         return m;
     }
     async findAll(pagination) {

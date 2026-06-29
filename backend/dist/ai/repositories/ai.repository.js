@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AiRepository = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../common/prisma/prisma.service");
+const client_1 = require("@prisma/client");
 let AiRepository = class AiRepository {
     prisma;
     constructor(prisma) {
@@ -30,7 +31,7 @@ let AiRepository = class AiRepository {
         return this.prisma.aIRiskSignal.create({
             data: {
                 projectId: dto.projectId,
-                severity: 'low',
+                severity: client_1.RiskSeverity.LOW,
                 description: dto.prompt,
             },
         });
@@ -47,7 +48,7 @@ let AiRepository = class AiRepository {
         return this.prisma.forecast.create({
             data: {
                 projectId,
-                horizon: horizon || 'standard',
+                horizon: horizon || client_1.ForecastHorizon.SHORT_TERM,
                 summary: 'Forecast placeholder',
             },
         });

@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ipms-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ipms
+      POSTGRES_PASSWORD: ipms
+      POSTGRES_DB: ipms
+    ports:
+      - "5432:5432"
+    volumes:
+      - ipms_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ipms -d ipms"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  ipms_pgdata:

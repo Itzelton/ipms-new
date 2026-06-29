@@ -29,7 +29,13 @@ let MilestoneRepository = class MilestoneRepository {
         return this.prisma.milestone.findUnique({ where: { id } });
     }
     async update(id, data) {
-        return this.prisma.milestone.update({ where: { id }, data });
+        return this.prisma.milestone.update({
+            where: { id },
+            data: {
+                ...data,
+                status: data.status ? data.status : undefined,
+            },
+        });
     }
     async remove(id) {
         return this.prisma.milestone.delete({ where: { id } });

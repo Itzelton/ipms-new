@@ -22,7 +22,7 @@ let AnalyticsRepository = class AnalyticsRepository {
             where: {
                 projectId: query.projectId,
             },
-            orderBy: { createdAt: 'desc' },
+            orderBy: { recordedAt: 'desc' },
             take: 50,
         });
     }
@@ -31,7 +31,7 @@ let AnalyticsRepository = class AnalyticsRepository {
             where: {
                 projectId,
             },
-            orderBy: { createdAt: 'desc' },
+            orderBy: { recordedAt: 'desc' },
             take: 50,
         });
     }

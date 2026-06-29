@@ -3,6 +3,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateSubmissionDto } from '../dto/create-submission.dto';
 import { UpdateSubmissionDto } from '../dto/update-submission.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
+import { SubmissionStatus, EvidenceType } from '@prisma/client';
 
 @Injectable()
 export class SubmissionRepository {
@@ -16,10 +17,10 @@ export class SubmissionRepository {
           milestoneId: data.milestoneId,
           authorId,
           content: data.content,
-          evidenceType: data.evidenceType,
+          evidenceType: data.evidenceType as any,
           fileUrl: data.fileUrl,
           metadata: data.metadata,
-          status: data.status || 'DRAFT',
+          status: (data.status as SubmissionStatus) || 'DRAFT',
         },
       });
 
@@ -54,7 +55,14 @@ export class SubmissionRepository {
   }
 
   async update(id: string, data: UpdateSubmissionDto) {
-    return this.prisma.submission.update({ where: { id }, data });
+    return this.prisma.submission.update({
+      where: { id },
+      data: {
+        ...data,
+        status: data.status ? (data.status as SubmissionStatus) : undefined,
+        evidenceType: data.evidenceType ? (data.evidenceType as EvidenceType) : undefined,
+      },
+    });
   }
 
   async remove(id: string) {
@@ -72,14 +80,14 @@ export class SubmissionRepository {
           submissionId,
           versionNumber: nextVersion,
           content: dto.content,
-          evidenceType: dto.evidenceType,
+          evidenceType: dto.evidenceType as EvidenceType,
           fileUrl: dto.fileUrl,
           authorId,
           metadata: dto.metadata,
         },
       });
 
-      await prisma.submission.update({ where: { id: submissionId }, data: { content: dto.content, evidenceType: dto.evidenceType, fileUrl: dto.fileUrl } });
+      await prisma.submission.update({ where: { id: submissionId }, data: { content: dto.content, evidenceType: dto.evidenceType as EvidenceType, fileUrl: dto.fileUrl } });
 
       return version;
     });

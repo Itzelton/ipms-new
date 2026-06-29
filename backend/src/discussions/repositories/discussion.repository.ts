@@ -34,7 +34,7 @@ export class DiscussionRepository {
     });
   }
 
-  async createThread(data: CreateDiscussionThreadDto & { createdById?: string }) {
+  async createThread(data: CreateDiscussionThreadDto & { createdById: string }) {
     return this.prisma.discussionThread.create({ data });
   }
 

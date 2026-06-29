@@ -9,12 +9,12 @@ export declare class ReportsService {
         departmentId: string | null;
         cohortId: string | null;
         description: string | null;
-        projectId: string | null;
         title: string;
         status: string;
-        scope: import(".prisma/client").$Enums.ReportScope;
-        generatedById: string;
         supervisorId: string | null;
+        projectId: string | null;
+        generatedById: string;
+        scope: import(".prisma/client").$Enums.ReportScope;
         completedAt: Date | null;
     }[]>;
     findOne(id: string): Promise<{
@@ -23,12 +23,12 @@ export declare class ReportsService {
         departmentId: string | null;
         cohortId: string | null;
         description: string | null;
-        projectId: string | null;
         title: string;
         status: string;
-        scope: import(".prisma/client").$Enums.ReportScope;
-        generatedById: string;
         supervisorId: string | null;
+        projectId: string | null;
+        generatedById: string;
+        scope: import(".prisma/client").$Enums.ReportScope;
         completedAt: Date | null;
     } | null>;
     create(createReportDto: CreateReportDto): Promise<{
@@ -37,12 +37,12 @@ export declare class ReportsService {
         departmentId: string | null;
         cohortId: string | null;
         description: string | null;
-        projectId: string | null;
         title: string;
         status: string;
-        scope: import(".prisma/client").$Enums.ReportScope;
-        generatedById: string;
         supervisorId: string | null;
+        projectId: string | null;
+        generatedById: string;
+        scope: import(".prisma/client").$Enums.ReportScope;
         completedAt: Date | null;
     }>;
     remove(id: string): Promise<{
@@ -51,12 +51,12 @@ export declare class ReportsService {
         departmentId: string | null;
         cohortId: string | null;
         description: string | null;
-        projectId: string | null;
         title: string;
         status: string;
-        scope: import(".prisma/client").$Enums.ReportScope;
-        generatedById: string;
         supervisorId: string | null;
+        projectId: string | null;
+        generatedById: string;
+        scope: import(".prisma/client").$Enums.ReportScope;
         completedAt: Date | null;
     }>;
 }

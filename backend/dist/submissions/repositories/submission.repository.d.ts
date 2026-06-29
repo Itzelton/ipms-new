@@ -9,18 +9,18 @@ export declare class SubmissionRepository {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        projectId: string;
         status: import(".prisma/client").$Enums.SubmissionStatus;
+        studentProfileId: string | null;
+        projectId: string;
         authorId: string;
         content: string;
-        milestoneId: string | null;
-        studentProfileId: string | null;
         evidenceType: import(".prisma/client").$Enums.EvidenceType | null;
         fileUrl: string | null;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         grade: number | null;
         feedback: string | null;
         submittedAt: Date;
+        milestoneId: string | null;
     }>;
     findAll(pagination: PaginationDto): Promise<({
         project: {
@@ -32,13 +32,13 @@ export declare class SubmissionRepository {
             description: string | null;
             title: string;
             status: import(".prisma/client").$Enums.ProjectStatus;
-            studentProfileId: string | null;
-            supervisorId: string | null;
-            type: import(".prisma/client").$Enums.ProjectType;
             startDate: Date | null;
             expectedEndDate: Date | null;
             actualEndDate: Date | null;
+            type: import(".prisma/client").$Enums.ProjectType;
             studentId: string | null;
+            studentProfileId: string | null;
+            supervisorId: string | null;
             supervisorProfileId: string | null;
         };
         author: {
@@ -60,18 +60,18 @@ export declare class SubmissionRepository {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        projectId: string;
         status: import(".prisma/client").$Enums.SubmissionStatus;
+        studentProfileId: string | null;
+        projectId: string;
         authorId: string;
         content: string;
-        milestoneId: string | null;
-        studentProfileId: string | null;
         evidenceType: import(".prisma/client").$Enums.EvidenceType | null;
         fileUrl: string | null;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         grade: number | null;
         feedback: string | null;
         submittedAt: Date;
+        milestoneId: string | null;
     })[]>;
     findOne(id: string): Promise<({
         project: {
@@ -83,13 +83,13 @@ export declare class SubmissionRepository {
             description: string | null;
             title: string;
             status: import(".prisma/client").$Enums.ProjectStatus;
-            studentProfileId: string | null;
-            supervisorId: string | null;
-            type: import(".prisma/client").$Enums.ProjectType;
             startDate: Date | null;
             expectedEndDate: Date | null;
             actualEndDate: Date | null;
+            type: import(".prisma/client").$Enums.ProjectType;
             studentId: string | null;
+            studentProfileId: string | null;
+            supervisorId: string | null;
             supervisorProfileId: string | null;
         };
         author: {
@@ -111,52 +111,52 @@ export declare class SubmissionRepository {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        projectId: string;
         status: import(".prisma/client").$Enums.SubmissionStatus;
+        studentProfileId: string | null;
+        projectId: string;
         authorId: string;
         content: string;
-        milestoneId: string | null;
-        studentProfileId: string | null;
         evidenceType: import(".prisma/client").$Enums.EvidenceType | null;
         fileUrl: string | null;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         grade: number | null;
         feedback: string | null;
         submittedAt: Date;
+        milestoneId: string | null;
     }) | null>;
     update(id: string, data: UpdateSubmissionDto): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        projectId: string;
         status: import(".prisma/client").$Enums.SubmissionStatus;
+        studentProfileId: string | null;
+        projectId: string;
         authorId: string;
         content: string;
-        milestoneId: string | null;
-        studentProfileId: string | null;
         evidenceType: import(".prisma/client").$Enums.EvidenceType | null;
         fileUrl: string | null;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         grade: number | null;
         feedback: string | null;
         submittedAt: Date;
+        milestoneId: string | null;
     }>;
     remove(id: string): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        projectId: string;
         status: import(".prisma/client").$Enums.SubmissionStatus;
+        studentProfileId: string | null;
+        projectId: string;
         authorId: string;
         content: string;
-        milestoneId: string | null;
-        studentProfileId: string | null;
         evidenceType: import(".prisma/client").$Enums.EvidenceType | null;
         fileUrl: string | null;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
         grade: number | null;
         feedback: string | null;
         submittedAt: Date;
+        milestoneId: string | null;
     }>;
     createVersion(submissionId: string, authorId: string, dto: {
         content: string;

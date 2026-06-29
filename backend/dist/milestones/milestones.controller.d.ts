@@ -7,57 +7,57 @@ export declare class MilestonesController {
     constructor(milestonesService: MilestonesService);
     findAll(pagination: PaginationDto): Promise<{
         id: string;
+        title: string;
         createdAt: Date;
+        projectId: string;
+        status: import(".prisma/client").$Enums.MilestoneStatus;
         updatedAt: Date;
         description: string | null;
-        projectId: string;
-        title: string;
-        status: import(".prisma/client").$Enums.MilestoneStatus;
-        completedAt: Date | null;
         dueDate: Date;
+        completedAt: Date | null;
     }[]>;
     findOne(id: string): Promise<{
         id: string;
+        title: string;
         createdAt: Date;
+        projectId: string;
+        status: import(".prisma/client").$Enums.MilestoneStatus;
         updatedAt: Date;
         description: string | null;
-        projectId: string;
-        title: string;
-        status: import(".prisma/client").$Enums.MilestoneStatus;
-        completedAt: Date | null;
         dueDate: Date;
+        completedAt: Date | null;
     } | null>;
     create(createMilestoneDto: CreateMilestoneDto): Promise<{
         id: string;
+        title: string;
         createdAt: Date;
+        projectId: string;
+        status: import(".prisma/client").$Enums.MilestoneStatus;
         updatedAt: Date;
         description: string | null;
-        projectId: string;
-        title: string;
-        status: import(".prisma/client").$Enums.MilestoneStatus;
-        completedAt: Date | null;
         dueDate: Date;
+        completedAt: Date | null;
     }>;
     update(id: string, updateMilestoneDto: UpdateMilestoneDto): Promise<{
         id: string;
+        title: string;
         createdAt: Date;
+        projectId: string;
+        status: import(".prisma/client").$Enums.MilestoneStatus;
         updatedAt: Date;
         description: string | null;
-        projectId: string;
-        title: string;
-        status: import(".prisma/client").$Enums.MilestoneStatus;
-        completedAt: Date | null;
         dueDate: Date;
+        completedAt: Date | null;
     }>;
     remove(id: string): Promise<{
         id: string;
+        title: string;
         createdAt: Date;
+        projectId: string;
+        status: import(".prisma/client").$Enums.MilestoneStatus;
         updatedAt: Date;
         description: string | null;
-        projectId: string;
-        title: string;
-        status: import(".prisma/client").$Enums.MilestoneStatus;
-        completedAt: Date | null;
         dueDate: Date;
+        completedAt: Date | null;
     }>;
 }

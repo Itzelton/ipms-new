@@ -19,6 +19,7 @@ const ai_request_dto_1 = require("./dto/ai-request.dto");
 const jwt_auth_guard_1 = require("../common/guards/jwt-auth.guard");
 const chat_assistant_request_dto_1 = require("./dto/chat-assistant-request.dto");
 const ai_assistant_service_1 = require("./ai-assistant.service");
+const client_1 = require("@prisma/client");
 let AiController = class AiController {
     aiService;
     aiAssistantService;

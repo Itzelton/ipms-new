@@ -1,4 +1,4 @@
-// File: /Users/elton/Downloads/projects/ipms/frontend/app/student/page.tsx
+// File: C:\Users\ACER\Desktop\ipms\frontend\app\student\page.tsx
 import * as entry from '../../../../app/student/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

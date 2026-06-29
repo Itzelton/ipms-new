@@ -11,7 +11,7 @@ export class AnalyticsRepository {
       where: {
         projectId: query.projectId,
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { recordedAt: 'desc' },
       take: 50,
     });
   }
@@ -21,7 +21,7 @@ export class AnalyticsRepository {
       where: {
         projectId,
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { recordedAt: 'desc' },
       take: 50,
     });
   }

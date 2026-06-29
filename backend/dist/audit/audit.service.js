@@ -18,6 +18,10 @@ let AuditService = class AuditService {
         this.auditRepo = auditRepo;
     }
     async log(actorId, action, entity, entityId, data) {
+        if (!actorId) {
+            console.log(`[Audit Log] (No Actor) Action: ${action}, Entity: ${entity}, ID: ${entityId}`);
+            return null;
+        }
         return this.auditRepo.create({ actorId, action, entity, entityId, data });
     }
 };

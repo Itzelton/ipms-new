@@ -4,6 +4,7 @@ import { AiRequestDto } from './dto/ai-request.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { ChatAssistantRequestDto } from './dto/chat-assistant-request.dto';
 import { AiAssistantService } from './ai-assistant.service';
+import { ForecastHorizon } from '@prisma/client';
 
 @UseGuards(JwtAuthGuard)
 @Controller('ai')
@@ -29,7 +30,7 @@ export class AiController {
   }
 
   @Get('forecast/:projectId')
-  forecast(@Param('projectId') projectId: string, @Query('horizon') horizon?: string) {
+  forecast(@Param('projectId') projectId: string, @Query('horizon') horizon?: ForecastHorizon) {
     return this.aiService.forecast(projectId, horizon);
   }
 

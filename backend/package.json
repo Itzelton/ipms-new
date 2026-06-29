@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "private": true,
   "prisma": {
-    "schema": "../database/schema/schema.prisma"
+    "schema": "../database/schema/schema.prisma",
+    "seed": "ts-node --transpile-only scripts/seed.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -12,7 +13,9 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:push": "prisma db push",
-    "prisma:studio": "prisma studio"
+    "prisma:seed": "prisma db seed",
+    "prisma:studio": "prisma studio",
+    "db:setup": "prisma generate && prisma migrate dev --name init && prisma db seed"
   },
   "dependencies": {
     "@nestjs/common": "^10.2.0",
@@ -21,8 +24,8 @@
     "@nestjs/jwt": "^10.2.0",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^10.2.0",
-    "@nestjs/platform-socket.io": "^11.1.26",
-    "@nestjs/websockets": "^11.1.26",
+    "@nestjs/platform-socket.io": "^10.4.22",
+    "@nestjs/websockets": "^10.4.22",
     "@prisma/client": "^5.14.0",
     "bcrypt": "^5.1.0",
     "class-transformer": "^0.5.1",

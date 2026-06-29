@@ -9,7 +9,17 @@ export class NotificationRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(data: CreateNotificationDto) {
-    return this.prisma.notification.create({ data });
+    return this.prisma.notification.create({
+      data: {
+        recipientId: data.recipientId,
+        type: data.type ?? 'SYSTEM',
+        title: data.title ?? 'Notification',
+        message: data.message,
+        projectId: data.projectId,
+        link: data.link,
+        read: data.read ?? false,
+      },
+    });
   }
 
   async findAll(pagination: PaginationDto) {

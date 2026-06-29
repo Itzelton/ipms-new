@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AiRequestDto } from '../dto/ai-request.dto';
+import { RiskSeverity, ForecastHorizon } from '@prisma/client';
 
 @Injectable()
 export class AiRepository {
@@ -20,7 +21,7 @@ export class AiRepository {
     return this.prisma.aIRiskSignal.create({
       data: {
         projectId: dto.projectId,
-        severity: 'low',
+        severity: RiskSeverity.LOW,
         description: dto.prompt,
       },
     });
@@ -35,11 +36,11 @@ export class AiRepository {
     });
   }
 
-  async generateForecast(projectId: string, horizon?: string) {
+  async generateForecast(projectId: string, horizon?: ForecastHorizon) {
     return this.prisma.forecast.create({
       data: {
         projectId,
-        horizon: horizon || 'standard',
+        horizon: horizon || ForecastHorizon.SHORT_TERM,
         summary: 'Forecast placeholder',
       },
     });
