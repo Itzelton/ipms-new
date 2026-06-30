@@ -47,13 +47,44 @@ async function fetchLocalProfile(accessToken: string): Promise<SessionUser | nul
   }
 }
 
+async function ensureLocalProfile(accessToken: string): Promise<SessionUser | null> {
+  // Try to fetch existing profile first
+  const existing = await fetchLocalProfile(accessToken);
+  if (existing) return existing;
+
+  // No local profile — attempt auto-create using Supabase user metadata
+  try {
+    const { data: { user: sbUser } } = await supabase.auth.getUser(accessToken);
+    if (!sbUser) return null;
+
+    const meta = sbUser.user_metadata ?? {};
+    const name = meta.name || sbUser.email?.split('@')[0] || 'User';
+    const role: Role = (['STUDENT', 'SUPERVISOR', 'ADMIN'].includes(meta.role) ? meta.role : 'STUDENT') as Role;
+
+    const res = await fetch(`${API}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ name, role, email: sbUser.email }),
+    });
+
+    // 409 = profile already exists (race), treat as success
+    if (!res.ok && res.status !== 409) return null;
+
+    return fetchLocalProfile(accessToken);
+  } catch {
+    return null;
+  }
+}
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    // Hydrate from existing Supabase session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       if (session?.access_token) {
@@ -63,7 +94,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setHydrated(true);
     });
 
-    // Listen for auth state changes (login, logout, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       if (session?.access_token) {
@@ -81,18 +111,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw new Error(error.message);
 
-    const profile = await fetchLocalProfile(data.session.access_token);
-    if (!profile) throw new Error('Account exists in auth but has no profile. Contact an administrator.');
+    // Auto-create local profile if missing (handles email-confirmation flow gap)
+    const profile = await ensureLocalProfile(data.session.access_token);
+    if (!profile) throw new Error('Unable to load your profile. Please contact an administrator.');
     setUser(profile);
   };
 
   const register = async (email: string, password: string, name: string, role: Role) => {
-    // Step 1: Create Supabase Auth account
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    // Store name + role in Supabase user_metadata so auto-create works after email confirmation
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name, role } },
+    });
     if (error) throw new Error(error.message);
-    if (!data.session) throw new Error('CHECK_EMAIL'); // email confirmation required
 
-    // Step 2: Create local profile via backend (JWT proves identity)
+    if (!data.session) {
+      // Email confirmation required — profile will be auto-created on first login
+      throw new Error('CHECK_EMAIL');
+    }
+
+    // Immediate session (no email confirmation) — create profile now
     const res = await fetch(`${API}/auth/register`, {
       method: 'POST',
       headers: {
@@ -102,7 +141,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       body: JSON.stringify({ name, role, email }),
     });
 
-    if (!res.ok) {
+    if (!res.ok && res.status !== 409) {
       const body = await res.json().catch(() => ({}));
       throw new Error(body?.message || 'Failed to create profile');
     }
