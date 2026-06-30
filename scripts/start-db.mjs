@@ -22,7 +22,10 @@ async function startDatabase() {
   }
 
   const pg = new EmbeddedPostgres(config);
-  await pg.initialise();
+  const alreadyInitialised = existsSync(path.join(dataDir, 'PG_VERSION'));
+  if (!alreadyInitialised) {
+    await pg.initialise();
+  }
   await pg.start();
 
   const client = pg.getPgClient();
