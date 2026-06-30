@@ -22,7 +22,7 @@ export class SubmissionsService {
     await this.auditService.log(authorId || null, 'create_submission', 'Submission', submission.id, { projectId: submission.projectId });
 
     if (submission.projectId) {
-      const project = await (this.submissionRepository as any).prisma.project.findUnique({ where: { id: submission.projectId }, select: { supervisorId: true } });
+      const project = await this.submissionRepository.prisma.project.findUnique({ where: { id: submission.projectId }, select: { supervisorId: true } });
       if (project?.supervisorId) {
         await this.notificationsService.create({
           recipientId: project.supervisorId,
@@ -49,6 +49,10 @@ export class SubmissionsService {
 
   async findAll(pagination: PaginationDto) {
     return this.submissionRepository.findAll(pagination);
+  }
+
+  async findByAuthor(authorId: string, pagination: PaginationDto) {
+    return this.submissionRepository.findByAuthor(authorId, pagination);
   }
 
   async findOne(id: string) {

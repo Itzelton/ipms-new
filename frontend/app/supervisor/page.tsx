@@ -1,4 +1,4 @@
-npm run"use client";
+"use client";
 import React from 'react';
 import Link from 'next/link';
 import AnalyticsSummaryCard from '../../components/supervisor/AnalyticsSummaryCard';

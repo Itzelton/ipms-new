@@ -78,7 +78,7 @@ export async function getProjectDetails(projectId: string) {
 
 export async function getProjectsForUser(role: 'STUDENT' | 'SUPERVISOR' | 'ADMIN' = 'STUDENT') {
   try {
-    return await apiGet(`/api/v1/projects?role=${role}`);
+    return await apiGet(`/api/v1/projects`);
   } catch (e) {
     if (process.env.NODE_ENV !== 'production') {
       return [

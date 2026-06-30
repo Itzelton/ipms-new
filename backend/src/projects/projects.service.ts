@@ -20,7 +20,9 @@ export class ProjectsService {
   async create(createProjectDto: CreateProjectDto, actorId?: string) {
     const project = await this.projectRepository.create(createProjectDto);
     await this.auditService.log(actorId || null, 'create_project', 'Project', project.id, { title: project.title });
-    await this.notificationsService.create({ recipientId: createProjectDto.supervisorId || '', message: `Project created: ${project.title}`, link: `/projects/${project.id}` });
+    if (createProjectDto.supervisorId) {
+      await this.notificationsService.create({ recipientId: createProjectDto.supervisorId, message: `Project created: ${project.title}`, link: `/projects/${project.id}` });
+    }
     return project;
   }
 

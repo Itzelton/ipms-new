@@ -138,6 +138,12 @@ export class AiAssistantService {
       }
 
       case 'FORECAST': {
+        if (!projectId) {
+          return {
+            answerText: 'Select a project first so I can generate a forecast.',
+            suggestedNextQuestions: ['What milestones are pending?', 'What is my health score?'],
+          };
+        }
         const forecast = await this.aiRepository.generateForecast(projectId, undefined);
         evidence.push({ type: 'FORECAST', label: 'Project forecast', data: { summary: forecast.summary, details: forecast.details } });
         return {
@@ -149,6 +155,12 @@ export class AiAssistantService {
       }
 
       case 'SUMMARIZE_RECENT_ACTIVITY': {
+        if (!projectId) {
+          return {
+            answerText: 'Select a project first so I can summarize recent activity.',
+            suggestedNextQuestions: ['What milestones are pending?', 'What are the risks?'],
+          };
+        }
         const [milestones, submissions] = await Promise.all([
           this.prisma.milestone.findMany({ where: { projectId }, orderBy: { updatedAt: 'desc' }, take: 5 }),
           this.prisma.submission.findMany({ where: { projectId }, orderBy: { updatedAt: 'desc' }, take: 5 }),
@@ -194,7 +206,7 @@ export class AiAssistantService {
     if (message.includes('risk') || message.includes('danger') || message.includes('warning')) return role === 'SUPERVISOR' ? 'SUPERVISOR_AT_RISK' : 'RISKS';
     if (message.includes('forecast') || message.includes('predict') || message.includes('outlook')) return 'FORECAST';
     if (message.includes('next') || message.includes('do next') || message.includes('recommend') || message.includes('suggest')) return 'NEXT_STEPS';
-    if (message.includes('review') || message.includes('need attention') && role === 'SUPERVISOR') return 'PROJECTS_NEED_REVIEW';
+    if (role === 'SUPERVISOR' && (message.includes('review') || message.includes('need attention'))) return 'PROJECTS_NEED_REVIEW';
     if (message.includes('summarize') || message.includes('recent') || message.includes('activity') || message.includes('update')) return 'SUMMARIZE_RECENT_ACTIVITY';
     return 'UNKNOWN';
   }

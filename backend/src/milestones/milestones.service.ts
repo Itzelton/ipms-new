@@ -18,20 +18,19 @@ export class MilestonesService {
     const m = await this.milestoneRepository.create(createMilestoneDto);
     await this.auditService.log(actorId || null, 'create_milestone', 'Milestone', m.id, { title: m.title });
     
-    let recipientId = '';
     if (createMilestoneDto.projectId) {
       const project = await this.milestoneRepository.prisma.project.findUnique({
         where: { id: createMilestoneDto.projectId },
         select: { studentId: true },
       });
-      recipientId = project?.studentId || '';
+      if (project?.studentId) {
+        await this.notificationsService.create({
+          recipientId: project.studentId,
+          message: `Milestone created: ${m.title}`,
+          link: `/projects/${createMilestoneDto.projectId}/milestones/${m.id}`,
+        });
+      }
     }
-
-    await this.notificationsService.create({
-      recipientId,
-      message: `Milestone created: ${m.title}`,
-      link: `/projects/${createMilestoneDto.projectId}/milestones/${m.id}`,
-    });
     return m;
   }
 
