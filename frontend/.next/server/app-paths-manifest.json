@@ -1,7 +1,0 @@
-{
-  "/(authentication)/register/page": "app/(authentication)/register/page.js",
-  "/admin/page": "app/admin/page.js",
-  "/(authentication)/login/page": "app/(authentication)/login/page.js",
-  "/admin/projects/page": "app/admin/projects/page.js",
-  "/admin/users/page": "app/admin/users/page.js"
-}
