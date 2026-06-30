@@ -42,30 +42,49 @@ export default function Sidebar() {
   return (
     <>
       {/* Overlay */}
-      {open && (
-        <div
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity"
-          onClick={close}
-        />
-      )}
+      <div
+        onClick={close}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 40,
+          background: 'rgba(0,0,0,0.4)',
+          backdropFilter: 'blur(2px)',
+          transition: 'opacity 0.3s ease',
+          opacity: open ? 1 : 0,
+          pointerEvents: open ? 'auto' : 'none',
+        }}
+      />
 
       {/* Drawer */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-full w-72 shrink-0 flex-col gap-6 border-r border-slate-200/80 bg-white px-5 py-6 shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
-          open ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          zIndex: 50,
+          height: '100%',
+          width: '288px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '24px',
+          padding: '24px 20px',
+          background: 'white',
+          borderRight: '1px solid rgba(226,232,240,0.8)',
+          boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+          transform: open ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 0.3s cubic-bezier(0.32,0.72,0,1)',
+        }}
       >
         {/* Close button */}
         <button
           onClick={close}
-          className="absolute top-5 right-4 flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+          style={{ position: 'absolute', top: '20px', right: '16px' }}
+          className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+          aria-label="Close menu"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path
-              fillRule="evenodd"
-              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-              clipRule="evenodd"
-            />
+            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
           </svg>
         </button>
 
@@ -83,10 +102,8 @@ export default function Sidebar() {
                   key={it.href}
                   href={it.href}
                   onClick={close}
-                  className={`block rounded-2xl px-4 py-3 text-sm font-medium transition ${
-                    active
-                      ? 'bg-sky-100 text-sky-800'
-                      : 'text-slate-700 hover:bg-slate-100'
+                  className={`block rounded-2xl px-4 py-3 text-sm font-medium transition-colors ${
+                    active ? 'bg-sky-100 text-sky-800' : 'text-slate-700 hover:bg-slate-100'
                   }`}
                 >
                   {it.label}
@@ -96,7 +113,7 @@ export default function Sidebar() {
           </nav>
         </div>
 
-        <div className="mt-auto rounded-3xl bg-slate-50 p-4 text-sm leading-6 text-slate-600 shadow-sm">
+        <div style={{ marginTop: 'auto' }} className="rounded-3xl bg-slate-50 p-4 text-sm leading-6 text-slate-600 shadow-sm">
           Quick tip: use your dashboard cards to track progress, not paperwork.
         </div>
       </aside>
