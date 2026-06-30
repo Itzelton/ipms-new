@@ -10,12 +10,33 @@ import {
   RiskSeverity,
   ForecastHorizon,
 } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import { createClient } from '@supabase/supabase-js';
 
 const prisma = new PrismaClient();
 
-async function hash(pw: string) {
-  return bcrypt.hash(pw, 10);
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { autoRefreshToken: false, persistSession: false } },
+);
+
+async function upsertSupabaseUser(email: string, password: string) {
+  // Check if user already exists
+  const { data: existing } = await supabase.auth.admin.listUsers();
+  const found = existing?.users?.find(u => u.email === email);
+  if (found) return found;
+
+  const { data, error } = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true, // bypass email confirmation for seed users
+  });
+  if (error) throw new Error(`Failed to create Supabase auth user ${email}: ${error.message}`);
+  return data.user;
+}
+
+async function hash(_pw: string) {
+  return ''; // passwords managed by Supabase Auth
 }
 
 async function upsertRole(name: RoleName) {
@@ -45,6 +66,21 @@ async function main() {
     update: {},
     create: { id: 'cohort-2024', name: 'Class of 2024', startDate: new Date('2024-01-15'), endDate: new Date('2024-12-15'), departmentId: dept.id },
   });
+
+  // Supabase Auth users (created first so they can sign in immediately)
+  const authUsers = [
+    { email: 'admin@ipms.edu', password: 'Admin@1234' },
+    { email: 'prof.boateng@ipms.edu', password: 'Supervisor@1234' },
+    { email: 'dr.asante@ipms.edu', password: 'Supervisor@1234' },
+    { email: 'kofi.adu@student.ipms.edu', password: 'Student@1234' },
+    { email: 'ama.darko@student.ipms.edu', password: 'Student@1234' },
+    { email: 'yaw.ofori@student.ipms.edu', password: 'Student@1234' },
+    { email: 'akosua.frimpong@student.ipms.edu', password: 'Student@1234' },
+  ];
+  for (const u of authUsers) {
+    await upsertSupabaseUser(u.email, u.password);
+    console.log(`  ✓ Supabase auth user: ${u.email}`);
+  }
 
   // Users
   const adminRole = await prisma.role.findUnique({ where: { name: RoleName.ADMIN } });
