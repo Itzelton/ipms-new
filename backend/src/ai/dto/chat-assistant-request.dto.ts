@@ -8,7 +8,7 @@ export class ChatAssistantRequestDto {
 
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
   projectId?: string;
 
   // If the backend can infer role from JWT later, this can be omitted.
