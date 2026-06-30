@@ -6,3 +6,5 @@ database/schema/.env
 node_modules
 skills-lock.json
 .agents/
+.DS_Store
+**/.DS_Store
