@@ -34,10 +34,13 @@ async function fetchLocalProfile(accessToken: string): Promise<SessionUser | nul
     if (!res.ok) return null;
     const json = await res.json();
     const u = json.data ?? json;
+    const roleList: string[] = Array.isArray(u.roles)
+      ? u.roles.map((r: any) => (typeof r === 'string' ? r : r.name))
+      : [];
     const role: Role =
-      u.roles?.find((r: any) => r.name === 'ADMIN')  ? 'ADMIN' :
-      u.roles?.find((r: any) => r.name === 'SUPERVISOR') ? 'SUPERVISOR' :
-      u.roles?.find((r: any) => r.name === 'STUDENT') ? 'STUDENT' : null;
+      roleList.includes('ADMIN') ? 'ADMIN' :
+      roleList.includes('SUPERVISOR') ? 'SUPERVISOR' :
+      roleList.includes('STUDENT') ? 'STUDENT' : null;
     return { id: u.id, email: u.email, name: u.preferredName || u.firstName || u.email, role };
   } catch {
     return null;
