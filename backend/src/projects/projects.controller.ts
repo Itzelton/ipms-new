@@ -5,8 +5,10 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 import { AssignSupervisorDto } from './dto/assign-supervisor.dto';
 import { UpdateProjectStatusDto } from './dto/update-project-status.dto';
 import { UpdateProjectTypeDto } from './dto/update-project-type.dto';
+import { AddCollaboratorDto } from './dto/add-collaborator.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { PaginationDto } from '../common/dto/pagination.dto';
+import { CurrentUser } from '../common/decorators/user.decorator';
 
 @UseGuards(JwtAuthGuard)
 @Controller('projects')
@@ -14,8 +16,8 @@ export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 
   @Get()
-  findAll(@Query() pagination: PaginationDto) {
-    return this.projectsService.findAll(pagination);
+  findAll(@Query() pagination: PaginationDto, @CurrentUser('id') userId: string) {
+    return this.projectsService.findAll(pagination, userId);
   }
 
   @Get(':id')
@@ -66,6 +68,29 @@ export class ProjectsController {
   @Patch(':id/type')
   updateType(@Param('id') id: string, @Body() dto: UpdateProjectTypeDto) {
     return this.projectsService.updateType(id, dto.type);
+  }
+
+  @Get(':id/collaborators')
+  findCollaborators(@Param('id') id: string) {
+    return this.projectsService.findCollaborators(id);
+  }
+
+  @Post(':id/collaborators')
+  addCollaborator(
+    @Param('id') id: string,
+    @Body() dto: AddCollaboratorDto,
+    @CurrentUser('id') actorId: string,
+  ) {
+    return this.projectsService.addCollaborator(id, dto.userId, dto.role, actorId);
+  }
+
+  @Delete(':id/collaborators/:userId')
+  removeCollaborator(
+    @Param('id') id: string,
+    @Param('userId') userId: string,
+    @CurrentUser('id') actorId: string,
+  ) {
+    return this.projectsService.removeCollaborator(id, userId, actorId);
   }
 
   @Delete(':id')

@@ -3,7 +3,7 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { ProjectRepository } from './repositories/project.repository';
-import { ProjectStatus, ProjectType } from '@prisma/client';
+import { ProjectStatus, ProjectType, RoleName } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AuditService } from '../audit/audit.service';
 import { ProjectHealthService, ProjectHealthScoreResult, ProjectRiskStatus, ProjectRecommendationsResult } from './project-health.service';
@@ -26,8 +26,8 @@ export class ProjectsService {
     return project;
   }
 
-  async findAll(pagination: PaginationDto) {
-    return this.projectRepository.findAll(pagination);
+  async findAll(pagination: PaginationDto, userId?: string) {
+    return this.projectRepository.findAll(pagination, userId);
   }
 
   async findOne(id: string) {
@@ -91,5 +91,26 @@ export class ProjectsService {
     const res = await this.projectRepository.remove(id);
     await this.auditService.log(actorId || null, 'delete_project', 'Project', id, {});
     return res;
+  }
+
+  async findCollaborators(projectId: string) {
+    return this.projectRepository.findCollaborators(projectId);
+  }
+
+  async addCollaborator(projectId: string, userId: string, role?: RoleName, actorId?: string) {
+    const result = await this.projectRepository.addCollaborator(projectId, userId, role);
+    await this.auditService.log(actorId || null, 'add_collaborator', 'ProjectAssignment', projectId, { userId, role });
+    await this.notificationsService.create({
+      recipientId: userId,
+      message: `You have been added as a collaborator on a project.`,
+      link: `/projects/${projectId}`,
+    });
+    return result;
+  }
+
+  async removeCollaborator(projectId: string, userId: string, actorId?: string) {
+    const result = await this.projectRepository.removeCollaborator(projectId, userId);
+    await this.auditService.log(actorId || null, 'remove_collaborator', 'ProjectAssignment', projectId, { userId });
+    return result;
   }
 }

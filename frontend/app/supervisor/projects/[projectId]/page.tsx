@@ -9,6 +9,7 @@ import ProjectDiscussionsPanel from '../../../../components/project/ProjectDiscu
 import ProjectHealthRiskPanel from '../../../../components/project/ProjectHealthRiskPanel';
 import ProjectRecommendationsPanel from '../../../../components/project/ProjectRecommendationsPanel';
 import ProjectTabs from '../../../../components/project/ProjectTabs';
+import ProjectCollaboratorsPanel from '../../../../components/project/ProjectCollaboratorsPanel';
 
 export default function SupervisorProjectDetailsPage({ params }: { params: { projectId: string } }) {
   const [project, setProject] = useState<any>(null);
@@ -55,6 +56,7 @@ export default function SupervisorProjectDetailsPage({ params }: { params: { pro
               {activeTab === 'milestones' && <ProjectMilestonesPanel milestones={project.milestones} />}
               {activeTab === 'submissions' && <ProjectSubmissionsPanel submissions={project.submissions} />}
               {activeTab === 'discussions' && <ProjectDiscussionsPanel discussions={project.discussionThreads ?? project.discussions} />}
+              {activeTab === 'collaborators' && <ProjectCollaboratorsPanel projectId={params.projectId} />}
             </div>
           </div>
         </div>

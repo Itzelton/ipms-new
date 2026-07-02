@@ -6,6 +6,7 @@ const tabs = [
   { key: 'milestones', label: 'Milestones' },
   { key: 'submissions', label: 'Submissions' },
   { key: 'discussions', label: 'Discussions' },
+  { key: 'collaborators', label: 'Collaborators' },
 ];
 
 export default function ProjectTabs({ activeTab, onChange }: { activeTab: string; onChange: (tab: string) => void }) {

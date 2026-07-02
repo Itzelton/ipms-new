@@ -75,7 +75,7 @@ export class ProjectRepository {
     return this.prisma.project.create({ data });
   }
 
-  async findAll(pagination: PaginationDto) {
+  async findAll(pagination: PaginationDto, userId?: string) {
     if (this.useInMemoryData) {
       const take = pagination.limit || 20;
       const skip = pagination.page ? (pagination.page - 1) * take : 0;
@@ -84,12 +84,19 @@ export class ProjectRepository {
 
     const take = pagination.limit || 20;
     const skip = pagination.page ? (pagination.page - 1) * take : 0;
+    const where = userId
+      ? { OR: [{ studentId: userId }, { supervisorId: userId }, { assignments: { some: { userId } } }] }
+      : {};
     return this.prisma.project.findMany({
       skip,
       take,
+      where,
       include: {
         student: { select: { id: true, email: true, firstName: true, lastName: true } },
         supervisor: { select: { id: true, email: true, firstName: true, lastName: true } },
+        assignments: {
+          include: { user: { select: { id: true, email: true, firstName: true, lastName: true } } },
+        },
       },
     });
   }
@@ -253,6 +260,31 @@ export class ProjectRepository {
     }
 
     return this.prisma.project.update({ where: { id }, data: { type } });
+  }
+
+  async findCollaborators(projectId: string) {
+    if (this.useInMemoryData) return [];
+    return this.prisma.projectAssignment.findMany({
+      where: { projectId },
+      include: { user: { select: { id: true, email: true, firstName: true, lastName: true } } },
+    });
+  }
+
+  async addCollaborator(projectId: string, userId: string, role: RoleName = RoleName.REVIEWER) {
+    if (this.useInMemoryData) {
+      return { id: randomUUID(), projectId, userId, role, assignedAt: new Date() };
+    }
+    return this.prisma.projectAssignment.upsert({
+      where: { projectId_userId_role: { projectId, userId, role } },
+      create: { projectId, userId, role },
+      update: {},
+      include: { user: { select: { id: true, email: true, firstName: true, lastName: true } } },
+    });
+  }
+
+  async removeCollaborator(projectId: string, userId: string) {
+    if (this.useInMemoryData) return null;
+    return this.prisma.projectAssignment.deleteMany({ where: { projectId, userId } });
   }
 
   async remove(id: string) {
