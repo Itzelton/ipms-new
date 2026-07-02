@@ -16,6 +16,15 @@ interface Collaborator {
   user: CollaboratorUser;
 }
 
+interface Invite {
+  id: string;
+  token: string;
+  role: string;
+  usedCount: number;
+  expiresAt: string | null;
+  createdAt: string;
+}
+
 function displayName(c: Collaborator): string {
   const u = c.user;
   if (!u) return '—';
@@ -31,24 +40,33 @@ const ROLE_LABELS: Record<string, string> = {
   GUEST: 'Guest',
 };
 
+const ORIGIN = typeof window !== 'undefined' ? window.location.origin : '';
+
 export default function ProjectCollaboratorsPanel({ projectId }: { projectId: string }) {
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+  const [invites, setInvites] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [newEmail, setNewEmail] = useState('');
   const [newRole, setNewRole] = useState('REVIEWER');
   const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState('');
+
+  const [inviteRole, setInviteRole] = useState('REVIEWER');
+  const [inviteExpiry, setInviteExpiry] = useState('7');
+  const [generating, setGenerating] = useState(false);
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
+
   const [removingId, setRemovingId] = useState<string | null>(null);
-  const [error, setError] = useState('');
 
   async function load() {
-    try {
-      const data = await apiGet(`/projects/${projectId}/collaborators`);
-      setCollaborators(Array.isArray(data) ? data : []);
-    } catch {
-      setCollaborators([]);
-    } finally {
-      setLoading(false);
-    }
+    const [collab, inv] = await Promise.allSettled([
+      apiGet(`/projects/${projectId}/collaborators`),
+      apiGet(`/projects/${projectId}/invites`),
+    ]);
+    setCollaborators(collab.status === 'fulfilled' && Array.isArray(collab.value) ? collab.value : []);
+    setInvites(inv.status === 'fulfilled' && Array.isArray(inv.value) ? inv.value : []);
+    setLoading(false);
   }
 
   useEffect(() => { load(); }, [projectId]);
@@ -57,13 +75,13 @@ export default function ProjectCollaboratorsPanel({ projectId }: { projectId: st
     e.preventDefault();
     if (!newEmail.trim()) return;
     setAdding(true);
-    setError('');
+    setAddError('');
     try {
       await apiPost(`/projects/${projectId}/collaborators`, { email: newEmail.trim(), role: newRole });
       setNewEmail('');
       await load();
     } catch (err: any) {
-      setError(err?.message || 'No account found with that email address.');
+      setAddError(err?.message || 'No account found with that email address.');
     } finally {
       setAdding(false);
     }
@@ -75,10 +93,41 @@ export default function ProjectCollaboratorsPanel({ projectId }: { projectId: st
       await apiDelete(`/projects/${projectId}/collaborators/${userId}`);
       await load();
     } catch {
-      // silently ignore
+      // ignore
     } finally {
       setRemovingId(null);
     }
+  }
+
+  async function handleGenerateInvite(e: React.FormEvent) {
+    e.preventDefault();
+    setGenerating(true);
+    try {
+      await apiPost(`/projects/${projectId}/invites`, {
+        role: inviteRole,
+        expiresInDays: inviteExpiry ? Number(inviteExpiry) : undefined,
+      });
+      await load();
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function handleRevokeInvite(token: string) {
+    try {
+      await apiDelete(`/projects/${projectId}/invites/${token}`);
+      await load();
+    } catch {
+      // ignore
+    }
+  }
+
+  function handleCopy(token: string) {
+    const link = `${ORIGIN}/invite/${token}`;
+    navigator.clipboard.writeText(link).then(() => {
+      setCopiedToken(token);
+      setTimeout(() => setCopiedToken(null), 2000);
+    });
   }
 
   if (loading) {
@@ -86,10 +135,14 @@ export default function ProjectCollaboratorsPanel({ projectId }: { projectId: st
   }
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="space-y-8">
+
+      {/* Collaborators list */}
+      <section>
         <h4 className="mb-3 text-sm font-semibold text-gray-700">
-          {collaborators.length === 0 ? 'No collaborators yet' : `${collaborators.length} Collaborator${collaborators.length !== 1 ? 's' : ''}`}
+          {collaborators.length === 0
+            ? 'No collaborators yet'
+            : `${collaborators.length} Collaborator${collaborators.length !== 1 ? 's' : ''}`}
         </h4>
         {collaborators.length > 0 && (
           <ul className="divide-y divide-gray-100 rounded border border-gray-100">
@@ -115,10 +168,11 @@ export default function ProjectCollaboratorsPanel({ projectId }: { projectId: st
             ))}
           </ul>
         )}
-      </div>
+      </section>
 
+      {/* Add by email */}
       <form onSubmit={handleAdd} className="space-y-3 rounded border border-dashed border-gray-200 p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Add collaborator</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Add by email</p>
         <div className="flex gap-2">
           <input
             type="email"
@@ -145,11 +199,85 @@ export default function ProjectCollaboratorsPanel({ projectId }: { projectId: st
             {adding ? 'Adding...' : 'Add'}
           </button>
         </div>
-        {error && <p className="text-xs text-red-600">{error}</p>}
-        <p className="text-xs text-gray-400">
-          Collaborators can view and edit this project. Enter the email address they registered with.
-        </p>
+        {addError && <p className="text-xs text-red-600">{addError}</p>}
       </form>
+
+      {/* Invite links */}
+      <section className="space-y-3">
+        <h4 className="text-sm font-semibold text-gray-700">Invite links</h4>
+
+        {invites.length > 0 && (
+          <ul className="divide-y divide-gray-100 rounded border border-gray-100">
+            {invites.map((inv) => {
+              const link = `${ORIGIN}/invite/${inv.token}`;
+              const expired = inv.expiresAt && new Date(inv.expiresAt) < new Date();
+              return (
+                <li key={inv.id} className="flex items-start justify-between gap-4 px-4 py-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">
+                        {ROLE_LABELS[inv.role] ?? inv.role}
+                      </span>
+                      {expired && (
+                        <span className="rounded bg-red-100 px-1.5 py-0.5 text-xs font-medium text-red-600">Expired</span>
+                      )}
+                      <span className="text-xs text-gray-400">
+                        Used {inv.usedCount} time{inv.usedCount !== 1 ? 's' : ''}
+                        {inv.expiresAt && !expired && ` · expires ${new Date(inv.expiresAt).toLocaleDateString()}`}
+                      </span>
+                    </div>
+                    <p className="mt-1 truncate font-mono text-xs text-gray-500">{link}</p>
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <button
+                      onClick={() => handleCopy(inv.token)}
+                      className="rounded px-2 py-1 text-xs text-blue-600 hover:bg-blue-50"
+                    >
+                      {copiedToken === inv.token ? 'Copied!' : 'Copy'}
+                    </button>
+                    <button
+                      onClick={() => handleRevokeInvite(inv.token)}
+                      className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+                    >
+                      Revoke
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        <form onSubmit={handleGenerateInvite} className="flex flex-wrap gap-2">
+          <select
+            value={inviteRole}
+            onChange={(e) => setInviteRole(e.target.value)}
+            className="rounded border px-2 py-1.5 text-sm"
+          >
+            <option value="REVIEWER">Reviewer</option>
+            <option value="STUDENT">Student</option>
+            <option value="SUPERVISOR">Supervisor</option>
+            <option value="GUEST">Guest</option>
+          </select>
+          <select
+            value={inviteExpiry}
+            onChange={(e) => setInviteExpiry(e.target.value)}
+            className="rounded border px-2 py-1.5 text-sm"
+          >
+            <option value="1">Expires in 1 day</option>
+            <option value="7">Expires in 7 days</option>
+            <option value="30">Expires in 30 days</option>
+            <option value="">Never expires</option>
+          </select>
+          <button
+            type="submit"
+            disabled={generating}
+            className="rounded bg-slate-700 px-4 py-1.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+          >
+            {generating ? 'Generating...' : 'Generate link'}
+          </button>
+        </form>
+      </section>
     </div>
   );
 }

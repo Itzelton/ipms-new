@@ -6,6 +6,7 @@ import { AssignSupervisorDto } from './dto/assign-supervisor.dto';
 import { UpdateProjectStatusDto } from './dto/update-project-status.dto';
 import { UpdateProjectTypeDto } from './dto/update-project-type.dto';
 import { AddCollaboratorDto } from './dto/add-collaborator.dto';
+import { CreateInviteDto } from './dto/create-invite.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { CurrentUser } from '../common/decorators/user.decorator';
@@ -73,6 +74,25 @@ export class ProjectsController {
   @Get(':id/collaborators')
   findCollaborators(@Param('id') id: string) {
     return this.projectsService.findCollaborators(id);
+  }
+
+  @Get(':id/invites')
+  listInvites(@Param('id') id: string) {
+    return this.projectsService.listInvites(id);
+  }
+
+  @Post(':id/invites')
+  createInvite(
+    @Param('id') id: string,
+    @Body() dto: CreateInviteDto,
+    @CurrentUser('id') actorId: string,
+  ) {
+    return this.projectsService.createInvite(id, dto.role, actorId, dto.expiresInDays);
+  }
+
+  @Delete(':id/invites/:token')
+  revokeInvite(@Param('token') token: string) {
+    return this.projectsService.revokeInvite(token);
   }
 
   @Post(':id/collaborators')

@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { ProjectRepository } from './repositories/project.repository';
+import { ProjectInviteRepository } from './repositories/project-invite.repository';
 import { ProjectStatus, ProjectType, RoleName } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AuditService } from '../audit/audit.service';
@@ -13,6 +14,7 @@ import { ProjectHealthService, ProjectHealthScoreResult, ProjectRiskStatus, Proj
 export class ProjectsService {
   constructor(
     private readonly projectRepository: ProjectRepository,
+    private readonly projectInviteRepository: ProjectInviteRepository,
     private readonly notificationsService: NotificationsService,
     private readonly auditService: AuditService,
     private readonly usersService: UsersService,
@@ -116,5 +118,34 @@ export class ProjectsService {
     const result = await this.projectRepository.removeCollaborator(projectId, userId);
     await this.auditService.log(actorId || null, 'remove_collaborator', 'ProjectAssignment', projectId, { userId });
     return result;
+  }
+
+  async createInvite(projectId: string, role: RoleName = RoleName.REVIEWER, createdById: string, expiresInDays?: number) {
+    const expiresAt = expiresInDays ? new Date(Date.now() + expiresInDays * 86_400_000) : undefined;
+    return this.projectInviteRepository.create(projectId, role, createdById, expiresAt);
+  }
+
+  async listInvites(projectId: string) {
+    return this.projectInviteRepository.findByProject(projectId);
+  }
+
+  async getInviteDetails(token: string) {
+    const invite = await this.projectInviteRepository.findByToken(token);
+    if (!invite) throw new NotFoundException('Invite link not found or has been revoked.');
+    if (invite.expiresAt && invite.expiresAt < new Date()) throw new BadRequestException('This invite link has expired.');
+    return { projectId: invite.projectId, role: invite.role, project: invite.project };
+  }
+
+  async acceptInvite(token: string, userId: string) {
+    const invite = await this.projectInviteRepository.findByToken(token);
+    if (!invite) throw new NotFoundException('Invite link not found or has been revoked.');
+    if (invite.expiresAt && invite.expiresAt < new Date()) throw new BadRequestException('This invite link has expired.');
+    await this.projectRepository.addCollaborator(invite.projectId, userId, invite.role);
+    await this.projectInviteRepository.incrementUsedCount(token);
+    return { projectId: invite.projectId, role: invite.role, project: invite.project };
+  }
+
+  async revokeInvite(token: string) {
+    return this.projectInviteRepository.revoke(token);
   }
 }

@@ -115,6 +115,7 @@ model User {
   createdDiscussionThreads DiscussionThread[]
   discussionMessages DiscussionMessage[]
   supervisedReports Report[]        @relation("SupervisedReports")
+  createdInvites  ProjectInvite[] @relation("CreatedInvites")
   notificationReceipts Notification[] @relation("RecipientNotifications")
   auditLogs       AuditLog[]      @relation("ActorAuditLogs")
   reports         Report[]        @relation("GeneratedReports")
@@ -236,6 +237,7 @@ model Project {
   cohort          Cohort?          @relation(fields: [cohortId], references: [id])
   cohortId        String?
   assignments     ProjectAssignment[]
+  invites         ProjectInvite[]
   milestones      Milestone[]
   submissions     Submission[]
   discussionThreads DiscussionThread[]
@@ -258,6 +260,19 @@ model ProjectAssignment {
   assignedAt  DateTime @default(now())
 
   @@unique([projectId, userId, role])
+}
+
+model ProjectInvite {
+  id          String    @id @default(uuid())
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId   String
+  token       String    @unique @default(uuid())
+  role        RoleName  @default(REVIEWER)
+  createdBy   User      @relation("CreatedInvites", fields: [createdById], references: [id])
+  createdById String
+  expiresAt   DateTime?
+  usedCount   Int       @default(0)
+  createdAt   DateTime  @default(now())
 }
 
 model Milestone {

@@ -1,10 +1,12 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '../../../components/auth/auth-context';
 
 export default function LoginPage() {
   const { login, user, hydrated } = useAuth();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -13,10 +15,11 @@ export default function LoginPage() {
   useEffect(() => {
     if (!hydrated) return;
     if (user) {
-      const path = user.role === 'ADMIN' ? '/admin' : user.role === 'SUPERVISOR' ? '/supervisor' : '/student';
+      const next = searchParams.get('next');
+      const path = next || (user.role === 'ADMIN' ? '/admin' : user.role === 'SUPERVISOR' ? '/supervisor' : '/student');
       window.location.href = path;
     }
-  }, [user, hydrated]);
+  }, [user, hydrated, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
