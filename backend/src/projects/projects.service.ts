@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
@@ -6,6 +6,7 @@ import { ProjectRepository } from './repositories/project.repository';
 import { ProjectStatus, ProjectType, RoleName } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AuditService } from '../audit/audit.service';
+import { UsersService } from '../users/users.service';
 import { ProjectHealthService, ProjectHealthScoreResult, ProjectRiskStatus, ProjectRecommendationsResult } from './project-health.service';
 
 @Injectable()
@@ -14,6 +15,7 @@ export class ProjectsService {
     private readonly projectRepository: ProjectRepository,
     private readonly notificationsService: NotificationsService,
     private readonly auditService: AuditService,
+    private readonly usersService: UsersService,
     private readonly projectHealthService: ProjectHealthService,
   ) {}
 
@@ -97,11 +99,13 @@ export class ProjectsService {
     return this.projectRepository.findCollaborators(projectId);
   }
 
-  async addCollaborator(projectId: string, userId: string, role?: RoleName, actorId?: string) {
-    const result = await this.projectRepository.addCollaborator(projectId, userId, role);
-    await this.auditService.log(actorId || null, 'add_collaborator', 'ProjectAssignment', projectId, { userId, role });
+  async addCollaboratorByEmail(projectId: string, email: string, role?: RoleName, actorId?: string) {
+    const user = await this.usersService.findByEmail(email);
+    if (!user) throw new NotFoundException(`No user found with email ${email}`);
+    const result = await this.projectRepository.addCollaborator(projectId, user.id, role);
+    await this.auditService.log(actorId || null, 'add_collaborator', 'ProjectAssignment', projectId, { userId: user.id, role });
     await this.notificationsService.create({
-      recipientId: userId,
+      recipientId: user.id,
       message: `You have been added as a collaborator on a project.`,
       link: `/projects/${projectId}`,
     });

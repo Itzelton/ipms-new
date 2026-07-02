@@ -81,7 +81,7 @@ export class ProjectsController {
     @Body() dto: AddCollaboratorDto,
     @CurrentUser('id') actorId: string,
   ) {
-    return this.projectsService.addCollaborator(id, dto.userId, dto.role, actorId);
+    return this.projectsService.addCollaboratorByEmail(id, dto.email, dto.role, actorId);
   }
 
   @Delete(':id/collaborators/:userId')

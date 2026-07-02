@@ -34,7 +34,7 @@ const ROLE_LABELS: Record<string, string> = {
 export default function ProjectCollaboratorsPanel({ projectId }: { projectId: string }) {
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newUserId, setNewUserId] = useState('');
+  const [newEmail, setNewEmail] = useState('');
   const [newRole, setNewRole] = useState('REVIEWER');
   const [adding, setAdding] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
@@ -55,15 +55,15 @@ export default function ProjectCollaboratorsPanel({ projectId }: { projectId: st
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
-    if (!newUserId.trim()) return;
+    if (!newEmail.trim()) return;
     setAdding(true);
     setError('');
     try {
-      await apiPost(`/projects/${projectId}/collaborators`, { userId: newUserId.trim(), role: newRole });
-      setNewUserId('');
+      await apiPost(`/projects/${projectId}/collaborators`, { email: newEmail.trim(), role: newRole });
+      setNewEmail('');
       await load();
     } catch (err: any) {
-      setError(err?.message || 'Failed to add collaborator. Check the user ID is valid.');
+      setError(err?.message || 'No account found with that email address.');
     } finally {
       setAdding(false);
     }
@@ -121,9 +121,10 @@ export default function ProjectCollaboratorsPanel({ projectId }: { projectId: st
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Add collaborator</p>
         <div className="flex gap-2">
           <input
-            value={newUserId}
-            onChange={(e) => setNewUserId(e.target.value)}
-            placeholder="User ID..."
+            type="email"
+            value={newEmail}
+            onChange={(e) => setNewEmail(e.target.value)}
+            placeholder="user@example.com"
             className="flex-1 rounded border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <select
@@ -138,7 +139,7 @@ export default function ProjectCollaboratorsPanel({ projectId }: { projectId: st
           </select>
           <button
             type="submit"
-            disabled={adding || !newUserId.trim()}
+            disabled={adding || !newEmail.trim()}
             className="rounded bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
             {adding ? 'Adding...' : 'Add'}
@@ -146,7 +147,7 @@ export default function ProjectCollaboratorsPanel({ projectId }: { projectId: st
         </div>
         {error && <p className="text-xs text-red-600">{error}</p>}
         <p className="text-xs text-gray-400">
-          Collaborators can view and edit this project. Enter the user&apos;s ID from their profile.
+          Collaborators can view and edit this project. Enter the email address they registered with.
         </p>
       </form>
     </div>

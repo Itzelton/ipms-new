@@ -4,10 +4,11 @@ import { ProjectsService } from './projects.service';
 import { ProjectRepository } from './repositories/project.repository';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { AuditModule } from '../audit/audit.module';
+import { UsersModule } from '../users/users.module';
 import { ProjectHealthService } from './project-health.service';
 
 @Module({
-  imports: [NotificationsModule, AuditModule],
+  imports: [NotificationsModule, AuditModule, UsersModule],
   controllers: [ProjectsController],
   providers: [ProjectsService, ProjectRepository, ProjectHealthService],
   exports: [ProjectsService],

@@ -1,10 +1,10 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
 import { RoleName } from '@prisma/client';
 
 export class AddCollaboratorDto {
   @IsNotEmpty()
-  @IsString()
-  userId!: string;
+  @IsEmail()
+  email!: string;
 
   @IsOptional()
   @IsEnum(RoleName)
