@@ -90,7 +90,7 @@ export default function Sidebar() {
 
         <div className="space-y-4">
           <div className="rounded-3xl bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-900 ring-1 ring-sky-100">
-            Welcome back,
+            Welcome back, {user?.name || user?.email || 'there'}
             <div className="mt-1 text-xs font-medium text-slate-500 uppercase tracking-[0.18em]">{role ?? 'guest'}</div>
           </div>
 
