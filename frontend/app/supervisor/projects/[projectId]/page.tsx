@@ -10,17 +10,26 @@ import ProjectHealthRiskPanel from '../../../../components/project/ProjectHealth
 import ProjectRecommendationsPanel from '../../../../components/project/ProjectRecommendationsPanel';
 import ProjectTabs from '../../../../components/project/ProjectTabs';
 import ProjectCollaboratorsPanel from '../../../../components/project/ProjectCollaboratorsPanel';
+import ActivityHeatmap from '../../../../components/dashboard/ActivityHeatmap';
+import { apiGet } from '../../../../services/api';
 
 export default function SupervisorProjectDetailsPage({ params }: { params: { projectId: string } }) {
   const [project, setProject] = useState<any>(null);
+  const [heatmap, setHeatmap] = useState<{ year: number; days: any[] }>({ year: new Date().getFullYear(), days: [] });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     let mounted = true;
-    getProjectDetails(params.projectId)
-      .then((data) => { if (mounted) setProject(data); })
-      .finally(() => { if (mounted) setLoading(false); });
+    const year = new Date().getFullYear();
+    Promise.allSettled([
+      getProjectDetails(params.projectId),
+      apiGet(`/analytics/projects/${params.projectId}/heatmap?year=${year}`),
+    ]).then(([detailsRes, heatmapRes]) => {
+      if (!mounted) return;
+      if (detailsRes.status === 'fulfilled') setProject(detailsRes.value);
+      if (heatmapRes.status === 'fulfilled') setHeatmap(heatmapRes.value);
+    }).finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };
   }, [params.projectId]);
 
@@ -51,6 +60,7 @@ export default function SupervisorProjectDetailsPage({ params }: { params: { pro
                   <ProjectMilestonesPanel milestones={project.milestones} />
                   <ProjectSubmissionsPanel submissions={project.submissions} />
                   <ProjectDiscussionsPanel discussions={project.discussionThreads ?? project.discussions} />
+                  <ActivityHeatmap days={heatmap.days} year={heatmap.year} label="Project activity" />
                 </div>
               )}
               {activeTab === 'milestones' && <ProjectMilestonesPanel milestones={project.milestones} />}

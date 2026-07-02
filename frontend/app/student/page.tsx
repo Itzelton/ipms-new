@@ -10,6 +10,9 @@ import ActivityTimeline from '../../components/dashboard/ActivityTimeline';
 import HealthScoreCard from '../../components/dashboard/HealthScoreCard';
 import AIInsightsCard from '../../components/dashboard/AIInsightsCard';
 import ChatAssistant from '../../components/ai/ChatAssistant';
+import ActivityHeatmap from '../../components/dashboard/ActivityHeatmap';
+
+const YEAR = new Date().getFullYear();
 
 const EMPTY: any = {
   activeProject: null,
@@ -19,6 +22,7 @@ const EMPTY: any = {
   activity: [],
   healthScore: null,
   aiInsights: [],
+  heatmap: { year: YEAR, days: [] },
 };
 
 export default function StudentDashboard() {
@@ -29,10 +33,11 @@ export default function StudentDashboard() {
     let mounted = true;
     async function load() {
       try {
-        const [projects, submissions, notifications] = await Promise.allSettled([
+        const [projects, submissions, notifications, heatmapRes] = await Promise.allSettled([
           apiGet('/projects'),
           apiGet('/submissions'),
           apiGet('/notifications'),
+          apiGet(`/analytics/heatmap?year=${YEAR}`),
         ]);
 
         const projectList = projects.status === 'fulfilled' && Array.isArray(projects.value) ? projects.value : [];
@@ -70,6 +75,7 @@ export default function StudentDashboard() {
             activity: [],
             healthScore,
             aiInsights: [],
+            heatmap: heatmapRes.status === 'fulfilled' ? heatmapRes.value : { year: YEAR, days: [] },
           });
         }
       } catch {
@@ -120,6 +126,12 @@ export default function StudentDashboard() {
             <ActivityTimeline items={data.activity} />
           </aside>
         </div>
+
+        <ActivityHeatmap
+          days={data.heatmap.days}
+          year={data.heatmap.year}
+          label="Your activity"
+        />
       )}
     </div>
   );

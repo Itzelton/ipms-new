@@ -10,6 +10,9 @@ import RiskAlertsPanel from '../../components/supervisor/RiskAlertsPanel';
 import NotificationsPanel from '../../components/dashboard/NotificationsPanel';
 import ActivityTimeline from '../../components/dashboard/ActivityTimeline';
 import ChatAssistant from '../../components/ai/ChatAssistant';
+import ActivityHeatmap from '../../components/dashboard/ActivityHeatmap';
+
+const YEAR = new Date().getFullYear();
 
 const EMPTY: any = {
   assignedStudents: [],
@@ -19,6 +22,7 @@ const EMPTY: any = {
   activityFeed: [],
   riskAlerts: [],
   analyticsSummary: { activeProjects: 0, reviewQueue: 0, averageTurnaround: '—', riskProjects: 0 },
+  heatmap: { year: YEAR, days: [] },
 };
 
 export default function SupervisorIndex() {
@@ -29,10 +33,11 @@ export default function SupervisorIndex() {
     let mounted = true;
     async function load() {
       try {
-        const [projects, submissions, notifications] = await Promise.allSettled([
+        const [projects, submissions, notifications, heatmapRes] = await Promise.allSettled([
           apiGet('/projects'),
           apiGet('/submissions'),
           apiGet('/notifications'),
+          apiGet(`/analytics/heatmap?year=${YEAR}`),
         ]);
 
         const projectList = projects.status === 'fulfilled' && Array.isArray(projects.value) ? projects.value : [];
@@ -66,6 +71,7 @@ export default function SupervisorIndex() {
               averageTurnaround: '—',
               riskProjects: projectList.filter((p: any) => p.status === 'AT_RISK').length,
             },
+            heatmap: heatmapRes.status === 'fulfilled' ? heatmapRes.value : { year: YEAR, days: [] },
           });
         }
       } catch {
@@ -114,6 +120,14 @@ export default function SupervisorIndex() {
             <ChatAssistant role="SUPERVISOR" />
           </aside>
         </div>
+      )}
+
+      {!loading && (
+        <ActivityHeatmap
+          days={dashboard.heatmap.days}
+          year={dashboard.heatmap.year}
+          label="Your activity"
+        />
       )}
     </div>
   );
