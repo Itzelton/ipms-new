@@ -49,12 +49,12 @@ export default function SupervisorProjectDetailsPage({ params }: { params: { pro
                 <div className="space-y-6">
                   <ProjectMilestonesPanel milestones={project.milestones} />
                   <ProjectSubmissionsPanel submissions={project.submissions} />
-                  <ProjectDiscussionsPanel discussions={project.discussions} />
+                  <ProjectDiscussionsPanel discussions={project.discussionThreads ?? project.discussions} />
                 </div>
               )}
               {activeTab === 'milestones' && <ProjectMilestonesPanel milestones={project.milestones} />}
               {activeTab === 'submissions' && <ProjectSubmissionsPanel submissions={project.submissions} />}
-              {activeTab === 'discussions' && <ProjectDiscussionsPanel discussions={project.discussions} />}
+              {activeTab === 'discussions' && <ProjectDiscussionsPanel discussions={project.discussionThreads ?? project.discussions} />}
             </div>
           </div>
         </div>

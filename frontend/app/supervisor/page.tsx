@@ -1,6 +1,7 @@
 "use client";
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { apiGet } from '../../services/api';
 import AnalyticsSummaryCard from '../../components/supervisor/AnalyticsSummaryCard';
 import PendingReviewsCard from '../../components/supervisor/PendingReviewsCard';
 import ProjectsUnderReview from '../../components/supervisor/ProjectsUnderReview';
@@ -10,39 +11,72 @@ import NotificationsPanel from '../../components/dashboard/NotificationsPanel';
 import ActivityTimeline from '../../components/dashboard/ActivityTimeline';
 import ChatAssistant from '../../components/ai/ChatAssistant';
 
-const fallbackDashboard = {
-  assignedStudents: [
-    { id: 'stu1', name: 'Amina Patel', project: 'Research Analytics', progress: 74, status: 'ON_TRACK' },
-    { id: 'stu2', name: 'Jonas Lee', project: 'Capstone Platform', progress: 49, status: 'AT_RISK' },
-  ],
-  projectsUnderReview: [
-    { id: 'proj1', title: 'Capstone Platform', status: 'REVIEW_PENDING', student: 'Jonas Lee', dueDate: '2026-06-20' },
-    { id: 'proj2', title: 'AI Monitoring', status: 'IN_REVIEW', student: 'Amina Patel', dueDate: '2026-06-28' },
-  ],
-  pendingReviews: [{ id: 'rev1', title: 'Week 7 Progress', student: 'Jonas Lee', dueDate: '2026-06-09' }],
-  notifications: [
-    { id: 'n1', title: 'Review due today', message: 'Review submission from Amina Patel', createdAt: '2026-06-11' },
-  ],
-  activityFeed: [
-    { id: 'a1', type: 'PROJECT_CREATED' as const, title: 'Project created', detail: 'Amina Patel started a new project', actor: 'Amina Patel', timestamp: '2026-04-01' },
-    { id: 'a2', type: 'MILESTONE_COMPLETED' as const, title: 'Prototype milestone completed', detail: 'Jonas Lee completed the prototype milestone', actor: 'Jonas Lee', timestamp: '2026-06-08' },
-    { id: 'a3', type: 'SUBMISSION_UPLOADED' as const, title: 'Submission uploaded', detail: 'Amina Patel uploaded Week 7 status update', actor: 'Amina Patel', timestamp: '2026-06-10' },
-    { id: 'a4', type: 'COMMENT' as const, title: 'New comment on submission', detail: 'Please address the testing plan concerns', actor: 'Supervisor', timestamp: '2026-06-11' },
-    { id: 'a5', type: 'REVISION_REQUEST' as const, title: 'Revision requested', detail: 'Requested revision for prototype evaluation', actor: 'Supervisor', timestamp: '2026-06-11' },
-  ],
-  riskAlerts: [
-    { id: 'r1', title: 'Project delay risk', description: 'Prototype milestone behind schedule for Jonas Lee', status: 'HIGH' },
-  ],
-  analyticsSummary: {
-    activeProjects: 12,
-    reviewQueue: 4,
-    averageTurnaround: '1.8 days',
-    riskProjects: 3,
-  },
+const EMPTY: any = {
+  assignedStudents: [],
+  projectsUnderReview: [],
+  pendingReviews: [],
+  notifications: [],
+  activityFeed: [],
+  riskAlerts: [],
+  analyticsSummary: { activeProjects: 0, reviewQueue: 0, averageTurnaround: '—', riskProjects: 0 },
 };
 
 export default function SupervisorIndex() {
-  const dashboard = fallbackDashboard;
+  const [dashboard, setDashboard] = useState<any>(EMPTY);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      try {
+        const [projects, submissions, notifications] = await Promise.allSettled([
+          apiGet('/projects'),
+          apiGet('/submissions'),
+          apiGet('/notifications'),
+        ]);
+
+        const projectList = projects.status === 'fulfilled' && Array.isArray(projects.value) ? projects.value : [];
+        const submissionList = submissions.status === 'fulfilled' && Array.isArray(submissions.value) ? submissions.value : [];
+        const notificationList = notifications.status === 'fulfilled' && Array.isArray(notifications.value) ? notifications.value : [];
+
+        const underReview = projectList.filter((p: any) => ['REVIEW_PENDING', 'IN_REVIEW', 'ACTIVE'].includes(p.status));
+        const pendingReviews = submissionList
+          .filter((s: any) => s.status === 'SUBMITTED' || s.status === 'UNDER_REVIEW')
+          .slice(0, 5)
+          .map((s: any) => ({ id: s.id, title: s.metadata?.title || `Submission ${s.id.slice(0, 6)}`, student: s.author?.firstName || s.author?.email || '—', dueDate: s.updatedAt }));
+
+        const students = projectList
+          .filter((p: any) => p.student)
+          .map((p: any) => {
+            const name = typeof p.student === 'string' ? p.student : [p.student?.firstName, p.student?.lastName].filter(Boolean).join(' ') || p.student?.email || '—';
+            return { id: p.student?.id || p.id, name, project: p.title, progress: p.progress ?? 0, status: p.status };
+          });
+
+        if (mounted) {
+          setDashboard({
+            assignedStudents: students.slice(0, 10),
+            projectsUnderReview: underReview.slice(0, 5).map((p: any) => ({ id: p.id, title: p.title, status: p.status, student: typeof p.student === 'string' ? p.student : p.student?.email || '—', dueDate: p.dueDate })),
+            pendingReviews,
+            notifications: notificationList.slice(0, 5).map((n: any) => ({ id: n.id, title: n.title, message: n.message, createdAt: n.createdAt })),
+            activityFeed: [],
+            riskAlerts: [],
+            analyticsSummary: {
+              activeProjects: projectList.filter((p: any) => p.status === 'ACTIVE').length,
+              reviewQueue: pendingReviews.length,
+              averageTurnaround: '—',
+              riskProjects: projectList.filter((p: any) => p.status === 'AT_RISK').length,
+            },
+          });
+        }
+      } catch {
+        // leave empty state
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    load();
+    return () => { mounted = false; };
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -60,26 +94,27 @@ export default function SupervisorIndex() {
         </div>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-        <div className="grid gap-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            <PendingReviewsCard pendingReviews={dashboard.pendingReviews} />
-            <RiskAlertsPanel alerts={dashboard.riskAlerts} />
+      {loading ? (
+        <div className="p-6 text-slate-500">Loading dashboard...</div>
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+          <div className="grid gap-6">
+            <div className="grid gap-6 md:grid-cols-2">
+              <PendingReviewsCard pendingReviews={dashboard.pendingReviews} />
+              <RiskAlertsPanel alerts={dashboard.riskAlerts} />
+            </div>
+            <AnalyticsSummaryCard summary={dashboard.analyticsSummary} />
+            <ProjectsUnderReview projects={dashboard.projectsUnderReview} />
+            <AssignedStudentsTable students={dashboard.assignedStudents} />
           </div>
 
-          <AnalyticsSummaryCard summary={dashboard.analyticsSummary} />
-
-          <ProjectsUnderReview projects={dashboard.projectsUnderReview} />
-
-          <AssignedStudentsTable students={dashboard.assignedStudents} />
+          <aside className="space-y-6">
+            <NotificationsPanel notifications={dashboard.notifications} />
+            <ActivityTimeline items={dashboard.activityFeed} />
+            <ChatAssistant role="SUPERVISOR" />
+          </aside>
         </div>
-
-        <aside className="space-y-6">
-          <NotificationsPanel notifications={dashboard.notifications} />
-          <ActivityTimeline items={dashboard.activityFeed} />
-          <ChatAssistant role="SUPERVISOR" />
-        </aside>
-      </div>
+      )}
     </div>
   );
 }

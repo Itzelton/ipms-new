@@ -1,6 +1,7 @@
 "use client";
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { apiGet } from '../../services/api';
 import ActiveProjectCard from '../../components/dashboard/ActiveProjectCard';
 import MilestonesList from '../../components/dashboard/MilestonesList';
 import RecentSubmissions from '../../components/dashboard/RecentSubmissions';
@@ -10,46 +11,76 @@ import HealthScoreCard from '../../components/dashboard/HealthScoreCard';
 import AIInsightsCard from '../../components/dashboard/AIInsightsCard';
 import ChatAssistant from '../../components/ai/ChatAssistant';
 
-const fallbackData = {
-  activeProject: { id: 'p1', title: 'Capstone Project', progress: 62 },
-  milestones: [
-    { id: 'm1', title: 'Proposal', status: 'COMPLETED' as const, dueDate: '2026-05-01' },
-    { id: 'm2', title: 'Prototype', status: 'IN_PROGRESS' as const, dueDate: '2026-06-15' },
-    { id: 'm3', title: 'Final Report', status: 'PENDING' as const, dueDate: '2026-07-30' },
-  ],
-  recentSubmissions: [
-    { id: 's1', title: 'Week 6 Update', submittedAt: '2026-06-05', status: 'REVIEWED' as const },
-  ],
-  notifications: [
-    { id: 'n1', title: 'Supervisor feedback', message: 'Please revise section 2', createdAt: '2026-06-06' },
-  ],
-  activity: [
-    { id: 'a1', type: 'PROJECT_CREATED' as const, title: 'Project created', detail: 'Capstone Project was created by your supervisor', actor: 'Dr. Sofia Khan', timestamp: '2026-04-01' },
-    { id: 'a2', type: 'MILESTONE_COMPLETED' as const, title: 'Proposal milestone completed', detail: 'Student completed the proposal milestone', actor: 'You', timestamp: '2026-05-01' },
-    { id: 'a3', type: 'SUBMISSION_UPLOADED' as const, title: 'Submission uploaded: Week 6 Update', detail: 'Your progress report was uploaded for review', actor: 'You', timestamp: '2026-06-05' },
-    { id: 'a4', type: 'COMMENT' as const, title: 'Supervisor comment received', detail: 'Please revisit the user personas section', actor: 'Dr. Sofia Khan', timestamp: '2026-06-06' },
-    { id: 'a5', type: 'REVISION_REQUEST' as const, title: 'Revision requested', detail: 'Supervisor requested changes to section 2', actor: 'Dr. Sofia Khan', timestamp: '2026-06-06' },
-  ],
-  healthScore: {
-    score: 78,
-    category: 'Stable' as const,
-    color: 'bg-yellow-100 text-yellow-800',
-    trend: 'Stable',
-    breakdown: {
-      milestoneCompletion: 80,
-      deadlineCompliance: 72,
-      submissionConsistency: 75,
-      supervisorEngagement: 65,
-      projectActivity: 70,
-    },
-  },
-  aiInsights: [
-    { id: 'ai1', title: 'Risk: Delayed prototype', summary: 'Prototype milestone behind schedule' },
-  ],
+const EMPTY: any = {
+  activeProject: null,
+  milestones: [],
+  recentSubmissions: [],
+  notifications: [],
+  activity: [],
+  healthScore: null,
+  aiInsights: [],
 };
 
 export default function StudentDashboard() {
-  const data = fallbackData;
+  const [data, setData] = useState<any>(EMPTY);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      try {
+        const [projects, submissions, notifications] = await Promise.allSettled([
+          apiGet('/projects'),
+          apiGet('/submissions'),
+          apiGet('/notifications'),
+        ]);
+
+        const projectList = projects.status === 'fulfilled' && Array.isArray(projects.value) ? projects.value : [];
+        const submissionList = submissions.status === 'fulfilled' && Array.isArray(submissions.value) ? submissions.value : [];
+        const notificationList = notifications.status === 'fulfilled' && Array.isArray(notifications.value) ? notifications.value : [];
+
+        const firstProject = projectList[0] ?? null;
+        let milestones: any[] = [];
+        let healthScore: any = null;
+
+        if (firstProject?.id) {
+          try {
+            const details = await apiGet(`/projects/${firstProject.id}/details`);
+            milestones = details?.milestones ?? [];
+            healthScore = details?.healthScore ?? null;
+          } catch { /* leave empty */ }
+        }
+
+        if (mounted) {
+          setData({
+            activeProject: firstProject ? { id: firstProject.id, title: firstProject.title, progress: firstProject.progress ?? 0 } : null,
+            milestones,
+            recentSubmissions: submissionList.slice(0, 5).map((s: any) => ({
+              id: s.id,
+              title: s.metadata?.title || `Submission ${s.id.slice(0, 6)}`,
+              submittedAt: s.submittedAt ?? s.createdAt,
+              status: s.status,
+            })),
+            notifications: notificationList.slice(0, 5).map((n: any) => ({
+              id: n.id,
+              title: n.title,
+              message: n.message,
+              createdAt: n.createdAt,
+            })),
+            activity: [],
+            healthScore,
+            aiInsights: [],
+          });
+        }
+      } catch {
+        // leave empty state
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    load();
+    return () => { mounted = false; };
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -67,25 +98,29 @@ export default function StudentDashboard() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <ActiveProjectCard project={data.activeProject} />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <MilestonesList milestones={data.milestones} />
-            <div className="space-y-6">
-              <HealthScoreCard score={data.healthScore} />
-              <AIInsightsCard insights={data.aiInsights} />
-              <ChatAssistant role="STUDENT" projectId={data?.activeProject?.id} />
+      {loading ? (
+        <div className="p-6 text-slate-500">Loading dashboard...</div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <ActiveProjectCard project={data.activeProject} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <MilestonesList milestones={data.milestones} />
+              <div className="space-y-6">
+                <HealthScoreCard score={data.healthScore} />
+                <AIInsightsCard insights={data.aiInsights} />
+                <ChatAssistant role="STUDENT" projectId={data.activeProject?.id} />
+              </div>
             </div>
+            <RecentSubmissions submissions={data.recentSubmissions} />
           </div>
-          <RecentSubmissions submissions={data.recentSubmissions} />
-        </div>
 
-        <aside className="space-y-6">
-          <NotificationsPanel notifications={data.notifications} />
-          <ActivityTimeline items={data.activity} />
-        </aside>
-      </div>
+          <aside className="space-y-6">
+            <NotificationsPanel notifications={data.notifications} />
+            <ActivityTimeline items={data.activity} />
+          </aside>
+        </div>
+      )}
     </div>
   );
 }

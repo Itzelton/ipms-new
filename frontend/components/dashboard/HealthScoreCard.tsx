@@ -4,7 +4,7 @@ import React from 'react';
 export type HealthScore = {
   score: number;
   category: 'Healthy' | 'Stable' | 'Needs Attention' | 'At Risk';
-  color: string;
+  color?: string;
   trend?: string;
   breakdown?: {
     milestoneCompletion: number;
@@ -22,10 +22,27 @@ const categoryCopy: Record<HealthScore['category'], string> = {
   'At Risk': 'Urgent intervention needed to recover the project.',
 };
 
+const categoryBadge: Record<HealthScore['category'], string> = {
+  Healthy: 'bg-emerald-100 text-emerald-800',
+  Stable: 'bg-yellow-100 text-yellow-800',
+  'Needs Attention': 'bg-orange-100 text-orange-800',
+  'At Risk': 'bg-red-100 text-red-800',
+};
+
+const categoryBarColor: Record<HealthScore['category'], string> = {
+  Healthy: '#10b981',
+  Stable: '#f59e0b',
+  'Needs Attention': '#f97316',
+  'At Risk': '#ef4444',
+};
+
 export default function HealthScoreCard({ score }: { score?: HealthScore }) {
   if (!score) return (
     <div className="p-4 bg-white rounded shadow">Health data not available</div>
   );
+
+  const badge = categoryBadge[score.category] ?? 'bg-slate-100 text-slate-800';
+  const barColor = categoryBarColor[score.category] ?? '#94a3b8';
 
   return (
     <div className="p-4 bg-white rounded shadow">
@@ -34,7 +51,7 @@ export default function HealthScoreCard({ score }: { score?: HealthScore }) {
           <h4 className="font-medium mb-2">Health Score</h4>
           <div className="flex items-baseline gap-3">
             <span className="text-4xl font-bold">{score.score}%</span>
-            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${score.color}`}>{score.category}</span>
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badge}`}>{score.category}</span>
           </div>
           {score.trend && <div className="mt-2 text-sm text-gray-500">Trend: {score.trend}</div>}
         </div>
@@ -70,7 +87,7 @@ export default function HealthScoreCard({ score }: { score?: HealthScore }) {
       )}
 
       <div className="mt-5 rounded-full bg-slate-200 h-3 overflow-hidden">
-        <div className={`${score.color} h-3`} style={{ width: `${score.score}%` }} />
+        <div style={{ width: `${score.score}%`, background: barColor, height: '100%' }} />
       </div>
       <p className="mt-3 text-sm text-slate-500">{categoryCopy[score.category]}</p>
     </div>

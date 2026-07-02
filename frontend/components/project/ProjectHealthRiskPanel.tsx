@@ -1,14 +1,29 @@
 "use client";
 import React from 'react';
 
+const riskToneMap: Record<string, string> = {
+  Critical: 'border-red-200 bg-red-50 text-red-800',
+  High: 'border-orange-200 bg-orange-50 text-orange-800',
+  Medium: 'border-yellow-200 bg-yellow-50 text-yellow-800',
+  Low: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+};
+
+const healthBarColor: Record<string, string> = {
+  Healthy: '#10b981',
+  Stable: '#f59e0b',
+  'Needs Attention': '#f97316',
+  'At Risk': '#ef4444',
+};
+
+const healthBadge: Record<string, string> = {
+  Healthy: 'bg-emerald-100 text-emerald-800',
+  Stable: 'bg-yellow-100 text-yellow-800',
+  'Needs Attention': 'bg-orange-100 text-orange-800',
+  'At Risk': 'bg-red-100 text-red-800',
+};
+
 export default function ProjectHealthRiskPanel({ healthScore, riskStatus, analytics }: { healthScore?: any; riskStatus?: any; analytics?: any }) {
-  const riskTone = riskStatus?.level === 'Critical'
-    ? 'border-red-200 bg-red-50 text-red-800'
-    : riskStatus?.level === 'High'
-      ? 'border-orange-200 bg-orange-50 text-orange-800'
-      : riskStatus?.level === 'Medium'
-        ? 'border-yellow-200 bg-yellow-50 text-yellow-800'
-        : 'border-emerald-200 bg-emerald-50 text-emerald-800';
+  const riskTone = riskToneMap[riskStatus?.level] ?? riskToneMap.Low;
 
   return (
     <div className="space-y-6">
@@ -21,10 +36,10 @@ export default function ProjectHealthRiskPanel({ healthScore, riskStatus, analyt
                 <div className="text-5xl font-bold">{healthScore.score}%</div>
                 <div className="mt-1 text-sm text-slate-500">{healthScore.category}</div>
               </div>
-              <div className={`rounded-full px-4 py-2 text-sm font-semibold ${healthScore.color}`}>{healthScore.category}</div>
+              <div className={`rounded-full px-4 py-2 text-sm font-semibold ${healthBadge[healthScore.category] ?? 'bg-slate-100 text-slate-800'}`}>{healthScore.category}</div>
             </div>
             <div className="rounded-full bg-slate-200 h-3 overflow-hidden">
-              <div className={`${healthScore.color} h-3`} style={{ width: `${healthScore.score}%` }} />
+              <div style={{ width: `${healthScore.score}%`, background: healthBarColor[healthScore.category] ?? '#94a3b8', height: '100%' }} />
             </div>
             {healthScore.breakdown ? (
               <div className="grid gap-3 text-sm text-slate-600">
