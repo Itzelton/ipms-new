@@ -34,8 +34,11 @@ export default function Navbar() {
         <div className="flex items-center gap-3 text-sm text-slate-700">
           {user ? (
             <>
-              <div className="rounded-full bg-slate-100 px-3 py-2 font-medium text-slate-800">
-                {user.email}
+              <div className="flex items-center gap-2 rounded-full bg-slate-100 px-3 py-2 font-medium text-slate-800">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-sky-600 text-xs font-bold text-white">
+                  {(user.name ?? user.email).charAt(0).toUpperCase()}
+                </span>
+                <span>{user.name || user.email}</span>
               </div>
               <button
                 onClick={() => logout()}
