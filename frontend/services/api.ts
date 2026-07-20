@@ -16,7 +16,13 @@ async function defaultHeaders(): Promise<Record<string, string>> {
     if (typeof window !== 'undefined') {
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token;
-      if (token) headers['Authorization'] = `Bearer ${token}`;
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+        return headers;
+      }
+      // Local dev fallback — token issued by the backend when Supabase is unreachable
+      const localToken = localStorage.getItem('ipms_local_token');
+      if (localToken) headers['Authorization'] = `Bearer ${localToken}`;
     }
   } catch {
     // SSR — no token
@@ -61,6 +67,25 @@ export async function apiPatch(path: string, body: any) {
     headers: await defaultHeaders(),
     body: JSON.stringify(body),
   });
+  return handleRes(res);
+}
+
+export async function apiUpload(path: string, formData: FormData) {
+  const url = buildUrl(path);
+  const authHeaders: Record<string, string> = {};
+  try {
+    if (typeof window !== 'undefined') {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (token) {
+        authHeaders['Authorization'] = `Bearer ${token}`;
+      } else {
+        const localToken = localStorage.getItem('ipms_local_token');
+        if (localToken) authHeaders['Authorization'] = `Bearer ${localToken}`;
+      }
+    }
+  } catch { /* SSR */ }
+  const res = await fetch(url, { method: 'POST', headers: authHeaders, body: formData });
   return handleRes(res);
 }
 

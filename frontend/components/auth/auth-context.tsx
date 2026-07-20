@@ -4,6 +4,16 @@ import { Session } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3333';
+const LOCAL_TOKEN_KEY = 'ipms_local_token';
+
+function extractMessage(err: any): string {
+  if (!err) return '';
+  if (typeof err === 'string') return err;
+  const msg = err?.message ?? err?.error_description ?? err?.error ?? '';
+  if (Array.isArray(msg)) return msg[0] ?? '';
+  if (typeof msg === 'object') return JSON.stringify(msg);
+  return String(msg);
+}
 
 export type Role = 'STUDENT' | 'SUPERVISOR' | 'ADMIN' | null;
 
@@ -12,6 +22,7 @@ export type SessionUser = {
   email: string;
   name: string;
   role: Role;
+  mustChangePassword?: boolean;
 };
 
 type AuthContextType = {
@@ -41,18 +52,16 @@ async function fetchLocalProfile(accessToken: string): Promise<SessionUser | nul
       roleList.includes('ADMIN') ? 'ADMIN' :
       roleList.includes('SUPERVISOR') ? 'SUPERVISOR' :
       roleList.includes('STUDENT') ? 'STUDENT' : null;
-    return { id: u.id, email: u.email, name: u.preferredName || u.firstName || u.email, role };
+    return { id: u.id, email: u.email, name: u.preferredName || u.firstName || u.email, role, mustChangePassword: u.mustChangePassword ?? false };
   } catch {
     return null;
   }
 }
 
 async function ensureLocalProfile(accessToken: string): Promise<SessionUser | null> {
-  // Try to fetch existing profile first
   const existing = await fetchLocalProfile(accessToken);
   if (existing) return existing;
 
-  // No local profile — attempt auto-create using Supabase user metadata
   try {
     const { data: { user: sbUser } } = await supabase.auth.getUser(accessToken);
     if (!sbUser) return null;
@@ -70,14 +79,69 @@ async function ensureLocalProfile(accessToken: string): Promise<SessionUser | nu
       body: JSON.stringify({ name, role, email: sbUser.email }),
     });
 
-    // 409 = profile already exists (race), treat as success
     if (!res.ok && res.status !== 409) return null;
-
     return fetchLocalProfile(accessToken);
   } catch {
     return null;
   }
 }
+
+function unwrapResponse(json: any) {
+  // Backend wraps all success responses as { data: ..., timestamp: ... }
+  return json?.data !== undefined ? json.data : json;
+}
+
+async function localAuthPost(path: string, body: object, fallbackError: string): Promise<{ access_token: string; user: SessionUser }> {
+  const res = await fetch(`${API}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  const json = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    const msg = Array.isArray(json?.message) ? json.message[0] : (json?.message || fallbackError);
+    throw new Error(msg);
+  }
+
+  const payload = unwrapResponse(json);
+  const { access_token, user } = payload;
+
+  if (!access_token || !user) {
+    throw new Error(fallbackError);
+  }
+
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(LOCAL_TOKEN_KEY, access_token);
+  }
+
+  return { access_token, user: user as SessionUser };
+}
+
+async function tryLocalLogin(email: string, password: string): Promise<SessionUser> {
+  const { user } = await localAuthPost('/auth/local-login', { email, password }, 'Invalid credentials');
+  return user;
+}
+
+async function tryLocalRegister(email: string, password: string, name: string, role: Role): Promise<SessionUser> {
+  const { user } = await localAuthPost('/auth/local-register', { email, password, name, role }, 'Unable to create account');
+  return user;
+}
+
+function shouldFallbackToLocal(err: any): boolean {
+  const msg: string = extractMessage(err).toLowerCase();
+  return (
+    msg.includes('failed to fetch') ||
+    msg.includes('network') ||
+    msg.includes('load failed') ||
+    msg.includes('invalid login credentials') ||
+    msg.includes('invalid_credentials') ||
+    msg.includes('email not confirmed') ||
+    msg.includes('email_not_confirmed')
+  );
+}
+
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<SessionUser | null>(null);
@@ -90,6 +154,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (session?.access_token) {
         const profile = await fetchLocalProfile(session.access_token);
         setUser(profile);
+      } else if (typeof window !== 'undefined') {
+        // Restore from local dev token
+        const localToken = localStorage.getItem(LOCAL_TOKEN_KEY);
+        if (localToken) {
+          const profile = await fetchLocalProfile(localToken);
+          if (profile) {
+            setUser(profile);
+          } else {
+            localStorage.removeItem(LOCAL_TOKEN_KEY);
+          }
+        }
       }
       setHydrated(true);
     });
@@ -108,50 +183,69 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw new Error(error.message);
-
-    // Auto-create local profile if missing (handles email-confirmation flow gap)
-    const profile = await ensureLocalProfile(data.session.access_token);
-    if (!profile) throw new Error('Unable to load your profile. Please contact an administrator.');
-    setUser(profile);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      const profile = await ensureLocalProfile(data.session.access_token);
+      if (!profile) throw new Error('Unable to load your profile. Please contact an administrator.');
+      setUser(profile);
+    } catch (err: any) {
+      if (shouldFallbackToLocal(err)) {
+        const profile = await tryLocalLogin(email, password);
+        setUser(profile);
+        return;
+      }
+      throw new Error(extractMessage(err) || 'Login failed');
+    }
   };
 
   const register = async (email: string, password: string, name: string, role: Role) => {
-    // Store name + role in Supabase user_metadata so auto-create works after email confirmation
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { name, role } },
-    });
-    if (error) throw new Error(error.message);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { name, role } },
+      });
 
-    if (!data.session) {
-      // Email confirmation required — profile will be auto-created on first login
-      throw new Error('CHECK_EMAIL');
+      if (error) throw error;
+
+      if (!data.session) {
+        throw new Error('CHECK_EMAIL');
+      }
+
+      const res = await fetch(`${API}/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${data.session.access_token}`,
+        },
+        body: JSON.stringify({ name, role, email }),
+      });
+
+      if (!res.ok && res.status !== 409) {
+        const body = await res.json().catch(() => ({}));
+        const msg = Array.isArray(body?.message) ? body.message[0] : (body?.message || 'Failed to create profile');
+        throw new Error(msg);
+      }
+
+      const profile = await fetchLocalProfile(data.session.access_token);
+      setUser(profile);
+    } catch (err: any) {
+      if (err?.message === 'CHECK_EMAIL') throw err;
+      // Supabase failed (rate limit, network, etc.) — always fall back to local registration
+      try {
+        const profile = await tryLocalRegister(email, password, name, role);
+        setUser(profile);
+        return;
+      } catch (localErr: any) {
+        throw new Error(extractMessage(localErr) || 'Unable to create account');
+      }
     }
-
-    // Immediate session (no email confirmation) — create profile now
-    const res = await fetch(`${API}/auth/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${data.session.access_token}`,
-      },
-      body: JSON.stringify({ name, role, email }),
-    });
-
-    if (!res.ok && res.status !== 409) {
-      const body = await res.json().catch(() => ({}));
-      throw new Error(body?.message || 'Failed to create profile');
-    }
-
-    const profile = await fetchLocalProfile(data.session.access_token);
-    setUser(profile);
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
+    try { await supabase.auth.signOut(); } catch { /* ignore supabase errors on logout */ }
+    if (typeof window !== 'undefined') localStorage.removeItem(LOCAL_TOKEN_KEY);
     setUser(null);
     setSession(null);
     window.location.href = '/login';
@@ -159,7 +253,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const getAccessToken = async (): Promise<string | null> => {
     const { data } = await supabase.auth.getSession();
-    return data.session?.access_token ?? null;
+    if (data.session?.access_token) return data.session.access_token;
+    if (typeof window !== 'undefined') return localStorage.getItem(LOCAL_TOKEN_KEY);
+    return null;
   };
 
   return (

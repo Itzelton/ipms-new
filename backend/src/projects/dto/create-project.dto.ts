@@ -42,4 +42,8 @@ export class CreateProjectDto {
 
   @IsOptional()
   type?: ProjectType;
+
+  @IsOptional()
+  @IsString()
+  proposalDocUrl?: string;
 }

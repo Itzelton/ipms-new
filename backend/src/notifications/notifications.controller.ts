@@ -4,6 +4,7 @@ import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { PaginationDto } from '../common/dto/pagination.dto';
+import { CurrentUser } from '../common/decorators/user.decorator';
 
 @UseGuards(JwtAuthGuard)
 @Controller('notifications')
@@ -11,8 +12,13 @@ export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Get()
-  findAll(@Query() pagination: PaginationDto) {
-    return this.notificationsService.findAll(pagination);
+  findAll(@Query() pagination: PaginationDto, @CurrentUser('id') userId: string) {
+    return this.notificationsService.findByRecipient(userId, pagination);
+  }
+
+  @Patch('read-all')
+  markAllRead(@CurrentUser('id') userId: string) {
+    return this.notificationsService.markAllRead(userId);
   }
 
   @Get(':id')

@@ -14,7 +14,7 @@ export class StorageService {
     );
   }
 
-  async uploadFile(file: Express.Multer.File, folder: string): Promise<string> {
+  async uploadFile(file: { originalname: string; mimetype: string; size: number; buffer: Buffer }, folder: string): Promise<string> {
     const ext = file.originalname.split('.').pop();
     const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 

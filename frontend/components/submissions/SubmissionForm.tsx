@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useState } from 'react';
 import { EvidenceType, SubmissionStatus } from '../../services/submission';
-import { apiGet } from '../../services/api';
+import { apiGet, apiUpload } from '../../services/api';
 
 const evidenceOptions: { value: EvidenceType; label: string }[] = [
   { value: 'DOCUMENT', label: 'Document' },
@@ -37,9 +37,11 @@ export default function SubmissionForm({ onSubmit, isSubmitting }: { onSubmit: (
 
   useEffect(() => {
     apiGet('/projects').then((data: any) => {
-      const list = Array.isArray(data) ? data : [];
-      setProjects(list);
-      if (list.length > 0) setProjectId(list[0].id);
+      const all = Array.isArray(data) ? data : [];
+      // Only active projects can receive submissions
+      const active = all.filter((p: any) => p.status === 'ACTIVE');
+      setProjects(active);
+      if (active.length > 0) setProjectId(active[0].id);
     }).catch(() => {});
   }, []);
 
@@ -74,10 +76,19 @@ export default function SubmissionForm({ onSubmit, isSubmitting }: { onSubmit: (
     }
 
     setErrors({});
+
+    let uploadedUrl: string | null = sourceUrl || null;
+    if (file && (evidenceType === 'DOCUMENT' || evidenceType === 'APK' || evidenceType === 'SCREENSHOT')) {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await apiUpload(`/storage/upload?folder=${projectId}`, fd);
+      uploadedUrl = res?.url ?? null;
+    }
+
     const metadata: any = {
       title,
       evidenceType,
-      sourceUrl: sourceUrl || null,
+      sourceUrl: uploadedUrl,
       meetingNotes: meetingNotes || null,
     };
 
@@ -85,7 +96,7 @@ export default function SubmissionForm({ onSubmit, isSubmitting }: { onSubmit: (
       projectId,
       content: details,
       evidenceType,
-      fileUrl: sourceUrl || null,
+      fileUrl: uploadedUrl,
       metadata,
       status,
     };
@@ -107,7 +118,7 @@ export default function SubmissionForm({ onSubmit, isSubmitting }: { onSubmit: (
           <label className="block text-sm font-medium text-gray-700">Project</label>
           <select value={projectId} onChange={(e) => setProjectId(e.target.value)} className="mt-1 w-full rounded border px-3 py-2" disabled={projects.length === 0}>
             {projects.length === 0
-              ? <option value="">Loading projects...</option>
+              ? <option value="">No active projects — get your proposal accepted first</option>
               : projects.map((p) => <option value={p.id} key={p.id}>{p.title}</option>)
             }
           </select>
@@ -156,7 +167,7 @@ export default function SubmissionForm({ onSubmit, isSubmitting }: { onSubmit: (
         <div className="mt-4">
           <label className="block text-sm font-medium text-gray-700">{fileLabel}</label>
           <input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} className="mt-1 w-full" />
-          <p className="mt-1 text-xs text-gray-400">File upload to storage is not yet wired — paste a URL in the URL field for now.</p>
+          {file && <p className="mt-1 text-xs text-emerald-600">File ready: {file.name}</p>}
         </div>
       )}
 

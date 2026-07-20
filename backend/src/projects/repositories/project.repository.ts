@@ -8,51 +8,8 @@ import { ProjectStatus, ProjectType, RoleName } from '@prisma/client';
 
 @Injectable()
 export class ProjectRepository {
-  private readonly useInMemoryData = !process.env.DATABASE_URL;
-  private readonly mockProjects: any[] = [
-    {
-      id: randomUUID(),
-      title: 'Project Alpha',
-      description: 'A capstone project focused on a real-world problem.',
-      status: ProjectStatus.ACTIVE,
-      type: ProjectType.CAPSTONE,
-      student: {
-        id: randomUUID(),
-        email: 'student@example.com',
-        firstName: 'Student',
-        lastName: 'Example',
-      },
-      supervisor: {
-        id: randomUUID(),
-        email: 'supervisor@example.com',
-        firstName: 'Supervisor',
-        lastName: 'Example',
-      },
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      id: randomUUID(),
-      title: 'Research Insight',
-      description: 'A research-oriented project that explores a new approach.',
-      status: ProjectStatus.PROPOSED,
-      type: ProjectType.RESEARCH,
-      student: {
-        id: randomUUID(),
-        email: 'researcher@example.com',
-        firstName: 'Researcher',
-        lastName: 'Example',
-      },
-      supervisor: {
-        id: randomUUID(),
-        email: 'advisor@example.com',
-        firstName: 'Advisor',
-        lastName: 'Example',
-      },
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  ];
+  private get useInMemoryData() { return !this.prisma.isConnected; }
+  private readonly mockProjects: any[] = [];
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -285,6 +242,19 @@ export class ProjectRepository {
   async removeCollaborator(projectId: string, userId: string) {
     if (this.useInMemoryData) return null;
     return this.prisma.projectAssignment.deleteMany({ where: { projectId, userId } });
+  }
+
+  async findProposalsForSupervisor(supervisorId: string) {
+    if (this.useInMemoryData) {
+      return this.mockProjects.filter((p) => p.supervisorId === supervisorId || p.supervisor?.id === supervisorId);
+    }
+    return this.prisma.project.findMany({
+      where: { supervisorId, status: ProjectStatus.PROPOSED },
+      include: {
+        student: { select: { id: true, email: true, firstName: true, lastName: true, preferredName: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 
   async remove(id: string) {

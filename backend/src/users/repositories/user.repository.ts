@@ -13,6 +13,7 @@ const userWithRolesInclude = {
       role: true,
     },
   },
+  studentProfile: true,
 } as const;
 
 const mockUsers = [
@@ -28,19 +29,7 @@ const mockUsers = [
     createdAt: new Date(),
     updatedAt: new Date(),
     roles: [{ role: { name: RoleName.STUDENT } }],
-  },
-  {
-    id: randomUUID(),
-    email: 'supervisor@example.com',
-    password: bcrypt.hashSync('supervisor123', 10),
-    firstName: 'Supervisor',
-    lastName: 'Example',
-    preferredName: 'Supervisor',
-    phone: '555-0101',
-    isActive: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    roles: [{ role: { name: RoleName.SUPERVISOR } }],
+    studentProfile: null,
   },
   {
     id: randomUUID(),
@@ -54,12 +43,38 @@ const mockUsers = [
     createdAt: new Date(),
     updatedAt: new Date(),
     roles: [{ role: { name: RoleName.ADMIN } }],
+    studentProfile: null,
   },
+  // The 9 real supervisors
+  ...[
+    { name: 'Frimpong Twum', first: 'Frimpong', last: 'Twum', email: 'frimpong.twum@ipms.edu' },
+    { name: 'Agyeman', first: 'Agyeman', last: '', email: 'agyeman@ipms.edu' },
+    { name: 'K.A Pabbi', first: 'K.A', last: 'Pabbi', email: 'ka.pabbi@ipms.edu' },
+    { name: 'Benjamin Partey', first: 'Benjamin', last: 'Partey', email: 'benjamin.partey@ipms.edu' },
+    { name: 'M Asante', first: 'M', last: 'Asante', email: 'm.asante@ipms.edu' },
+    { name: 'Kwame Peasah', first: 'Kwame', last: 'Peasah', email: 'kwame.peasah@ipms.edu' },
+    { name: 'Emmanuel Ahene', first: 'Emmanuel', last: 'Ahene', email: 'emmanuel.ahene@ipms.edu' },
+    { name: 'Linda', first: 'Linda', last: '', email: 'linda@ipms.edu' },
+    { name: 'Rosemary', first: 'Rosemary', last: '', email: 'rosemary@ipms.edu' },
+  ].map(({ name, first, last, email }) => ({
+    id: randomUUID(),
+    email,
+    password: bcrypt.hashSync('Supervisor@1234', 10),
+    firstName: first,
+    lastName: last || null,
+    preferredName: name,
+    phone: null,
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    roles: [{ role: { name: RoleName.SUPERVISOR } }],
+    studentProfile: null,
+  })),
 ];
 
 @Injectable()
 export class UserRepository {
-  private readonly useInMemoryData = !process.env.DATABASE_URL;
+  private get useInMemoryData() { return !this.prisma.isConnected; }
   private readonly inMemoryUsers = [...mockUsers];
 
   constructor(private readonly prisma: PrismaService) {}
@@ -73,11 +88,13 @@ export class UserRepository {
   }
 
   async create(data: CreateUserDto) {
+    const hashedPassword = data.password ? bcrypt.hashSync(data.password, 10) : '';
+
     if (this.useInMemoryData) {
       const user = {
         id: randomUUID(),
         ...data,
-        password: bcrypt.hashSync(data.password, 10),
+        password: hashedPassword,
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -93,6 +110,7 @@ export class UserRepository {
     return this.prisma.user.create({
       data: {
         ...userData,
+        password: hashedPassword,
         roles: {
           create: {
             role: {
@@ -108,11 +126,14 @@ export class UserRepository {
     });
   }
 
-  async findAll(pagination: PaginationDto) {
+  async findAll(pagination: PaginationDto, role?: RoleName) {
     if (this.useInMemoryData) {
       const take = pagination.limit || 20;
       const skip = pagination.page ? (pagination.page - 1) * take : 0;
-      return this.inMemoryUsers.slice(skip, skip + take);
+      const filtered = role
+        ? this.inMemoryUsers.filter((u) => u.roles.some((r) => r.role.name === role))
+        : this.inMemoryUsers;
+      return filtered.slice(skip, skip + take);
     }
 
     const take = pagination.limit || 20;
@@ -121,6 +142,9 @@ export class UserRepository {
     return this.prisma.user.findMany({
       skip,
       take,
+      where: role
+        ? { roles: { some: { role: { name: role } } } }
+        : undefined,
       include: userWithRolesInclude,
     });
   }
@@ -161,6 +185,37 @@ export class UserRepository {
       where: { id },
       data,
       include: userWithRolesInclude,
+    });
+  }
+
+  async findStudentsWithAdvisors() {
+    if (this.useInMemoryData) {
+      return this.inMemoryUsers
+        .filter((u) => u.roles.some((r: any) => r.role.name === RoleName.STUDENT))
+        .map((u) => ({ ...u, studentProfile: null }));
+    }
+    return this.prisma.user.findMany({
+      where: { roles: { some: { role: { name: RoleName.STUDENT } } } },
+      include: {
+        ...userWithRolesInclude,
+        studentProfile: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async assignSupervisor(studentId: string, supervisorId: string | null) {
+    if (this.useInMemoryData) {
+      return { studentId, supervisorId };
+    }
+    return this.prisma.studentProfile.upsert({
+      where: { userId: studentId },
+      create: {
+        userId: studentId,
+        enrollmentId: `STU-${Date.now()}`,
+        advisorId: supervisorId,
+      },
+      update: { advisorId: supervisorId },
     });
   }
 

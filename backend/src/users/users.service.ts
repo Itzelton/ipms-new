@@ -14,8 +14,8 @@ export class UsersService {
     return this.userRepository.create(createUserDto);
   }
 
-  async findAll(pagination: PaginationDto) {
-    const users = await this.userRepository.findAll(pagination);
+  async findAll(pagination: PaginationDto, role?: string) {
+    const users = await this.userRepository.findAll(pagination, role as any);
     return users.map((user) => this.sanitizeUser(user));
   }
 
@@ -25,6 +25,28 @@ export class UsersService {
 
   async findByEmail(email: string) {
     return this.userRepository.findByEmail(email);
+  }
+
+  async findSupervisors() {
+    return this.userRepository.findAll({ limit: 100 }, 'SUPERVISOR');
+  }
+
+  async getDirectory() {
+    const all = await this.userRepository.findAll({ limit: 500 });
+    return all.map((u: any) => ({
+      id: u.id,
+      name: u.preferredName || [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email,
+      email: u.email,
+      role: (u.roles?.[0]?.role?.name ?? u.roles?.[0] ?? 'STUDENT') as string,
+    }));
+  }
+
+  async findStudentsWithAdvisors() {
+    return this.userRepository.findStudentsWithAdvisors();
+  }
+
+  async assignSupervisor(studentId: string, supervisorId: string | null) {
+    return this.userRepository.assignSupervisor(studentId, supervisorId);
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {

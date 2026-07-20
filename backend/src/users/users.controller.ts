@@ -1,20 +1,42 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { PaginationDto } from '../common/dto/pagination.dto';
+import { IsOptional, IsString } from 'class-validator';
 
-@UseGuards(JwtAuthGuard)
-@Roles('ADMIN')
+class AssignSupervisorDto {
+  @IsOptional()
+  @IsString()
+  supervisorId?: string | null;
+}
+
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Get('supervisors')
+  findSupervisors() {
+    return this.usersService.findSupervisors();
+  }
+
+  @Roles('ADMIN')
+  @Get('students')
+  findStudentsWithAdvisors() {
+    return this.usersService.findStudentsWithAdvisors();
+  }
+
+  @Roles('ADMIN')
+  @Patch(':id/assign-supervisor')
+  assignSupervisor(@Param('id') id: string, @Body() dto: AssignSupervisorDto) {
+    return this.usersService.assignSupervisor(id, dto.supervisorId ?? null);
+  }
+
+  @Roles('ADMIN')
   @Get()
-  findAll(@Query() pagination: PaginationDto) {
-    return this.usersService.findAll(pagination);
+  findAll(@Query() pagination: PaginationDto, @Query('role') role?: string) {
+    return this.usersService.findAll(pagination, role);
   }
 
   @Get(':id')

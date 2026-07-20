@@ -14,9 +14,7 @@ export async function getSupervisorDashboard() {
         { id: 'proj2', title: 'AI Monitoring', status: 'IN_REVIEW', student: 'Amina Patel', dueDate: '2026-06-28' },
       ],
       pendingReviews: [{ id: 'rev1', title: 'Week 7 Progress', student: 'Jonas Lee', dueDate: '2026-06-09' }],
-      notifications: [
-        { id: 'n1', title: 'Review due today', message: 'Review submission from Amina Patel', createdAt: '2026-06-11' },
-      ],
+      notifications: [],
       activityFeed: [
         { id: 'a1', type: 'PROJECT_CREATED', title: 'Project created', detail: 'Amina Patel started a new project', actor: 'Amina Patel', timestamp: '2026-04-01' },
         { id: 'a2', type: 'MILESTONE_COMPLETED', title: 'Prototype milestone completed', detail: 'Jonas Lee completed the prototype milestone', actor: 'Jonas Lee', timestamp: '2026-06-08' },

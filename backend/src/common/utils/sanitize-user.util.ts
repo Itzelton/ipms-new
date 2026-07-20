@@ -5,7 +5,7 @@ type UserWithRoles = User & {
   roles: (UserRole & { role: Role })[];
 };
 
-export function sanitizeUser(user: UserWithRoles): AuthenticatedUser {
+export function sanitizeUser(user: any): AuthenticatedUser {
   return {
     id: user.id,
     email: user.email,
@@ -16,6 +16,10 @@ export function sanitizeUser(user: UserWithRoles): AuthenticatedUser {
     isActive: user.isActive,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
-    roles: user.roles.map((userRole) => userRole.role.name),
+    roles: (user.roles ?? []).map((userRole: any) => userRole.role?.name ?? userRole),
+    mustChangePassword: user.mustChangePassword ?? false,
+    studentProfile: user.studentProfile
+      ? { advisorId: user.studentProfile.advisorId ?? null }
+      : null,
   };
 }

@@ -16,6 +16,14 @@ export class NotificationsService {
     return this.notificationRepository.findAll(pagination);
   }
 
+  async findByRecipient(recipientId: string, pagination: PaginationDto) {
+    return this.notificationRepository.findByRecipient(recipientId, pagination);
+  }
+
+  async markAllRead(recipientId: string) {
+    return this.notificationRepository.markAllRead(recipientId);
+  }
+
   async findOne(id: string) {
     return this.notificationRepository.findOne(id);
   }

@@ -4,117 +4,256 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../auth/auth-context';
 import { useSidebar } from './SidebarContext';
+import { useSettings } from '../../contexts/SettingsContext';
 
-const navItems: Record<string, { href: string; label: string }[]> = {
+// ── Icons ──────────────────────────────────────────────────────────────────
+
+const HomeIcon = () => (
+  <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+  </svg>
+);
+
+const FolderIcon = () => (
+  <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+  </svg>
+);
+
+const UploadIcon = () => (
+  <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+  </svg>
+);
+
+const ChatIcon = () => (
+  <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+  </svg>
+);
+
+const ClipboardIcon = () => (
+  <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+  </svg>
+);
+
+const UsersIcon = () => (
+  <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+  </svg>
+);
+
+const ChartIcon = () => (
+  <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+  </svg>
+);
+
+const CogIcon = () => (
+  <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+  </svg>
+);
+
+const GridIcon = () => (
+  <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+    <rect x="3" y="3" width="7" height="7" rx="1.5" strokeLinejoin="round" />
+    <rect x="14" y="3" width="7" height="7" rx="1.5" strokeLinejoin="round" />
+    <rect x="3" y="14" width="7" height="7" rx="1.5" strokeLinejoin="round" />
+    <rect x="14" y="14" width="7" height="7" rx="1.5" strokeLinejoin="round" />
+  </svg>
+);
+
+// ── Nav definitions ────────────────────────────────────────────────────────
+
+const navItems: Record<string, { href: string; label: string; icon: React.ReactNode }[]> = {
   ADMIN: [
-    { href: '/admin', label: 'Dashboard' },
-    { href: '/admin/users', label: 'Users' },
-    { href: '/admin/projects', label: 'Projects' },
-    { href: '/admin/reports', label: 'Reports' },
-    { href: '/admin/settings', label: 'Settings' },
+    { href: '/admin',          label: 'Dashboard',   icon: <GridIcon /> },
+    { href: '/admin/users',    label: 'Users',        icon: <UsersIcon /> },
+    { href: '/admin/projects', label: 'Projects',     icon: <FolderIcon /> },
+    { href: '/admin/reports',  label: 'Reports',      icon: <ChartIcon /> },
+    { href: '/admin/settings', label: 'Settings',     icon: <CogIcon /> },
   ],
   SUPERVISOR: [
-    { href: '/supervisor', label: 'Dashboard' },
-    { href: '/supervisor/projects', label: 'Projects' },
-    { href: '/supervisor/reviews', label: 'Reviews' },
-    { href: '/supervisor/discussions', label: 'Discussions' },
-    { href: '/supervisor/settings', label: 'Settings' },
+    { href: '/supervisor',              label: 'Dashboard',   icon: <HomeIcon /> },
+    { href: '/supervisor/projects',     label: 'Projects',     icon: <FolderIcon /> },
+    { href: '/supervisor/reviews',      label: 'Reviews',      icon: <ClipboardIcon /> },
+    { href: '/supervisor/discussions',  label: 'Discussions',  icon: <ChatIcon /> },
+    { href: '/supervisor/settings',     label: 'Settings',     icon: <CogIcon /> },
   ],
   STUDENT: [
-    { href: '/student', label: 'Dashboard' },
-    { href: '/student/projects', label: 'Projects' },
-    { href: '/student/submissions', label: 'Submissions' },
-    { href: '/student/discussions', label: 'Discussions' },
-    { href: '/student/settings', label: 'Settings' },
+    { href: '/student',               label: 'Dashboard',   icon: <HomeIcon /> },
+    { href: '/student/projects',      label: 'Projects',     icon: <FolderIcon /> },
+    { href: '/student/submissions',   label: 'Submissions',  icon: <UploadIcon /> },
+    { href: '/student/discussions',   label: 'Discussions',  icon: <ChatIcon /> },
+    { href: '/student/settings',      label: 'Settings',     icon: <CogIcon /> },
   ],
 };
+
+const roleGradients: Record<string, string> = {
+  ADMIN:      'from-rose-500 to-orange-500',
+  SUPERVISOR: 'from-violet-500 to-indigo-600',
+  STUDENT:    'from-sky-500 to-blue-600',
+};
+
+// root hrefs that should be exact-match only (not startsWith)
+const exactHrefs = new Set(['/admin', '/supervisor', '/student']);
+
+// ── Component ──────────────────────────────────────────────────────────────
 
 export default function Sidebar() {
   const { user } = useAuth();
   const { open, close } = useSidebar();
+  const { persistentSidebar } = useSettings();
   const pathname = usePathname();
 
   if (!user) return null;
 
   const role = user.role as keyof typeof navItems;
   const items = navItems[role] ?? navItems.STUDENT;
+  const gradient = roleGradients[role] ?? roleGradients.STUDENT;
+  const initial = (user.name ?? user.email ?? '?').charAt(0).toUpperCase();
 
   return (
     <>
-      {/* Overlay */}
+      {/* Backdrop overlay — mobile only */}
       <div
         onClick={close}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 40,
-          background: 'rgba(0,0,0,0.4)',
-          backdropFilter: 'blur(2px)',
-          transition: 'opacity 0.3s ease',
-          opacity: open ? 1 : 0,
-          pointerEvents: open ? 'auto' : 'none',
-        }}
+        className={[
+          'lg:hidden fixed inset-0 z-40',
+          'bg-slate-900/50 backdrop-blur-sm',
+          'transition-opacity duration-300',
+          open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
+        ].join(' ')}
       />
 
-      {/* Drawer */}
+      {/* Sidebar panel */}
       <aside
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          zIndex: 50,
-          height: '100%',
-          width: '288px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '24px',
-          padding: '24px 20px',
-          background: 'white',
-          borderRight: '1px solid rgba(226,232,240,0.8)',
-          boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-          transform: open ? 'translateX(0)' : 'translateX(-100%)',
-          transition: 'transform 0.3s cubic-bezier(0.32,0.72,0,1)',
-        }}
+        className={[
+          'glass-sidebar',
+          'fixed top-0 left-0 z-50 h-full w-[260px]',
+          'flex flex-col overflow-y-auto',
+          'transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]',
+          open ? 'translate-x-0' : '-translate-x-full',
+          persistentSidebar ? 'lg:translate-x-0' : '',
+        ].join(' ')}
       >
-        {/* Close button */}
-        <button
-          onClick={close}
-          style={{ position: 'absolute', top: '20px', right: '16px' }}
-          className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-          aria-label="Close menu"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-          </svg>
-        </button>
-
-        <div className="space-y-4">
-          <div className="rounded-3xl bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-900 ring-1 ring-sky-100">
-            Welcome back, {user?.name || user?.email || 'there'}
-            <div className="mt-1 text-xs font-medium text-slate-500 uppercase tracking-[0.18em]">{role ?? 'guest'}</div>
+        {/* ── Brand ── */}
+        <div className="flex items-center gap-3 px-5 pt-6 pb-5">
+          <div
+            className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} shadow-md ring-2 ring-white/60`}
+          >
+            <span className="text-[13px] font-black text-white tracking-tight leading-none">IP</span>
           </div>
-
-          <nav className="space-y-2">
-            {items.map((it) => {
-              const active = pathname === it.href || (it.href !== '/' && pathname.startsWith(it.href));
-              return (
-                <Link
-                  key={it.href}
-                  href={it.href}
-                  onClick={close}
-                  className={`block rounded-2xl px-4 py-3 text-sm font-medium transition-colors ${
-                    active ? 'bg-sky-100 text-sky-800' : 'text-slate-700 hover:bg-slate-100'
-                  }`}
-                >
-                  {it.label}
-                </Link>
-              );
-            })}
-          </nav>
+          <div className="flex-1 min-w-0">
+            <div className="text-[14px] font-bold text-slate-900 tracking-tight leading-tight">IPMS</div>
+            <div className="text-[11px] text-slate-400 font-medium">Project Monitor</div>
+          </div>
+          {/* Close — mobile only */}
+          <button
+            onClick={close}
+            className="lg:hidden flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-slate-400 hover:bg-white/60 hover:text-slate-600"
+            aria-label="Close menu"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </button>
         </div>
 
-        <div style={{ marginTop: 'auto' }} className="rounded-3xl bg-slate-50 p-4 text-sm leading-6 text-slate-600 shadow-sm">
-          Quick tip: use your dashboard cards to track progress, not paperwork.
+        {/* ── User profile pill ── */}
+        <div
+          className="mx-3 mb-5 rounded-2xl p-3"
+          style={{
+            background: 'rgba(255,255,255,0.58)',
+            border: '1px solid rgba(255,255,255,0.72)',
+            boxShadow: '0 2px 8px rgba(15,23,42,0.05), inset 0 1px 0 rgba(255,255,255,0.85)',
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <div
+              className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${gradient} text-sm font-bold text-white shadow-sm ring-2 ring-white/50`}
+            >
+              {initial}
+            </div>
+            <div className="min-w-0">
+              <div className="truncate text-[13px] font-semibold text-slate-900 leading-tight">
+                {user.name || user.email}
+              </div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 mt-0.5">
+                {role}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Navigation ── */}
+        <nav className="flex-1 space-y-0.5 px-3">
+          <div className="mb-3 px-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400/80">
+            Menu
+          </div>
+          {items.map((it) => {
+            const active = exactHrefs.has(it.href)
+              ? pathname === it.href
+              : pathname.startsWith(it.href);
+
+            return (
+              <Link
+                key={it.href}
+                href={it.href}
+                onClick={close}
+                className={[
+                  'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-medium',
+                  'transition-all duration-150',
+                  active
+                    ? 'text-sky-700'
+                    : 'text-slate-600 hover:text-slate-900',
+                ].join(' ')}
+                style={active ? {
+                  background: 'rgba(255,255,255,0.78)',
+                  boxShadow:
+                    '0 2px 10px rgba(14,165,233,0.10), ' +
+                    '0 1px 0 rgba(255,255,255,0.9) inset, ' +
+                    '0 0 0 1px rgba(14,165,233,0.18)',
+                } : undefined}
+              >
+                <span
+                  className={[
+                    'flex-shrink-0 transition-colors',
+                    active ? 'text-sky-500' : 'text-slate-400 group-hover:text-slate-500',
+                  ].join(' ')}
+                >
+                  {it.icon}
+                </span>
+                <span className="flex-1">{it.label}</span>
+                {active && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-sky-500 shadow-[0_0_6px_rgba(14,165,233,0.6)]" />
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* ── Footer tip ── */}
+        <div
+          className="m-3 mt-5 rounded-2xl p-4"
+          style={{
+            background: 'rgba(255,255,255,0.45)',
+            border: '1px solid rgba(255,255,255,0.6)',
+          }}
+        >
+          <div className="flex items-start gap-2.5">
+            <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-sky-100 text-sky-600">
+              <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </span>
+            <p className="text-[11.5px] leading-relaxed text-slate-500">
+              Check your health score daily to stay ahead of deadlines.
+            </p>
+          </div>
         </div>
       </aside>
     </>

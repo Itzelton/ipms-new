@@ -9,6 +9,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { AuditService } from '../audit/audit.service';
 import { UsersService } from '../users/users.service';
 import { ProjectHealthService, ProjectHealthScoreResult, ProjectRiskStatus, ProjectRecommendationsResult } from './project-health.service';
+import { ChannelsService } from '../channels/channels.service';
 
 @Injectable()
 export class ProjectsService {
@@ -19,6 +20,7 @@ export class ProjectsService {
     private readonly auditService: AuditService,
     private readonly usersService: UsersService,
     private readonly projectHealthService: ProjectHealthService,
+    private readonly channelsService: ChannelsService,
   ) {}
 
   async create(createProjectDto: CreateProjectDto, actorId?: string) {
@@ -27,6 +29,15 @@ export class ProjectsService {
     if (createProjectDto.supervisorId) {
       await this.notificationsService.create({ recipientId: createProjectDto.supervisorId, message: `Project created: ${project.title}`, link: `/projects/${project.id}` });
     }
+    // Auto-provision discussion channels for this project
+    try {
+      await this.channelsService.provisionProjectChannels(
+        project.id,
+        actorId || (createProjectDto as any).studentId || '',
+        (createProjectDto as any).studentId,
+        createProjectDto.supervisorId,
+      );
+    } catch { /* non-fatal */ }
     return project;
   }
 
@@ -79,9 +90,23 @@ export class ProjectsService {
     return project;
   }
 
+  async findProposalsForSupervisor(supervisorId: string) {
+    return this.projectRepository.findProposalsForSupervisor(supervisorId);
+  }
+
   async updateStatus(id: string, status: ProjectStatus, actorId?: string) {
     const project = await this.projectRepository.updateStatus(id, status);
     await this.auditService.log(actorId || null, 'update_project_status', 'Project', id, { status });
+    // Notify the student when supervisor accepts or rejects their proposal
+    if (project && (project as any).studentId) {
+      const label = status === ProjectStatus.ACTIVE ? 'accepted' : status === ProjectStatus.CANCELLED ? 'rejected' : status.toLowerCase();
+      await this.notificationsService.create({
+        recipientId: (project as any).studentId,
+        title: `Proposal ${label}`,
+        message: `Your proposal "${(project as any).title}" was ${label}.`,
+        link: `/student/projects`,
+      });
+    }
     return project;
   }
 

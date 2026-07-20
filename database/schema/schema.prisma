@@ -64,6 +64,13 @@ enum NotificationType {
   ALERT
 }
 
+enum ChannelType {
+  PROJECT_GENERAL
+  PROJECT_FEEDBACK
+  DIRECT
+  ANNOUNCEMENT
+}
+
 enum RiskSeverity {
   LOW
   MEDIUM
@@ -85,6 +92,109 @@ enum ReportScope {
   ADMIN
 }
 
+model Channel {
+  id          String      @id @default(uuid())
+  name        String
+  slug        String      @unique
+  type        ChannelType
+  description String?
+  projectId   String?
+  project     Project?    @relation("ProjectChannels", fields: [projectId], references: [id])
+  createdById String
+  createdBy   User        @relation("CreatedChannels", fields: [createdById], references: [id])
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  members     ChannelMember[]
+  messages    Message[]
+  pinned      PinnedMessage[]
+
+  @@index([projectId])
+}
+
+model ChannelMember {
+  channelId  String
+  userId     String
+  lastReadAt DateTime?
+  role       String    @default("MEMBER")
+  joinedAt   DateTime  @default(now())
+
+  channel    Channel   @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user       User      @relation("ChannelMemberships", fields: [userId], references: [id])
+
+  @@id([channelId, userId])
+}
+
+model Message {
+  id          String    @id @default(uuid())
+  channelId   String
+  authorId    String
+  content     String
+  parentId    String?
+  editedAt    DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  channel     Channel   @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  author      User      @relation("AuthoredMessages", fields: [authorId], references: [id])
+  parent      Message?  @relation("MessageThread", fields: [parentId], references: [id])
+  replies     Message[] @relation("MessageThread")
+  reactions   MessageReaction[]
+  attachments MessageAttachment[]
+  readBy      MessageRead[]
+  pinned      PinnedMessage[]  @relation("PinnedOnMessage")
+
+  @@index([channelId, createdAt])
+  @@index([parentId])
+}
+
+model MessageReaction {
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation("MessageReactions", fields: [userId], references: [id])
+
+  @@id([messageId, userId, emoji])
+}
+
+model MessageAttachment {
+  id        String  @id @default(uuid())
+  messageId String
+  fileUrl   String
+  fileName  String
+  fileSize  Int
+  mimeType  String
+
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+}
+
+model MessageRead {
+  messageId String
+  userId    String
+  readAt    DateTime @default(now())
+
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation("MessageReads", fields: [userId], references: [id])
+
+  @@id([messageId, userId])
+}
+
+model PinnedMessage {
+  channelId  String
+  messageId  String
+  pinnedById String
+  pinnedAt   DateTime @default(now())
+
+  channel    Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  message    Message  @relation("PinnedOnMessage", fields: [messageId], references: [id], onDelete: Cascade)
+  pinnedBy   User     @relation("PinnedMessages", fields: [pinnedById], references: [id])
+
+  @@id([channelId, messageId])
+}
+
 model User {
   id              String          @id @default(uuid())
   email           String          @unique
@@ -93,8 +203,9 @@ model User {
   lastName        String?
   preferredName   String?
   phone           String?
-  isActive        Boolean         @default(true)
-  createdAt       DateTime        @default(now())
+  isActive            Boolean         @default(true)
+  mustChangePassword  Boolean         @default(false)
+  createdAt           DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   deletedAt       DateTime?
 
@@ -114,6 +225,12 @@ model User {
   submissionVersions SubmissionVersion[]
   createdDiscussionThreads DiscussionThread[]
   discussionMessages DiscussionMessage[]
+  createdChannels     Channel[]        @relation("CreatedChannels")
+  channelMemberships  ChannelMember[]  @relation("ChannelMemberships")
+  authoredMessages    Message[]        @relation("AuthoredMessages")
+  messageReactions    MessageReaction[] @relation("MessageReactions")
+  messageReads        MessageRead[]    @relation("MessageReads")
+  pinnedMessages      PinnedMessage[]  @relation("PinnedMessages")
   supervisedReports Report[]        @relation("SupervisedReports")
   createdInvites  ProjectInvite[] @relation("CreatedInvites")
   notificationReceipts Notification[] @relation("RecipientNotifications")
@@ -221,6 +338,7 @@ model Project {
   expectedEndDate DateTime?
   actualEndDate   DateTime?
   type            ProjectType      @default(OTHER)
+  proposalDocUrl  String?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
@@ -241,6 +359,7 @@ model Project {
   milestones      Milestone[]
   submissions     Submission[]
   discussionThreads DiscussionThread[]
+  channels          Channel[]        @relation("ProjectChannels")
   notifications   Notification[]   @relation("ProjectNotifications")
   analytics       AnalyticsSnapshot[]
   healthScores    AIHealthScore[]

@@ -15,7 +15,9 @@ import { AiModule } from './ai/ai.module';
 import { ReportsModule } from './reports/reports.module';
 import { AuditModule } from './audit/audit.module';
 import { StorageModule } from './storage/storage.module';
+import { ChannelsModule } from './channels/channels.module';
 import { RolesGuard } from './common/guards/roles.guard';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -36,9 +38,11 @@ import { RolesGuard } from './common/guards/roles.guard';
     ReportsModule,
     AuditModule,
     StorageModule,
+    ChannelsModule,
   ],
   controllers: [RootController],
   providers: [
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })

@@ -1,0 +1,170 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <!--
+    4×4 uniform grid — cell size 100×100, icon canvas 32×32, centered at each cell.
+    All icons: fill=none stroke=#1e40af stroke-width=1.8 linecap=round linejoin=round opacity=0.09
+    Tile repeats seamlessly: 68px gap between every icon in all directions.
+  -->
+
+  <!-- ── R1 C1 · Laptop ── translate(34,34) -->
+  <g transform="translate(34,34)" fill="none" stroke="#1e40af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.09">
+    <rect x="2" y="2" width="28" height="19" rx="2"/>
+    <line x1="6"  y1="7"  x2="26" y2="7"/>
+    <line x1="6"  y1="11" x2="20" y2="11"/>
+    <line x1="6"  y1="15" x2="23" y2="15"/>
+    <path d="M0,23 h32 M12,23 v3 h8 v-3"/>
+  </g>
+
+  <!-- ── R1 C2 · Graduation Cap ── translate(134,34) -->
+  <g transform="translate(134,34)" fill="none" stroke="#1e40af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.09">
+    <polygon points="16,4 30,10 16,16 2,10"/>
+    <path d="M6,13 v7 c0,2.5 4,5.5 10,5.5 s10,-3 10,-5.5 v-7"/>
+    <line x1="30" y1="10" x2="30" y2="22"/>
+    <line x1="28" y1="22" x2="32" y2="25"/>
+  </g>
+
+  <!-- ── R1 C3 · Database ── translate(234,34) -->
+  <g transform="translate(234,34)" fill="none" stroke="#1e40af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.09">
+    <ellipse cx="16" cy="6" rx="13" ry="4.5"/>
+    <path d="M3,6 v18 c0,2.5 5.8,4.5 13,4.5 s13,-2 13,-4.5 V6"/>
+    <path d="M3,14 c0,2.5 5.8,4.5 13,4.5 s13,-2 13,-4.5"/>
+  </g>
+
+  <!-- ── R1 C4 · Books Stack ── translate(334,34) -->
+  <g transform="translate(334,34)" fill="none" stroke="#1e40af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.09">
+    <rect x="2"  y="1"  width="28" height="7" rx="1.5"/>
+    <rect x="4"  y="10" width="24" height="7" rx="1.5"/>
+    <rect x="1"  y="19" width="30" height="7" rx="1.5"/>
+    <line x1="6"  y1="1"  x2="6"  y2="8"/>
+    <line x1="8"  y1="10" x2="8"  y2="17"/>
+    <line x1="5"  y1="19" x2="5"  y2="26"/>
+  </g>
+
+  <!-- ── R2 C1 · Cloud Upload ── translate(34,134) -->
+  <g transform="translate(34,134)" fill="none" stroke="#1e40af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.09">
+    <path d="M8,22 H5 a7,7 0 0 1 0,-14 a5,5 0 0 1 10,-4 a8,8 0 0 1 14,8 a5,5 0 0 1 -1,10 H8"/>
+    <line x1="16" y1="28" x2="16" y2="15"/>
+    <polyline points="12,19 16,15 20,19"/>
+  </g>
+
+  <!-- ── R2 C2 · Line Chart ── translate(134,134) -->
+  <g transform="translate(134,134)" fill="none" stroke="#1e40af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.09">
+    <line x1="2"  y1="30" x2="30" y2="30"/>
+    <line x1="2"  y1="2"  x2="2"  y2="30"/>
+    <polyline points="4,26 8,20 14,23 19,13 24,9 30,16"/>
+    <circle cx="8"  cy="20" r="1.8" fill="#1e40af" stroke="none"/>
+    <circle cx="14" cy="23" r="1.8" fill="#1e40af" stroke="none"/>
+    <circle cx="19" cy="13" r="1.8" fill="#1e40af" stroke="none"/>
+    <circle cx="24" cy="9"  r="1.8" fill="#1e40af" stroke="none"/>
+  </g>
+
+  <!-- ── R2 C3 · Thesis Document ── translate(234,134) -->
+  <g transform="translate(234,134)" fill="none" stroke="#1e40af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.09">
+    <path d="M4,1 h16 l8,8 v22 H4 Z"/>
+    <path d="M20,1 v8 h8"/>
+    <line x1="8"  y1="14" x2="24" y2="14"/>
+    <line x1="8"  y1="18" x2="24" y2="18"/>
+    <line x1="8"  y1="22" x2="18" y2="22"/>
+    <line x1="8"  y1="26" x2="20" y2="26"/>
+  </g>
+
+  <!-- ── R2 C4 · Bar Chart ── translate(334,134) -->
+  <g transform="translate(334,134)" fill="none" stroke="#1e40af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.09">
+    <line x1="2"  y1="30" x2="30" y2="30"/>
+    <line x1="2"  y1="2"  x2="2"  y2="30"/>
+    <rect x="5"  y="18" width="7"  height="12" rx="1"/>
+    <rect x="14" y="10" width="7"  height="20" rx="1"/>
+    <rect x="23" y="14" width="5"  height="16" rx="1"/>
+  </g>
+
+  <!-- ── R3 C1 · Code Brackets </> ── translate(34,234) -->
+  <g transform="translate(34,234)" fill="none" stroke="#1e40af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.09">
+    <polyline points="11,7 3,16 11,25"/>
+    <polyline points="21,7 29,16 21,25"/>
+    <line x1="19" y1="5" x2="13" y2="27"/>
+  </g>
+
+  <!-- ── R3 C2 · Atom / Orbital ── translate(134,234) -->
+  <g transform="translate(134,234)" fill="none" stroke="#1e40af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.09">
+    <ellipse cx="16" cy="16" rx="14" ry="5.5"/>
+    <ellipse cx="16" cy="16" rx="14" ry="5.5" transform="rotate(60 16 16)"/>
+    <ellipse cx="16" cy="16" rx="14" ry="5.5" transform="rotate(120 16 16)"/>
+    <circle  cx="16" cy="16" r="2.5" fill="#1e40af" stroke="none"/>
+  </g>
+
+  <!-- ── R3 C3 · Flask / Research ── translate(234,234) -->
+  <g transform="translate(234,234)" fill="none" stroke="#1e40af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.09">
+    <path d="M11,2 v13 l-9,15 h28 l-9,-15 V2"/>
+    <line x1="9"  y1="2"  x2="23" y2="2"/>
+    <line x1="7"  y1="22" x2="25" y2="22" stroke-width="1.2"/>
+  </g>
+
+  <!-- ── R3 C4 · Server Rack ── translate(334,234) -->
+  <g transform="translate(334,234)" fill="none" stroke="#1e40af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.09">
+    <rect x="2"  y="2"  width="28" height="8"  rx="1.5"/>
+    <rect x="2"  y="12" width="28" height="8"  rx="1.5"/>
+    <rect x="2"  y="22" width="28" height="8"  rx="1.5"/>
+    <line x1="5"  y1="6"  x2="18" y2="6"  stroke-width="1.2"/>
+    <line x1="5"  y1="16" x2="18" y2="16" stroke-width="1.2"/>
+    <line x1="5"  y1="26" x2="18" y2="26" stroke-width="1.2"/>
+    <circle cx="24" cy="6"  r="1.8" fill="#1e40af" stroke="none"/>
+    <circle cx="24" cy="16" r="1.8" fill="#1e40af" stroke="none"/>
+    <circle cx="24" cy="26" r="1.8" fill="#1e40af" stroke="none"/>
+  </g>
+
+  <!-- ── R4 C1 · Magnifying Glass ── translate(34,334) -->
+  <g transform="translate(34,334)" fill="none" stroke="#1e40af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.09">
+    <circle cx="13" cy="13" r="10"/>
+    <line x1="21" y1="21" x2="30" y2="30"/>
+  </g>
+
+  <!-- ── R4 C2 · Microchip / CPU ── translate(134,334) -->
+  <g transform="translate(134,334)" fill="none" stroke="#1e40af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.09">
+    <rect x="9"  y="9"  width="14" height="14" rx="2"/>
+    <rect x="12" y="12" width="8"  height="8"  rx="1"/>
+    <line x1="9"  y1="13" x2="4"  y2="13"/>
+    <line x1="9"  y1="16" x2="4"  y2="16"/>
+    <line x1="9"  y1="19" x2="4"  y2="19"/>
+    <line x1="23" y1="13" x2="28" y2="13"/>
+    <line x1="23" y1="16" x2="28" y2="16"/>
+    <line x1="23" y1="19" x2="28" y2="19"/>
+    <line x1="13" y1="9"  x2="13" y2="4"/>
+    <line x1="16" y1="9"  x2="16" y2="4"/>
+    <line x1="19" y1="9"  x2="19" y2="4"/>
+    <line x1="13" y1="23" x2="13" y2="28"/>
+    <line x1="16" y1="23" x2="16" y2="28"/>
+    <line x1="19" y1="23" x2="19" y2="28"/>
+  </g>
+
+  <!-- ── R4 C3 · Neural Network ── translate(234,334) -->
+  <g transform="translate(234,334)" fill="none" stroke="#1e40af" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity="0.09">
+    <circle cx="4"  cy="10" r="2.5" fill="#1e40af" stroke="none"/>
+    <circle cx="4"  cy="22" r="2.5" fill="#1e40af" stroke="none"/>
+    <circle cx="16" cy="6"  r="2.5" fill="#1e40af" stroke="none"/>
+    <circle cx="16" cy="16" r="2.5" fill="#1e40af" stroke="none"/>
+    <circle cx="16" cy="26" r="2.5" fill="#1e40af" stroke="none"/>
+    <circle cx="28" cy="12" r="2.5" fill="#1e40af" stroke="none"/>
+    <circle cx="28" cy="22" r="2.5" fill="#1e40af" stroke="none"/>
+    <line x1="6"  y1="10" x2="14" y2="6"/>
+    <line x1="6"  y1="10" x2="14" y2="16"/>
+    <line x1="6"  y1="10" x2="14" y2="26"/>
+    <line x1="6"  y1="22" x2="14" y2="6"/>
+    <line x1="6"  y1="22" x2="14" y2="16"/>
+    <line x1="6"  y1="22" x2="14" y2="26"/>
+    <line x1="18" y1="6"  x2="26" y2="12"/>
+    <line x1="18" y1="6"  x2="26" y2="22"/>
+    <line x1="18" y1="16" x2="26" y2="12"/>
+    <line x1="18" y1="16" x2="26" y2="22"/>
+    <line x1="18" y1="26" x2="26" y2="12"/>
+    <line x1="18" y1="26" x2="26" y2="22"/>
+  </g>
+
+  <!-- ── R4 C4 · Globe / Network ── translate(334,334) -->
+  <g transform="translate(334,334)" fill="none" stroke="#1e40af" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.09">
+    <circle cx="16" cy="16" r="14"/>
+    <ellipse cx="16" cy="16" rx="6" ry="14"/>
+    <line x1="2"  y1="10" x2="30" y2="10"/>
+    <line x1="2"  y1="16" x2="30" y2="16"/>
+    <line x1="2"  y1="22" x2="30" y2="22"/>
+  </g>
+
+</svg>

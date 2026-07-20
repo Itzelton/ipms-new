@@ -1,213 +1,283 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
-import { ChatAssistantRequestDto } from './dto/chat-assistant-request.dto';
+import { ChatAssistantRequestDto, HistoryMessage } from './dto/chat-assistant-request.dto';
 import { ChatAssistantResponseDto } from './dto/chat-assistant-response.dto';
-import { AiRepository } from './repositories/ai.repository';
+import { OpenRouterService } from './openrouter.service';
 import { MilestoneStatus } from '@prisma/client';
 
-type Intent =
-  | 'MILESTONES_PENDING'
-  | 'MILESTONES_OVERDUE'
-  | 'HEALTH_SCORE'
-  | 'NEXT_STEPS'
-  | 'RISKS'
-  | 'FORECAST'
-  | 'SUPERVISOR_AT_RISK'
-  | 'PROJECTS_NEED_REVIEW'
-  | 'SUMMARIZE_RECENT_ACTIVITY'
-  | 'UNKNOWN';
+const MAX_HISTORY = 8;
 
 @Injectable()
 export class AiAssistantService {
+  private readonly useDb = !!process.env.DATABASE_URL;
+
   constructor(
     private readonly prisma: PrismaService,
-    private readonly aiRepository: AiRepository,
+    private readonly openRouter: OpenRouterService,
   ) {}
 
   async chat(dto: ChatAssistantRequestDto): Promise<ChatAssistantResponseDto> {
-    const message = (dto.message || '').toLowerCase();
-    const role: 'STUDENT' | 'SUPERVISOR' = dto.roleHint || 'STUDENT';
-    const intent = this.classifyIntent(message, role);
+    const role: 'STUDENT' | 'SUPERVISOR' = dto.roleHint ?? 'STUDENT';
     const projectId = dto.projectId;
+    const contextParts: string[] = [];
 
-    if (intent === 'UNKNOWN') {
-      return {
-        answerText: "I can help with milestones, health scores, risks, recommendations, and forecasts. Try asking:",
-        suggestedNextQuestions: [
-          'What milestones are pending?',
-          'What milestones are overdue?',
-          'What is my health score?',
-          'What are the risks on this project?',
-          'What should I do next?',
-          'Give me a forecast for this project',
-        ],
-      };
+    // Use frontend-passed context first (avoids extra DB round-trip)
+    if (dto.projectContext && (dto.projectContext.milestones || dto.projectContext.submissions)) {
+      this.buildContextFromFrontend(dto.projectContext, contextParts);
+    } else if (this.useDb) {
+      try {
+        if (projectId) {
+          await this.gatherProjectContext(projectId, contextParts);
+        } else if (role === 'SUPERVISOR') {
+          await this.gatherSupervisorContext(contextParts);
+        } else if (dto.userId) {
+          await this.gatherStudentContext(dto.userId, contextParts);
+        }
+      } catch {
+        // DB unavailable — proceed without context
+      }
     }
 
-    if (!projectId && role === 'STUDENT') {
+    const systemPrompt = buildSystemPrompt(role, contextParts);
+
+    // Build conversation messages: history (capped) + current
+    const prior: HistoryMessage[] = (dto.history ?? []).slice(-MAX_HISTORY);
+    const messages: { role: 'user' | 'assistant'; content: string }[] = [
+      ...prior,
+      { role: 'user', content: dto.message },
+    ];
+
+    try {
+      const answerText = await this.openRouter.chat(systemPrompt, messages);
       return {
-        answerText: 'Select a project first so I can pull the relevant data.',
-        suggestedNextQuestions: ['What milestones are pending?', 'What is my health score?'],
+        answerText,
+        suggestedNextQuestions: this.suggestQuestions(role, !!projectId || !!dto.projectContext),
+      };
+    } catch {
+      return {
+        answerText: `I'm having trouble reaching the AI service right now. Please try again in a moment.`,
+        suggestedNextQuestions: this.suggestQuestions(role, !!projectId || !!dto.projectContext),
       };
     }
+  }
 
-    const project = projectId
-      ? await this.prisma.project.findUnique({ where: { id: projectId }, select: { id: true, title: true } })
-      : null;
+  private buildContextFromFrontend(
+    ctx: NonNullable<ChatAssistantRequestDto['projectContext']>,
+    out: string[],
+  ) {
+    if (ctx.title) out.push(`Project: "${ctx.title}" (status: ${ctx.status ?? 'unknown'})`);
 
-    const evidence: ChatAssistantResponseDto['evidence'] = [];
+    const milestones = ctx.milestones ?? [];
+    if (milestones.length > 0) {
+      const now = new Date();
+      const completed = milestones.filter(m => m.status === 'COMPLETED');
+      const pending = milestones.filter(m => m.status === 'PENDING');
+      const overdue = milestones.filter(
+        m => m.status !== 'COMPLETED' && new Date(m.dueDate) < now,
+      );
+
+      out.push(
+        `Milestones (${milestones.length} total): ${completed.length} completed, ${pending.length} pending, ${overdue.length} overdue`,
+      );
+
+      if (overdue.length > 0) {
+        out.push(
+          `Overdue milestones: ${overdue.map(m => `"${m.title}" (was due ${new Date(m.dueDate).toDateString()})`).join(', ')}`,
+        );
+      }
+
+      const allMilestoneNames = milestones.map(m => `"${m.title}" [${m.status}, due ${new Date(m.dueDate).toDateString()}]`).join('; ');
+      out.push(`All milestones: ${allMilestoneNames}`);
+
+      const next = pending.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0];
+      if (next) out.push(`Next upcoming milestone: "${next.title}" due ${new Date(next.dueDate).toDateString()}`);
+    }
+
+    const submissions = ctx.submissions ?? [];
+    if (submissions.length === 0) {
+      out.push('Submissions: none yet');
+    } else {
+      const now = new Date();
+      const last = submissions[submissions.length - 1];
+      const daysSince = Math.round(
+        (now.getTime() - new Date(last.createdAt).getTime()) / 86_400_000,
+      );
+      const names = submissions.map(s => `"${s.title ?? 'Untitled'}" [${s.status}]`).join(', ');
+      out.push(`Submissions (${submissions.length}): ${names}`);
+      out.push(`Last submission: ${daysSince} day(s) ago (status: ${last.status})`);
+    }
+
+    if (ctx.healthScore) {
+      out.push(`Health score: ${ctx.healthScore.score}/100 (${ctx.healthScore.classification})`);
+    }
+  }
+
+  private async gatherProjectContext(projectId: string, out: string[]) {
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      include: {
+        milestones: { orderBy: { dueDate: 'asc' } },
+        submissions: { orderBy: { createdAt: 'desc' }, take: 5 },
+      },
+    });
+    if (!project) return;
+
     const now = new Date();
+    const completed = project.milestones.filter(m => m.status === MilestoneStatus.COMPLETED);
+    const pending = project.milestones.filter(m => m.status === MilestoneStatus.PENDING);
+    const overdue = project.milestones.filter(
+      m => m.status !== MilestoneStatus.COMPLETED && new Date(m.dueDate) < now,
+    );
 
-    switch (intent) {
-      case 'MILESTONES_PENDING': {
-        const pending = await this.prisma.milestone.findMany({
-          where: { projectId, status: MilestoneStatus.PENDING },
-          orderBy: { dueDate: 'asc' },
-        });
-        pending.forEach(m => evidence.push({ type: 'MILESTONE', label: m.title, data: { dueDate: m.dueDate, status: m.status } }));
-        return {
-          answerText: pending.length
-            ? `You have ${pending.length} pending milestone(s)${project?.title ? ` on "${project.title}"` : ''}:`
-            : 'No pending milestones — great work!',
-          bullets: pending.map(m => `${m.title} — due ${new Date(m.dueDate).toDateString()}`),
-          evidence,
-          suggestedNextQuestions: ['What milestones are overdue?', 'What should I do next?'],
-        };
-      }
+    out.push(`Project: "${project.title}" (status: ${project.status})`);
+    out.push(
+      `Milestones (${project.milestones.length} total): ${completed.length} completed, ${pending.length} pending, ${overdue.length} overdue`,
+    );
 
-      case 'MILESTONES_OVERDUE': {
-        const overdue = await this.prisma.milestone.findMany({
-          where: { projectId, status: { not: MilestoneStatus.COMPLETED }, dueDate: { lt: now } },
-          orderBy: { dueDate: 'asc' },
-        });
-        overdue.forEach(m => evidence.push({ type: 'MILESTONE', label: m.title, data: { dueDate: m.dueDate, status: m.status } }));
-        return {
-          answerText: overdue.length
-            ? `⚠️ ${overdue.length} overdue milestone(s)${project?.title ? ` on "${project.title}"` : ''}:`
-            : '✓ No overdue milestones.',
-          bullets: overdue.map(m => `${m.title} — was due ${new Date(m.dueDate).toDateString()}`),
-          evidence,
-          suggestedNextQuestions: ['What are the risks?', 'What should I do next?'],
-        };
-      }
+    if (overdue.length > 0) {
+      out.push(
+        `Overdue milestones: ${overdue.map(m => `"${m.title}" (was due ${new Date(m.dueDate).toDateString()})`).join(', ')}`,
+      );
+    }
 
-      case 'HEALTH_SCORE': {
-        let hs = await this.prisma.aIHealthScore.findFirst({ where: { projectId }, orderBy: { generatedAt: 'desc' } });
-        if (!hs) hs = await this.aiRepository.generateHealthScore({ projectId, prompt: '' });
-        evidence.push({ type: 'HEALTH_SCORE', label: 'Health score', data: { score: hs.score, classification: hs.classification } });
-        return {
-          answerText: `Health score for${project?.title ? ` "${project.title}"` : ' this project'}: ${hs.score}/100 (${hs.classification})`,
-          bullets: [
-            hs.score >= 80 ? '✓ Project is healthy and on track.' :
-            hs.score >= 60 ? '⚠️ Project is at risk — review milestones and submissions.' :
-            '🔴 Project needs urgent attention.',
-          ],
-          evidence,
-          suggestedNextQuestions: ['What are the risks?', 'What should I do next?'],
-        };
-      }
+    const allMilestoneNames = project.milestones.map(m => `"${m.title}" [${m.status}, due ${new Date(m.dueDate).toDateString()}]`).join('; ');
+    out.push(`All milestones: ${allMilestoneNames}`);
 
-      case 'RISKS': {
-        let risks = await this.prisma.aIRiskSignal.findMany({ where: { projectId }, orderBy: { generatedAt: 'desc' }, take: 5 });
-        if (risks.length === 0) {
-          const generated = await this.aiRepository.detectRisk({ projectId, prompt: '' });
-          risks = Array.isArray(generated) ? generated : [generated];
-        }
-        risks.forEach(r => evidence.push({ type: 'RISK_SIGNAL', label: `${r.severity} risk`, data: { description: r.description } }));
-        return {
-          answerText: `Risk signals for${project?.title ? ` "${project.title}"` : ' this project'}:`,
-          bullets: risks.map(r => `[${r.severity}] ${r.description}`),
-          evidence,
-          suggestedNextQuestions: ['What should I do next?', 'Give me a forecast'],
-        };
-      }
+    const next = pending[0];
+    if (next) out.push(`Next milestone: "${next.title}" due ${new Date(next.dueDate).toDateString()}`);
 
-      case 'NEXT_STEPS': {
-        let recs = await this.prisma.aIRecommendation.findMany({ where: { projectId }, orderBy: { generatedAt: 'desc' }, take: 3 });
-        if (recs.length === 0) {
-          const generated = await this.aiRepository.generateRecommendation({ projectId, prompt: '' });
-          recs = Array.isArray(generated) ? generated : [generated];
-        }
-        recs.forEach(r => evidence.push({ type: 'RECOMMENDATION', label: r.category || 'Recommendation', data: { recommendation: r.recommendation } }));
-        return {
-          answerText: `Recommended next steps${project?.title ? ` for "${project.title}"` : ''}:`,
-          bullets: recs.map(r => r.recommendation),
-          evidence,
-          suggestedNextQuestions: ['What milestones are pending?', 'What is my health score?'],
-        };
-      }
+    if (project.submissions.length === 0) {
+      out.push('Submissions: none yet');
+    } else {
+      const daysSince = Math.round(
+        (now.getTime() - new Date(project.submissions[0].createdAt).getTime()) / 86_400_000,
+      );
+      out.push(
+        `Submissions: ${project.submissions.length} total, last ${daysSince} day(s) ago (status: ${project.submissions[0].status})`,
+      );
+    }
 
-      case 'FORECAST': {
-        if (!projectId) {
-          return {
-            answerText: 'Select a project first so I can generate a forecast.',
-            suggestedNextQuestions: ['What milestones are pending?', 'What is my health score?'],
-          };
-        }
-        const forecast = await this.aiRepository.generateForecast(projectId, undefined);
-        evidence.push({ type: 'FORECAST', label: 'Project forecast', data: { summary: forecast.summary, details: forecast.details } });
-        return {
-          answerText: `Forecast for${project?.title ? ` "${project.title}"` : ' this project'}:`,
-          bullets: [forecast.summary],
-          evidence,
-          suggestedNextQuestions: ['What are the risks?', 'What should I do next?'],
-        };
-      }
+    const hs = await this.prisma.aIHealthScore.findFirst({
+      where: { projectId },
+      orderBy: { generatedAt: 'desc' },
+    });
+    if (hs) out.push(`Health score: ${hs.score}/100 (${hs.classification})`);
 
-      case 'SUMMARIZE_RECENT_ACTIVITY': {
-        if (!projectId) {
-          return {
-            answerText: 'Select a project first so I can summarize recent activity.',
-            suggestedNextQuestions: ['What milestones are pending?', 'What are the risks?'],
-          };
-        }
-        const [milestones, submissions] = await Promise.all([
-          this.prisma.milestone.findMany({ where: { projectId }, orderBy: { updatedAt: 'desc' }, take: 5 }),
-          this.prisma.submission.findMany({ where: { projectId }, orderBy: { updatedAt: 'desc' }, take: 5 }),
-        ]);
-        milestones.forEach(m => evidence.push({ type: 'MILESTONE', label: m.title, data: { status: m.status, updatedAt: m.updatedAt } }));
-        submissions.forEach(s => evidence.push({ type: 'SUBMISSION', label: 'Submission', data: { status: s.status, updatedAt: s.updatedAt } }));
-        return {
-          answerText: `Recent activity${project?.title ? ` for "${project.title}"` : ''}:`,
-          bullets: [
-            ...milestones.map(m => `Milestone: "${m.title}" → ${m.status}`),
-            ...submissions.map(s => `Submission: ${s.status} (${new Date(s.updatedAt).toDateString()})`),
-          ].slice(0, 8),
-          evidence,
-          suggestedNextQuestions: ['What should I do next?', 'What is my health score?'],
-        };
-      }
+    const risks = await this.prisma.aIRiskSignal.findMany({
+      where: { projectId },
+      orderBy: { generatedAt: 'desc' },
+      take: 3,
+    });
+    if (risks.length > 0) {
+      out.push(`Risks: ${risks.map(r => `[${r.severity}] ${r.description}`).join('; ')}`);
+    }
 
-      case 'SUPERVISOR_AT_RISK':
-      case 'PROJECTS_NEED_REVIEW': {
-        const risks = await this.prisma.aIRiskSignal.findMany({
-          where: projectId ? { projectId } : {},
-          orderBy: { generatedAt: 'desc' },
-          take: 10,
-        });
-        risks.forEach(r => evidence.push({ type: 'RISK_SIGNAL', label: `${r.severity} risk`, data: { description: r.description, projectId: r.projectId } }));
-        return {
-          answerText: 'Projects/students flagged by risk signals:',
-          bullets: risks.length ? risks.map(r => `[${r.severity}] ${r.description}`) : ['No risk signals found.'],
-          evidence,
-          suggestedNextQuestions: ['Summarize recent activity', 'What should be reviewed next?'],
-        };
-      }
-
-      default:
-        return { answerText: 'I could not determine what you are asking. Try rephrasing.' };
+    const recs = await this.prisma.aIRecommendation.findMany({
+      where: { projectId },
+      orderBy: { generatedAt: 'desc' },
+      take: 3,
+    });
+    if (recs.length > 0) {
+      out.push(`Recommendations: ${recs.map(r => r.recommendation).join('; ')}`);
     }
   }
 
-  private classifyIntent(message: string, role: 'STUDENT' | 'SUPERVISOR'): Intent {
-    if (message.includes('overdue')) return 'MILESTONES_OVERDUE';
-    if ((message.includes('milestone') || message.includes('task')) && (message.includes('pending') || message.includes('todo') || message.includes('not done') || message.includes('upcoming'))) return 'MILESTONES_PENDING';
-    if (message.includes('health score') || message.includes('health') || message.includes('score')) return 'HEALTH_SCORE';
-    if (message.includes('risk') || message.includes('danger') || message.includes('warning')) return role === 'SUPERVISOR' ? 'SUPERVISOR_AT_RISK' : 'RISKS';
-    if (message.includes('forecast') || message.includes('predict') || message.includes('outlook')) return 'FORECAST';
-    if (message.includes('next') || message.includes('do next') || message.includes('recommend') || message.includes('suggest')) return 'NEXT_STEPS';
-    if (role === 'SUPERVISOR' && (message.includes('review') || message.includes('need attention'))) return 'PROJECTS_NEED_REVIEW';
-    if (message.includes('summarize') || message.includes('recent') || message.includes('activity') || message.includes('update')) return 'SUMMARIZE_RECENT_ACTIVITY';
-    return 'UNKNOWN';
+  private async gatherStudentContext(userId: string, out: string[]) {
+    const project = await this.prisma.project.findFirst({
+      where: { studentId: userId, status: { in: ['ACTIVE', 'PROPOSED', 'ON_HOLD'] } },
+      include: {
+        milestones: { orderBy: { dueDate: 'asc' } },
+        submissions: { orderBy: { createdAt: 'desc' }, take: 3 },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+    if (!project) return;
+
+    await this.gatherProjectContext(project.id, out);
   }
+
+  private async gatherSupervisorContext(out: string[]) {
+    const projects = await this.prisma.project.findMany({
+      where: { status: { in: ['ACTIVE', 'PROPOSED', 'ON_HOLD'] } },
+      include: {
+        milestones: true,
+        submissions: { orderBy: { createdAt: 'desc' }, take: 1 },
+        student: { select: { firstName: true, lastName: true, email: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 20,
+    });
+
+    if (projects.length === 0) return;
+
+    const now = new Date();
+    out.push(`Active projects under supervision: ${projects.length}`);
+
+    const atRisk = projects.filter(p =>
+      p.milestones.some(m => m.status !== MilestoneStatus.COMPLETED && new Date(m.dueDate) < now),
+    );
+
+    if (atRisk.length > 0) {
+      out.push(
+        `Projects with overdue milestones (${atRisk.length}): ${atRisk.map(p => {
+          const s = p.student;
+          const name = s ? [s.firstName, s.lastName].filter(Boolean).join(' ') || s.email : 'Unknown';
+          return `"${p.title}" (student: ${name})`;
+        }).join(', ')}`,
+      );
+    }
+
+    const noSubmission = projects.filter(p => {
+      if (p.submissions.length === 0) return true;
+      const daysSince = (now.getTime() - new Date(p.submissions[0].createdAt).getTime()) / 86_400_000;
+      return daysSince > 14;
+    });
+
+    if (noSubmission.length > 0) {
+      out.push(
+        `Projects with no recent submission (${noSubmission.length}): ${noSubmission.slice(0, 5).map(p => `"${p.title}"`).join(', ')}`,
+      );
+    }
+
+    const risks = await this.prisma.aIRiskSignal.findMany({
+      orderBy: { generatedAt: 'desc' },
+      take: 5,
+    });
+    if (risks.length > 0) {
+      out.push(`Recent risk signals: ${risks.map(r => `[${r.severity}] ${r.description}`).join('; ')}`);
+    }
+  }
+
+  private suggestQuestions(role: 'STUDENT' | 'SUPERVISOR', hasProject: boolean): string[] {
+    if (role === 'SUPERVISOR') {
+      return ['Which students are at risk?', 'Which projects need my review?', 'Summarise recent activity'];
+    }
+    if (!hasProject) {
+      return ['What milestones are pending?', 'What is my health score?', 'What should I do next?'];
+    }
+    return ['What milestones are overdue?', 'What are the risks?', 'What should I do next?', 'Give me a forecast'];
+  }
+}
+
+function buildSystemPrompt(role: string, contextParts: string[]): string {
+  const contextBlock =
+    contextParts.length > 0
+      ? `\n\nProject context (use this data to answer — reference items by their exact names):\n${contextParts.map(c => `• ${c}`).join('\n')}`
+      : '\n\n(No specific project context available — give general best-practice advice.)';
+
+  return `You are an AI assistant embedded in IPMS (Integrated Project Management System), a platform for managing student final-year academic projects.
+
+You are speaking to a ${role.toLowerCase()}.${
+    role === 'STUDENT'
+      ? ' Help them understand their project status, milestones, risks, and what to do next.'
+      : ' Help them monitor students, identify at-risk projects, and prioritise their review workload.'
+  }
+
+Guidelines:
+• Be concise and actionable — 2 to 5 sentences unless more detail is genuinely needed.
+• Ground your answer in the project context below when relevant. Reference milestones and submissions by their exact names.
+• Do not invent milestone names, dates, or scores not present in the context.
+• Use plain text. If listing items, use bullet points starting with "•". No markdown headers or bold.
+• Never mention that you are an AI or reference your training data.
+• Maintain context across the conversation — if the user refers to "that milestone" or "the last one", refer to the conversation history.${contextBlock}`;
 }

@@ -2,10 +2,10 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiGet } from '../../services/api';
+import { useAuth } from '../../components/auth/auth-context';
 import ActiveProjectCard from '../../components/dashboard/ActiveProjectCard';
 import MilestonesList from '../../components/dashboard/MilestonesList';
 import RecentSubmissions from '../../components/dashboard/RecentSubmissions';
-import NotificationsPanel from '../../components/dashboard/NotificationsPanel';
 import ActivityTimeline from '../../components/dashboard/ActivityTimeline';
 import HealthScoreCard from '../../components/dashboard/HealthScoreCard';
 import AIInsightsCard from '../../components/dashboard/AIInsightsCard';
@@ -23,9 +23,11 @@ const EMPTY: any = {
   healthScore: null,
   aiInsights: [],
   heatmap: { year: YEAR, days: [] },
+  supervisor: null,
 };
 
 export default function StudentDashboard() {
+  const { user } = useAuth();
   const [data, setData] = useState<any>(EMPTY);
   const [loading, setLoading] = useState(true);
 
@@ -33,11 +35,12 @@ export default function StudentDashboard() {
     let mounted = true;
     async function load() {
       try {
-        const [projects, submissions, notifications, heatmapRes] = await Promise.allSettled([
+        const [projects, submissions, notifications, heatmapRes, meRes] = await Promise.allSettled([
           apiGet('/projects'),
           apiGet('/submissions'),
           apiGet('/notifications'),
           apiGet(`/analytics/heatmap?year=${YEAR}`),
+          apiGet('/auth/me'),
         ]);
 
         const projectList = projects.status === 'fulfilled' && Array.isArray(projects.value) ? projects.value : [];
@@ -54,6 +57,23 @@ export default function StudentDashboard() {
             milestones = details?.milestones ?? [];
             healthScore = details?.healthScore ?? null;
           } catch { /* leave empty */ }
+        }
+
+        // Resolve supervisor from studentProfile.advisorId
+        let supervisor: any = null;
+        if (meRes.status === 'fulfilled') {
+          const me = meRes.value;
+          const advisorId = me?.studentProfile?.advisorId;
+          if (advisorId) {
+            try {
+              const sv = await apiGet(`/users/${advisorId}`);
+              supervisor = {
+                id: sv.id,
+                name: sv.preferredName || [sv.firstName, sv.lastName].filter(Boolean).join(' ') || sv.email,
+                email: sv.email,
+              };
+            } catch { /* no supervisor info */ }
+          }
         }
 
         if (mounted) {
@@ -76,6 +96,7 @@ export default function StudentDashboard() {
             healthScore,
             aiInsights: [],
             heatmap: heatmapRes.status === 'fulfilled' ? heatmapRes.value : { year: YEAR, days: [] },
+            supervisor,
           });
         }
       } catch {
@@ -90,48 +111,90 @@ export default function StudentDashboard() {
 
   return (
     <div className="space-y-6">
-      <header className="card p-6 space-y-4">
-        <div className="space-y-2">
-          <div className="inline-flex rounded-full bg-sky-100 px-3 py-1 text-sm font-semibold text-sky-800">Student view</div>
-          <h2 className="text-3xl font-semibold text-slate-900">Student Dashboard</h2>
-          <p className="mt-2 text-slate-600">Track your active project, submissions and advisor feedback in one friendly workspace.</p>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-4">
-          <Link href="/student" className="rounded-full bg-slate-100 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-200">Dashboard</Link>
-          <Link href="/student/projects" className="rounded-full bg-slate-100 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-200">Projects</Link>
-          <Link href="/student/submissions" className="rounded-full bg-slate-100 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-200">Submissions</Link>
-          <Link href="/student/discussions" className="rounded-full bg-slate-100 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-200">Discussions</Link>
+      <header className="card-static p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <span className="inline-flex items-center rounded-full bg-sky-100 px-2.5 py-0.5 text-[11px] font-semibold text-sky-700">Student workspace</span>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">Dashboard</h2>
+            <p className="mt-1 text-sm text-slate-500">Track your project, submissions and advisor feedback.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { href: '/student', label: 'Overview' },
+              { href: '/student/projects', label: 'Projects' },
+              { href: '/student/submissions', label: 'Submissions' },
+              { href: '/student/discussions', label: 'Discussions' },
+            ].map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className="rounded-full px-3.5 py-1.5 text-[12px] font-medium text-slate-600 no-underline transition hover:text-slate-900"
+                style={{ background: 'rgba(248,250,252,0.80)', border: '1px solid rgba(226,232,240,0.80)' }}
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
         </div>
       </header>
 
       {loading ? (
         <div className="p-6 text-slate-500">Loading dashboard...</div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <ActiveProjectCard project={data.activeProject} />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <MilestonesList milestones={data.milestones} />
-              <div className="space-y-6">
-                <HealthScoreCard score={data.healthScore} />
-                <AIInsightsCard insights={data.aiInsights} />
-                <ChatAssistant role="STUDENT" projectId={data.activeProject?.id} />
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              {/* Supervisor banner */}
+              {data.supervisor ? (
+                <div className="card p-5 flex items-center gap-4">
+                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-100 to-indigo-100">
+                    <svg className="h-5 w-5 text-violet-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Your Supervisor</p>
+                    <p className="mt-0.5 text-sm font-semibold text-slate-800 truncate">{data.supervisor.name}</p>
+                    <p className="text-xs text-slate-500 truncate">{data.supervisor.email}</p>
+                  </div>
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700">Assigned</span>
+                </div>
+              ) : (
+                <div className="card p-5 flex items-center gap-4 border-dashed">
+                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-amber-50">
+                    <svg className="h-5 w-5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700">No supervisor assigned yet</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Your administrator will assign a supervisor to your account shortly.</p>
+                  </div>
+                </div>
+              )}
+              <ActiveProjectCard project={data.activeProject} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <MilestonesList milestones={data.milestones} />
+                <div className="space-y-6">
+                  <HealthScoreCard score={data.healthScore} />
+                  <AIInsightsCard insights={data.aiInsights} />
+                  <ChatAssistant role="STUDENT" projectId={data.activeProject?.id} userId={user?.id} />
+                </div>
               </div>
+              <RecentSubmissions submissions={data.recentSubmissions} />
             </div>
-            <RecentSubmissions submissions={data.recentSubmissions} />
+
+            <aside className="space-y-6">
+              <ActivityTimeline items={data.activity} />
+            </aside>
           </div>
 
-          <aside className="space-y-6">
-            <NotificationsPanel notifications={data.notifications} />
-            <ActivityTimeline items={data.activity} />
-          </aside>
-        </div>
-
-        <ActivityHeatmap
-          days={data.heatmap.days}
-          year={data.heatmap.year}
-          label="Your activity"
-        />
+          <ActivityHeatmap
+            days={data.heatmap.days}
+            year={data.heatmap.year}
+            label="Your activity"
+          />
+        </>
       )}
     </div>
   );

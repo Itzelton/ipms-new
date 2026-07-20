@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
+import { useAuth } from '../../components/auth/auth-context';
 import Link from 'next/link';
 import { apiGet } from '../../services/api';
 import AnalyticsSummaryCard from '../../components/supervisor/AnalyticsSummaryCard';
@@ -7,10 +8,10 @@ import PendingReviewsCard from '../../components/supervisor/PendingReviewsCard';
 import ProjectsUnderReview from '../../components/supervisor/ProjectsUnderReview';
 import AssignedStudentsTable from '../../components/supervisor/AssignedStudentsTable';
 import RiskAlertsPanel from '../../components/supervisor/RiskAlertsPanel';
-import NotificationsPanel from '../../components/dashboard/NotificationsPanel';
 import ActivityTimeline from '../../components/dashboard/ActivityTimeline';
 import ChatAssistant from '../../components/ai/ChatAssistant';
 import ActivityHeatmap from '../../components/dashboard/ActivityHeatmap';
+import PendingProposalsCard from '../../components/supervisor/PendingProposalsCard';
 
 const YEAR = new Date().getFullYear();
 
@@ -26,6 +27,7 @@ const EMPTY: any = {
 };
 
 export default function SupervisorIndex() {
+  const { user } = useAuth();
   const [dashboard, setDashboard] = useState<any>(EMPTY);
   const [loading, setLoading] = useState(true);
 
@@ -86,17 +88,30 @@ export default function SupervisorIndex() {
 
   return (
     <div className="space-y-6">
-      <header className="card p-6 space-y-4">
-        <div className="space-y-2">
-          <div className="inline-flex rounded-full bg-sky-100 px-3 py-1 text-sm font-semibold text-sky-800">Supervisor workspace</div>
-          <h2 className="text-3xl font-semibold text-slate-900">Supervisor Dashboard</h2>
-          <p className="text-slate-600">Monitor assigned students, reviews, discussions and project risks with clear status cards.</p>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-4">
-          <Link href="/supervisor/projects" className="rounded-full bg-slate-100 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-200">Projects</Link>
-          <Link href="/supervisor/reviews" className="rounded-full bg-slate-100 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-200">Reviews</Link>
-          <Link href="/supervisor/discussions" className="rounded-full bg-slate-100 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-200">Discussions</Link>
-          <Link href="/supervisor/settings" className="rounded-full bg-slate-100 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-200">Settings</Link>
+      <header className="card-static p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <span className="inline-flex items-center rounded-full bg-violet-100 px-2.5 py-0.5 text-[11px] font-semibold text-violet-700">Supervisor workspace</span>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">Dashboard</h2>
+            <p className="mt-1 text-sm text-slate-500">Monitor students, reviews, discussions and project risks.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { href: '/supervisor', label: 'Overview' },
+              { href: '/supervisor/projects', label: 'Projects' },
+              { href: '/supervisor/reviews', label: 'Reviews' },
+              { href: '/supervisor/discussions', label: 'Discussions' },
+            ].map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className="rounded-full px-3.5 py-1.5 text-[12px] font-medium text-slate-600 no-underline transition hover:text-slate-900"
+                style={{ background: 'rgba(248,250,252,0.80)', border: '1px solid rgba(226,232,240,0.80)' }}
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
         </div>
       </header>
 
@@ -115,9 +130,9 @@ export default function SupervisorIndex() {
           </div>
 
           <aside className="space-y-6">
-            <NotificationsPanel notifications={dashboard.notifications} />
+            <PendingProposalsCard />
             <ActivityTimeline items={dashboard.activityFeed} />
-            <ChatAssistant role="SUPERVISOR" />
+            <ChatAssistant role="SUPERVISOR" userId={user?.id} />
           </aside>
         </div>
       )}

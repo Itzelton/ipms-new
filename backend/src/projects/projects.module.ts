@@ -8,9 +8,10 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { AuditModule } from '../audit/audit.module';
 import { UsersModule } from '../users/users.module';
 import { ProjectHealthService } from './project-health.service';
+import { ChannelsModule } from '../channels/channels.module';
 
 @Module({
-  imports: [NotificationsModule, AuditModule, UsersModule],
+  imports: [NotificationsModule, AuditModule, UsersModule, ChannelsModule],
   controllers: [ProjectsController, InvitesController],
   providers: [ProjectsService, ProjectRepository, ProjectInviteRepository, ProjectHealthService],
   exports: [ProjectsService],

@@ -37,7 +37,7 @@ export class StorageController {
   @Post('upload')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_SIZE } }))
   async upload(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: { originalname: string; mimetype: string; size: number; buffer: Buffer },
     @Query('folder') folder = 'general',
   ) {
     if (!file) throw new BadRequestException('No file provided');

@@ -1,8 +1,8 @@
 "use client";
-import React, { useEffect, useRef, useState } from 'react';
+import React from 'react';
 
 export interface HeatmapDay {
-  date: string; // "YYYY-MM-DD"
+  date: string;
   count: number;
   breakdown?: { submissions?: number; messages?: number; reviews?: number; milestones?: number };
 }
@@ -13,13 +13,13 @@ interface Props {
   label?: string;
 }
 
-const CELL = 13;   // cell size + gap
+const CELL = 13;
 const DAY_LABEL_W = 24;
 const MONTH_LABEL_H = 20;
 const WEEKS = 53;
 const DAYS = 7;
 
-const COLOR_SCALE = ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'];
+const COLOR_SCALE = ['#e2e8f0', '#bae6fd', '#38bdf8', '#0ea5e9', '#0369a1'];
 
 function countToLevel(n: number): number {
   if (n === 0) return 0;
@@ -35,9 +35,7 @@ function buildGrid(year: number, days: HeatmapDay[]) {
   const map = new Map<string, HeatmapDay>();
   for (const d of days) map.set(d.date, d);
 
-  // Jan 1 of the year
   const jan1 = new Date(year, 0, 1);
-  // Start from the Sunday on or before Jan 1
   const startDay = new Date(jan1);
   startDay.setDate(jan1.getDate() - jan1.getDay());
 
@@ -61,7 +59,7 @@ function buildGrid(year: number, days: HeatmapDay[]) {
 }
 
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const DAY_NAMES   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 function monthLabels(year: number, startDay: Date) {
   const labels: { label: string; col: number }[] = [];
@@ -81,9 +79,9 @@ function tooltipText(cell: { isoDate: string; count: number; breakdown?: Heatmap
   if (cell.count === 0) return `No activity on ${cell.isoDate}`;
   const parts: string[] = [];
   if (cell.breakdown?.submissions) parts.push(`${cell.breakdown.submissions} submission${cell.breakdown.submissions !== 1 ? 's' : ''}`);
-  if (cell.breakdown?.messages) parts.push(`${cell.breakdown.messages} message${cell.breakdown.messages !== 1 ? 's' : ''}`);
-  if (cell.breakdown?.reviews) parts.push(`${cell.breakdown.reviews} review${cell.breakdown.reviews !== 1 ? 's' : ''}`);
-  if (cell.breakdown?.milestones) parts.push(`${cell.breakdown.milestones} milestone${cell.breakdown.milestones !== 1 ? 's' : ''}`);
+  if (cell.breakdown?.messages)    parts.push(`${cell.breakdown.messages} message${cell.breakdown.messages !== 1 ? 's' : ''}`);
+  if (cell.breakdown?.reviews)     parts.push(`${cell.breakdown.reviews} review${cell.breakdown.reviews !== 1 ? 's' : ''}`);
+  if (cell.breakdown?.milestones)  parts.push(`${cell.breakdown.milestones} milestone${cell.breakdown.milestones !== 1 ? 's' : ''}`);
   const detail = parts.length ? ` (${parts.join(', ')})` : '';
   return `${cell.count} activit${cell.count !== 1 ? 'ies' : 'y'} on ${cell.isoDate}${detail}`;
 }
@@ -94,85 +92,67 @@ export default function ActivityHeatmap({ days, year, label }: Props) {
 
   const svgW = DAY_LABEL_W + WEEKS * CELL;
   const svgH = MONTH_LABEL_H + DAYS * CELL;
-
   const total = days.reduce((s, d) => s + d.count, 0);
 
   return (
-    <div className="space-y-2">
+    <div className="card p-6">
       {label && (
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-700">{label}</h3>
-          <span className="text-xs text-gray-400">{total} activit{total !== 1 ? 'ies' : 'y'} in {year}</span>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 shadow-sm">
+              <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">{label}</p>
+              <p className="text-sm font-semibold text-slate-900">{total} activit{total !== 1 ? 'ies' : 'y'} in {year}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+            <span>Less</span>
+            {COLOR_SCALE.map((c, i) => (
+              <svg key={i} width={10} height={10}>
+                <rect width={10} height={10} rx={2} fill={c} />
+              </svg>
+            ))}
+            <span>More</span>
+          </div>
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-lg border border-gray-100 bg-white p-4">
+      <div className="overflow-x-auto">
         <svg
           width={svgW}
           height={svgH}
           style={{ display: 'block', minWidth: svgW }}
           aria-label={`Activity heatmap for ${year}`}
         >
-          {/* Month labels */}
           {mLabels.map(({ label: ml, col }) => (
-            <text
-              key={`m-${col}`}
-              x={DAY_LABEL_W + col * CELL}
-              y={MONTH_LABEL_H - 6}
-              fontSize={10}
-              fill="#57606a"
-            >
+            <text key={`m-${col}`} x={DAY_LABEL_W + col * CELL} y={MONTH_LABEL_H - 6} fontSize={9} fill="#94a3b8">
               {ml}
             </text>
           ))}
 
-          {/* Day-of-week labels (Mon / Wed / Fri) */}
           {[1, 3, 5].map((dow) => (
-            <text
-              key={`d-${dow}`}
-              x={0}
-              y={MONTH_LABEL_H + dow * CELL + CELL - 3}
-              fontSize={9}
-              fill="#57606a"
-            >
-              {DAY_NAMES[dow].slice(0, 3)}
+            <text key={`d-${dow}`} x={0} y={MONTH_LABEL_H + dow * CELL + CELL - 3} fontSize={8} fill="#94a3b8">
+              {DAY_NAMES[dow].slice(0, 1)}
             </text>
           ))}
 
-          {/* Cells */}
           {grid.map((week, wi) =>
             week.map((cell, di) => {
               if (!cell) return null;
               const cx = DAY_LABEL_W + wi * CELL;
               const cy = MONTH_LABEL_H + di * CELL;
-              const color = COLOR_SCALE[countToLevel(cell.count)];
               return (
-                <rect
-                  key={`${wi}-${di}`}
-                  x={cx}
-                  y={cy}
-                  width={CELL - 2}
-                  height={CELL - 2}
-                  rx={2}
-                  fill={color}
-                >
+                <rect key={`${wi}-${di}`} x={cx} y={cy} width={CELL - 2} height={CELL - 2} rx={2.5} fill={COLOR_SCALE[countToLevel(cell.count)]}>
                   <title>{tooltipText(cell)}</title>
                 </rect>
               );
             })
           )}
         </svg>
-
-        {/* Legend */}
-        <div className="mt-3 flex items-center gap-1 text-xs text-gray-500">
-          <span>Less</span>
-          {COLOR_SCALE.map((c, i) => (
-            <svg key={i} width={11} height={11}>
-              <rect width={11} height={11} rx={2} fill={c} />
-            </svg>
-          ))}
-          <span>More</span>
-        </div>
       </div>
     </div>
   );

@@ -1,28 +1,47 @@
 "use client";
 import React from 'react';
 
+function fmtDate(d: string) {
+  if (!d) return '—';
+  try { return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' }).format(new Date(d)); }
+  catch { return d; }
+}
+
 export default function ProjectDiscussionsPanel({ discussions }: { discussions?: any[] }) {
   if (!discussions || discussions.length === 0) {
-    return <div className="p-6 text-gray-600">No discussion threads yet.</div>;
+    return (
+      <div className="card p-8 text-center">
+        <p className="text-sm text-slate-500">No discussion threads yet.</p>
+      </div>
+    );
   }
 
   return (
-    <div className="rounded border border-gray-100 bg-white p-6 shadow">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">Discussion Threads</h3>
-        <span className="text-sm text-gray-500">{discussions.length} threads</span>
+    <div className="card p-6">
+      <div className="flex items-center justify-between mb-5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">Discussion Threads</p>
+        <span className="text-[11px] text-slate-400">{discussions.length} threads</span>
       </div>
-      <div className="space-y-3">
+      <ul className="divide-y divide-slate-100">
         {discussions.map((thread) => (
-          <div key={thread.id} className="rounded-lg border border-gray-200 p-4 sm:flex sm:items-center sm:justify-between">
-            <div>
-              <div className="font-semibold">{thread.title}</div>
-              <p className="text-sm text-gray-500">Updated {thread.updatedAt} · {thread.messages} messages</p>
+          <li key={thread.id} className="flex items-center justify-between gap-3 py-3.5 first:pt-0 last:pb-0">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-sky-100">
+                <svg className="h-4 w-4 text-sky-500" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-[13px] font-medium text-slate-800">{thread.title}</p>
+                <p className="text-[11px] text-slate-400">Updated {fmtDate(thread.updatedAt)} · {thread.messages ?? 0} messages</p>
+              </div>
             </div>
-            <button className="mt-3 rounded bg-blue-600 px-3 py-1 text-xs font-semibold text-white sm:mt-0">Open thread</button>
-          </div>
+            <button className="flex-shrink-0 rounded-lg bg-sky-600 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-sky-700 transition-colors">
+              Open
+            </button>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }

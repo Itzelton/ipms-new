@@ -70,8 +70,15 @@ async function main() {
   // Supabase Auth users (created first so they can sign in immediately)
   const authUsers = [
     { email: 'admin@ipms.edu', password: 'Admin@1234' },
-    { email: 'prof.boateng@ipms.edu', password: 'Supervisor@1234' },
-    { email: 'dr.asante@ipms.edu', password: 'Supervisor@1234' },
+    { email: 'frimpong.twum@ipms.edu', password: 'Supervisor@1234' },
+    { email: 'agyeman@ipms.edu', password: 'Supervisor@1234' },
+    { email: 'ka.pabbi@ipms.edu', password: 'Supervisor@1234' },
+    { email: 'benjamin.partey@ipms.edu', password: 'Supervisor@1234' },
+    { email: 'm.asante@ipms.edu', password: 'Supervisor@1234' },
+    { email: 'kwame.peasah@ipms.edu', password: 'Supervisor@1234' },
+    { email: 'emmanuel.ahene@ipms.edu', password: 'Supervisor@1234' },
+    { email: 'linda@ipms.edu', password: 'Supervisor@1234' },
+    { email: 'rosemary@ipms.edu', password: 'Supervisor@1234' },
     { email: 'kofi.adu@student.ipms.edu', password: 'Student@1234' },
     { email: 'ama.darko@student.ipms.edu', password: 'Student@1234' },
     { email: 'yaw.ofori@student.ipms.edu', password: 'Student@1234' },
@@ -104,39 +111,41 @@ async function main() {
     create: { userId: admin.id, title: 'HOD', departmentId: dept.id },
   });
 
-  const sup1 = await prisma.user.upsert({
-    where: { email: 'prof.boateng@ipms.edu' },
-    update: {},
-    create: {
-      email: 'prof.boateng@ipms.edu', password: await hash('Supervisor@1234'),
-      firstName: 'Kwame', lastName: 'Boateng', preferredName: 'Prof. Boateng',
-      phone: '+233-24-000-0002', isActive: true, departmentId: dept.id,
-      roles: { create: { roleId: supervisorRole!.id } },
-    },
-  });
+  // The 9 real supervisors
+  const supervisorData = [
+    { email: 'frimpong.twum@ipms.edu', firstName: 'Frimpong', lastName: 'Twum', preferredName: 'Frimpong Twum', title: 'Lecturer', office: 'Room 101, CS Block' },
+    { email: 'agyeman@ipms.edu', firstName: 'Agyeman', lastName: '', preferredName: 'Agyeman', title: 'Lecturer', office: 'Room 102, CS Block' },
+    { email: 'ka.pabbi@ipms.edu', firstName: 'K.A', lastName: 'Pabbi', preferredName: 'K.A Pabbi', title: 'Senior Lecturer', office: 'Room 103, CS Block' },
+    { email: 'benjamin.partey@ipms.edu', firstName: 'Benjamin', lastName: 'Partey', preferredName: 'Benjamin Partey', title: 'Lecturer', office: 'Room 104, CS Block' },
+    { email: 'm.asante@ipms.edu', firstName: 'M', lastName: 'Asante', preferredName: 'M Asante', title: 'Associate Professor', office: 'Room 105, CS Block' },
+    { email: 'kwame.peasah@ipms.edu', firstName: 'Kwame', lastName: 'Peasah', preferredName: 'Kwame Peasah', title: 'Lecturer', office: 'Room 106, CS Block' },
+    { email: 'emmanuel.ahene@ipms.edu', firstName: 'Emmanuel', lastName: 'Ahene', preferredName: 'Emmanuel Ahene', title: 'Senior Lecturer', office: 'Room 107, CS Block' },
+    { email: 'linda@ipms.edu', firstName: 'Linda', lastName: '', preferredName: 'Linda', title: 'Lecturer', office: 'Room 108, CS Block' },
+    { email: 'rosemary@ipms.edu', firstName: 'Rosemary', lastName: '', preferredName: 'Rosemary', title: 'Lecturer', office: 'Room 109, CS Block' },
+  ];
 
-  await prisma.supervisorProfile.upsert({
-    where: { userId: sup1.id },
-    update: {},
-    create: { userId: sup1.id, title: 'Associate Professor', office: 'Room 204, CS Block' },
-  });
+  const supervisors = await Promise.all(
+    supervisorData.map(async (s, i) => {
+      const user = await prisma.user.upsert({
+        where: { email: s.email },
+        update: {},
+        create: {
+          email: s.email, password: await hash('Supervisor@1234'),
+          firstName: s.firstName, lastName: s.lastName || null, preferredName: s.preferredName,
+          phone: `+233-24-000-${String(10 + i).padStart(4, '0')}`, isActive: true, departmentId: dept.id,
+          roles: { create: { roleId: supervisorRole!.id } },
+        },
+      });
+      await prisma.supervisorProfile.upsert({
+        where: { userId: user.id },
+        update: {},
+        create: { userId: user.id, title: s.title, office: s.office },
+      });
+      return user;
+    }),
+  );
 
-  const sup2 = await prisma.user.upsert({
-    where: { email: 'dr.asante@ipms.edu' },
-    update: {},
-    create: {
-      email: 'dr.asante@ipms.edu', password: await hash('Supervisor@1234'),
-      firstName: 'Abena', lastName: 'Asante', preferredName: 'Dr. Asante',
-      phone: '+233-24-000-0003', isActive: true, departmentId: dept.id,
-      roles: { create: { roleId: supervisorRole!.id } },
-    },
-  });
-
-  await prisma.supervisorProfile.upsert({
-    where: { userId: sup2.id },
-    update: {},
-    create: { userId: sup2.id, title: 'Senior Lecturer', office: 'Room 110, CS Block' },
-  });
+  const [sup1, , , , , , , , sup2] = supervisors; // Frimpong Twum and Rosemary for demo projects
 
   // Students
   const students = await Promise.all([
@@ -300,14 +309,23 @@ async function main() {
   ));
 
   console.log('\n✓ Database seeded successfully!\n');
-  console.log('Demo accounts (all passwords follow the same pattern):');
-  console.log('  admin@ipms.edu          / Admin@1234');
-  console.log('  prof.boateng@ipms.edu   / Supervisor@1234');
-  console.log('  dr.asante@ipms.edu      / Supervisor@1234');
-  console.log('  kofi.adu@student.ipms.edu       / Student@1234');
-  console.log('  ama.darko@student.ipms.edu      / Student@1234');
-  console.log('  yaw.ofori@student.ipms.edu      / Student@1234');
-  console.log('  akosua.frimpong@student.ipms.edu / Student@1234');
+  console.log('Demo accounts:');
+  console.log('  admin@ipms.edu                    / Admin@1234');
+  console.log('  --- Supervisors (password: Supervisor@1234) ---');
+  console.log('  frimpong.twum@ipms.edu');
+  console.log('  agyeman@ipms.edu');
+  console.log('  ka.pabbi@ipms.edu');
+  console.log('  benjamin.partey@ipms.edu');
+  console.log('  m.asante@ipms.edu');
+  console.log('  kwame.peasah@ipms.edu');
+  console.log('  emmanuel.ahene@ipms.edu');
+  console.log('  linda@ipms.edu');
+  console.log('  rosemary@ipms.edu');
+  console.log('  --- Students (password: Student@1234) ---');
+  console.log('  kofi.adu@student.ipms.edu');
+  console.log('  ama.darko@student.ipms.edu');
+  console.log('  yaw.ofori@student.ipms.edu');
+  console.log('  akosua.frimpong@student.ipms.edu');
 }
 
 main()

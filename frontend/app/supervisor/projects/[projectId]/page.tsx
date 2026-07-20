@@ -12,8 +12,11 @@ import ProjectTabs from '../../../../components/project/ProjectTabs';
 import ProjectCollaboratorsPanel from '../../../../components/project/ProjectCollaboratorsPanel';
 import ActivityHeatmap from '../../../../components/dashboard/ActivityHeatmap';
 import { apiGet } from '../../../../services/api';
+import ChatAssistant from '../../../../components/ai/ChatAssistant';
+import { useAuth } from '../../../../components/auth/auth-context';
 
 export default function SupervisorProjectDetailsPage({ params }: { params: { projectId: string } }) {
+  const { user } = useAuth();
   const [project, setProject] = useState<any>(null);
   const [heatmap, setHeatmap] = useState<{ year: number; days: any[] }>({ year: new Date().getFullYear(), days: [] });
   const [loading, setLoading] = useState(true);
@@ -38,30 +41,40 @@ export default function SupervisorProjectDetailsPage({ params }: { params: { pro
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold">{project.title}</h1>
-          <p className="mt-2 text-gray-600 max-w-2xl">{project.description}</p>
+      <header className="card-static p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">{project.title}</h1>
+            {project.description && (
+              <p className="mt-1 text-sm text-slate-500 max-w-2xl">{project.description}</p>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <span className="rounded-full bg-violet-100 px-3 py-1 text-[12px] font-semibold text-violet-700">
+              {(project.status ?? '').replace(/_/g, ' ')}
+            </span>
+            {project.dueDate && (
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-[12px] text-slate-600">
+                Due {project.dueDate}
+              </span>
+            )}
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <span className="rounded bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-800">{project.status}</span>
-          <span className="rounded bg-gray-100 px-3 py-1 text-sm text-gray-700">Due {project.dueDate}</span>
-        </div>
-      </div>
+      </header>
 
       <div className="grid gap-6 xl:grid-cols-[1.8fr_1fr]">
         <div className="space-y-6">
           <ProjectOverviewPanel project={project} />
-          <div className="bg-white rounded shadow p-4">
+          <div className="card p-6">
             <ProjectTabs activeTab={activeTab} onChange={setActiveTab} />
-            <div className="mt-6">
+            <div className="mt-6 space-y-6">
               {activeTab === 'overview' && (
-                <div className="space-y-6">
+                <>
                   <ProjectMilestonesPanel milestones={project.milestones} />
                   <ProjectSubmissionsPanel submissions={project.submissions} />
                   <ProjectDiscussionsPanel discussions={project.discussionThreads ?? project.discussions} />
                   <ActivityHeatmap days={heatmap.days} year={heatmap.year} label="Project activity" />
-                </div>
+                </>
               )}
               {activeTab === 'milestones' && <ProjectMilestonesPanel milestones={project.milestones} />}
               {activeTab === 'submissions' && <ProjectSubmissionsPanel submissions={project.submissions} />}
@@ -74,10 +87,19 @@ export default function SupervisorProjectDetailsPage({ params }: { params: { pro
         <aside className="space-y-6">
           <ProjectHealthRiskPanel healthScore={project.healthScore} riskStatus={project.riskStatus} analytics={project.analytics} />
           <ProjectRecommendationsPanel recommendations={project.recommendedActions} />
-          <div className="bg-white rounded shadow p-4">
-            <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
-            <ActivityTimeline items={project.activity} />
-          </div>
+          <ChatAssistant
+            role="SUPERVISOR"
+            projectId={project.id}
+            userId={user?.id}
+            projectContext={{
+              title: project.title,
+              status: project.status,
+              milestones: project.milestones,
+              submissions: project.submissions,
+              healthScore: project.healthScore,
+            }}
+          />
+          <ActivityTimeline items={project.activity} />
         </aside>
       </div>
     </div>

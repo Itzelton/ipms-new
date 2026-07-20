@@ -9,4 +9,6 @@ export interface AuthenticatedUser {
   createdAt: Date;
   updatedAt: Date;
   roles: string[];
+  mustChangePassword: boolean;
+  studentProfile?: { advisorId?: string | null } | null;
 }

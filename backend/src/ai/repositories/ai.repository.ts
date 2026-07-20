@@ -53,8 +53,8 @@ export class AiRepository {
 
     const classification =
       score >= 80 ? 'HEALTHY' :
-      score >= 60 ? 'AT_RISK' :
-      score >= 40 ? 'NEEDS_ATTENTION' : 'CRITICAL';
+      score >= 60 ? 'STABLE' :
+      score >= 40 ? 'NEEDS_ATTENTION' : 'AT_RISK';
 
     return this.prisma.aIHealthScore.create({
       data: { projectId: dto.projectId, score, classification, source: 'computed' },
@@ -223,7 +223,7 @@ export class AiRepository {
         projectId,
         horizon: horizon || ForecastHorizon.SHORT_TERM,
         summary,
-        details,
+        details: details as any,
       },
     });
   }

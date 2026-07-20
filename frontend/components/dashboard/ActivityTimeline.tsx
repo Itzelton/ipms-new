@@ -62,12 +62,30 @@ export default function ActivityTimeline({ items }: { items?: ActivityTimelineIt
   }, [items]);
 
   if (!timelineItems.length) {
-    return <div className="p-4 bg-white rounded shadow">No recent activity</div>;
+    return (
+      <div className="card p-6">
+        <div className="flex flex-col items-center justify-center py-6 text-center">
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100">
+            <svg className="h-6 w-6 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <p className="text-sm font-medium text-slate-500">No recent activity</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="p-4 bg-white rounded shadow">
-      <h4 className="font-medium mb-4">Activity Timeline</h4>
+    <div className="card p-6">
+      <div className="flex items-center gap-3 mb-5">
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-slate-400 to-slate-600 shadow-sm">
+          <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">Activity Timeline</p>
+      </div>
       <Timeline>
         {timelineItems.map((item) => (
           <TimelineItem

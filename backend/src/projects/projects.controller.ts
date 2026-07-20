@@ -46,9 +46,14 @@ export class ProjectsController {
     return this.projectsService.getRecommendations(id);
   }
 
+  @Get('proposals')
+  findProposals(@CurrentUser('id') userId: string) {
+    return this.projectsService.findProposalsForSupervisor(userId);
+  }
+
   @Post()
-  create(@Body() createProjectDto: CreateProjectDto) {
-    return this.projectsService.create(createProjectDto);
+  create(@Body() createProjectDto: CreateProjectDto, @CurrentUser('id') userId: string) {
+    return this.projectsService.create({ ...createProjectDto, studentId: createProjectDto.studentId ?? userId }, userId);
   }
 
   @Patch(':id')
@@ -62,8 +67,8 @@ export class ProjectsController {
   }
 
   @Patch(':id/status')
-  updateStatus(@Param('id') id: string, @Body() dto: UpdateProjectStatusDto) {
-    return this.projectsService.updateStatus(id, dto.status);
+  updateStatus(@Param('id') id: string, @Body() dto: UpdateProjectStatusDto, @CurrentUser('id') actorId: string) {
+    return this.projectsService.updateStatus(id, dto.status, actorId);
   }
 
   @Patch(':id/type')
