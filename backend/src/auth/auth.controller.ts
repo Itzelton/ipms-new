@@ -20,6 +20,13 @@ class ChangePasswordDto {
   newPassword!: string;
 }
 
+class SetPasswordDto {
+  @IsNotEmpty()
+  @IsString()
+  @MinLength(8)
+  newPassword!: string;
+}
+
 class LocalRegisterDto {
   @IsEmail()
   email!: string;
@@ -72,5 +79,10 @@ export class AuthController {
   @Post('change-password')
   changePassword(@CurrentUser() user: AuthenticatedUser, @Body() dto: ChangePasswordDto) {
     return this.authService.changePassword(user.id, dto.currentPassword, dto.newPassword);
+  }
+
+  @Post('set-password')
+  setPassword(@CurrentUser() user: AuthenticatedUser, @Body() dto: SetPasswordDto) {
+    return this.authService.setPassword(user.id, dto.newPassword);
   }
 }

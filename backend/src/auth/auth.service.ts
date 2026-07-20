@@ -119,6 +119,12 @@ export class AuthService {
     return this.usersService.getDirectory();
   }
 
+  async setPassword(userId: string, newPassword: string) {
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await this.usersService.update(userId, { password: hashed, mustChangePassword: false });
+    return { message: 'Password updated successfully' };
+  }
+
   async changePassword(userId: string, currentPassword: string, newPassword: string) {
     const user = await this.usersService.findOne(userId);
     if (!user) throw new UnauthorizedException('User not found');
