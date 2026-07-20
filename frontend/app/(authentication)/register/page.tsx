@@ -184,7 +184,7 @@ export default function RegisterPage() {
               />
               <RoleCard
                 value="SUPERVISOR" current={role} onClick={() => setRole('SUPERVISOR')}
-                title="Lecturer / Supervisor" desc="Supervise student projects and review submissions"
+                title="Supervisor" desc="Supervise student projects and review submissions"
                 icon={<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
               />
             </div>
@@ -196,7 +196,7 @@ export default function RegisterPage() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">Select your name</label>
                 {supervisors.length === 0 ? (
-                  <p className="text-sm text-slate-400 py-3 text-center">Loading lecturers…</p>
+                  <p className="text-sm text-slate-400 py-3 text-center">Loading supervisors…</p>
                 ) : (
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 max-h-72 overflow-y-auto pr-1">
                     {supervisors.map(sv => (

@@ -113,15 +113,15 @@ async function main() {
 
   // The 9 real supervisors
   const supervisorData = [
-    { email: 'frimpong.twum@ipms.edu', firstName: 'Frimpong', lastName: 'Twum', preferredName: 'Frimpong Twum', title: 'Lecturer', office: 'Room 101, CS Block' },
-    { email: 'agyeman@ipms.edu', firstName: 'Agyeman', lastName: '', preferredName: 'Agyeman', title: 'Lecturer', office: 'Room 102, CS Block' },
-    { email: 'ka.pabbi@ipms.edu', firstName: 'K.A', lastName: 'Pabbi', preferredName: 'K.A Pabbi', title: 'Senior Lecturer', office: 'Room 103, CS Block' },
-    { email: 'benjamin.partey@ipms.edu', firstName: 'Benjamin', lastName: 'Partey', preferredName: 'Benjamin Partey', title: 'Lecturer', office: 'Room 104, CS Block' },
+    { email: 'frimpong.twum@ipms.edu', firstName: 'Frimpong', lastName: 'Twum', preferredName: 'Frimpong Twum', title: 'Supervisor', office: 'Room 101, CS Block' },
+    { email: 'agyeman@ipms.edu', firstName: 'Agyeman', lastName: '', preferredName: 'Agyeman', title: 'Supervisor', office: 'Room 102, CS Block' },
+    { email: 'ka.pabbi@ipms.edu', firstName: 'K.A', lastName: 'Pabbi', preferredName: 'K.A Pabbi', title: 'Senior Supervisor', office: 'Room 103, CS Block' },
+    { email: 'benjamin.partey@ipms.edu', firstName: 'Benjamin', lastName: 'Partey', preferredName: 'Benjamin Partey', title: 'Supervisor', office: 'Room 104, CS Block' },
     { email: 'm.asante@ipms.edu', firstName: 'M', lastName: 'Asante', preferredName: 'M Asante', title: 'Associate Professor', office: 'Room 105, CS Block' },
-    { email: 'kwame.peasah@ipms.edu', firstName: 'Kwame', lastName: 'Peasah', preferredName: 'Kwame Peasah', title: 'Lecturer', office: 'Room 106, CS Block' },
-    { email: 'emmanuel.ahene@ipms.edu', firstName: 'Emmanuel', lastName: 'Ahene', preferredName: 'Emmanuel Ahene', title: 'Senior Lecturer', office: 'Room 107, CS Block' },
-    { email: 'linda@ipms.edu', firstName: 'Linda', lastName: '', preferredName: 'Linda', title: 'Lecturer', office: 'Room 108, CS Block' },
-    { email: 'rosemary@ipms.edu', firstName: 'Rosemary', lastName: '', preferredName: 'Rosemary', title: 'Lecturer', office: 'Room 109, CS Block' },
+    { email: 'kwame.peasah@ipms.edu', firstName: 'Kwame', lastName: 'Peasah', preferredName: 'Kwame Peasah', title: 'Supervisor', office: 'Room 106, CS Block' },
+    { email: 'emmanuel.ahene@ipms.edu', firstName: 'Emmanuel', lastName: 'Ahene', preferredName: 'Emmanuel Ahene', title: 'Senior Supervisor', office: 'Room 107, CS Block' },
+    { email: 'linda@ipms.edu', firstName: 'Linda', lastName: '', preferredName: 'Linda', title: 'Supervisor', office: 'Room 108, CS Block' },
+    { email: 'rosemary@ipms.edu', firstName: 'Rosemary', lastName: '', preferredName: 'Rosemary', title: 'Supervisor', office: 'Room 109, CS Block' },
   ];
 
   const supervisors = await Promise.all(
