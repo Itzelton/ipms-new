@@ -60,8 +60,15 @@ export class AuthController {
   }
 
   @Get('me')
-  me(@CurrentUser() user: AuthenticatedUser) {
-    return this.authService.getMe(user.id);
+  async me(@CurrentUser() user: AuthenticatedUser) {
+    // Try to load the full DB profile. If the user isn't in the DB yet
+    // (brand-new Supabase registration), return the stub built from JWT claims —
+    // the frontend will trigger /auth/register on the next step.
+    try {
+      return await this.authService.getMe(user.id, user.email);
+    } catch {
+      return user;
+    }
   }
 
   @Public()

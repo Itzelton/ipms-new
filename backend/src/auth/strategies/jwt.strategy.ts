@@ -49,17 +49,24 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const user = await this.usersService.findByEmail(email);
 
     if (!user) {
+      // New Supabase user not yet registered in the local DB.
+      // Extract whatever metadata the JWT carries so the /auth/me caller
+      // can display the right name/role while registration is in flight.
+      const meta = payload.user_metadata ?? {};
+      const allowedRoles = ['STUDENT', 'SUPERVISOR', 'ADMIN'];
+      const roleFromMeta = allowedRoles.includes(meta.role) ? meta.role : 'STUDENT';
+      const nameFromMeta = meta.name || email.split('@')[0];
       return {
         id: payload.sub,
         email: payload.email,
-        firstName: null,
+        firstName: nameFromMeta,
         lastName: null,
-        preferredName: null,
+        preferredName: nameFromMeta,
         phone: null,
-        isActive: false,
+        isActive: true,   // mark active so /auth/me can return gracefully
         createdAt: new Date(0),
         updatedAt: new Date(0),
-        roles: [],
+        roles: [roleFromMeta],
         mustChangePassword: false,
       };
     }

@@ -37,8 +37,13 @@ export class AuthService {
     return this.usersService.sanitizeUser(user);
   }
 
-  async getMe(userId: string): Promise<AuthenticatedUser> {
-    const user = await this.usersService.findOne(userId);
+  async getMe(userId: string, email?: string): Promise<AuthenticatedUser> {
+    let user = await this.usersService.findOne(userId);
+    if (!user && email) {
+      // userId might be a Supabase UUID that doesn't match the local DB primary key —
+      // fall back to email lookup which is always reliable.
+      user = await this.usersService.findByEmail(email);
+    }
     if (!user || !user.isActive) {
       throw new UnauthorizedException('User not found or inactive');
     }
