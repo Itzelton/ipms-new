@@ -92,7 +92,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full rounded-full bg-sky-600 py-3 text-sm font-semibold text-white shadow-lg shadow-sky-500/10 hover:bg-sky-700 disabled:opacity-50 transition"
           >
-            {loading ? 'Signing in…' : 'Sign in'}
+            {loading ? 'Signing in… (this may take a moment)' : 'Sign in'}
           </button>
 
           <p className="text-center text-sm text-slate-500">

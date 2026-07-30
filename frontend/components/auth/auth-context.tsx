@@ -37,53 +37,62 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
 async function fetchLocalProfile(accessToken: string): Promise<SessionUser | null> {
-  try {
-    const res = await fetch(`${API}/auth/me`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    if (!res.ok) return null;
-    const json = await res.json();
-    const u = json.data ?? json;
-    const roleList: string[] = Array.isArray(u.roles)
-      ? u.roles.map((r: any) => (typeof r === 'string' ? r : r.name))
-      : [];
-    const role: Role =
-      roleList.includes('ADMIN') ? 'ADMIN' :
-      roleList.includes('SUPERVISOR') ? 'SUPERVISOR' :
-      roleList.includes('STUDENT') ? 'STUDENT' : null;
-    return { id: u.id, email: u.email, name: u.preferredName || u.firstName || u.email, role, mustChangePassword: u.mustChangePassword ?? false };
-  } catch {
-    return null;
-  }
+  const res = await fetch(`${API}/auth/me`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) return null;
+  const json = await res.json();
+  const u = json.data ?? json;
+  const roleList: string[] = Array.isArray(u.roles)
+    ? u.roles.map((r: any) => (typeof r === 'string' ? r : r.name))
+    : [];
+  const role: Role =
+    roleList.includes('ADMIN') ? 'ADMIN' :
+    roleList.includes('SUPERVISOR') ? 'SUPERVISOR' :
+    roleList.includes('STUDENT') ? 'STUDENT' : null;
+  return { id: u.id, email: u.email, name: u.preferredName || u.firstName || u.email, role, mustChangePassword: u.mustChangePassword ?? false };
 }
 
-async function ensureLocalProfile(accessToken: string): Promise<SessionUser | null> {
-  const existing = await fetchLocalProfile(accessToken);
-  if (existing) return existing;
+async function ensureLocalProfile(accessToken: string): Promise<SessionUser> {
+  // Try to fetch existing profile — retry once after 4s to handle Railway cold starts
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const existing = await fetchLocalProfile(accessToken);
+      if (existing) return existing;
+    } catch {
+      // network error or server not ready — retry below
+    }
 
-  try {
-    const { data: { user: sbUser } } = await supabase.auth.getUser(accessToken);
-    if (!sbUser) return null;
+    if (attempt === 0) {
+      // Profile missing or backend warming up — try auto-creating the profile
+      try {
+        const { data: { user: sbUser } } = await supabase.auth.getUser(accessToken);
+        if (sbUser) {
+          const meta = sbUser.user_metadata ?? {};
+          const name = meta.name || sbUser.email?.split('@')[0] || 'User';
+          const role: Role = (['STUDENT', 'SUPERVISOR', 'ADMIN'].includes(meta.role) ? meta.role : 'STUDENT') as Role;
 
-    const meta = sbUser.user_metadata ?? {};
-    const name = meta.name || sbUser.email?.split('@')[0] || 'User';
-    const role: Role = (['STUDENT', 'SUPERVISOR', 'ADMIN'].includes(meta.role) ? meta.role : 'STUDENT') as Role;
+          const registerRes = await fetch(`${API}/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+            body: JSON.stringify({ name, role, email: sbUser.email }),
+          });
 
-    const res = await fetch(`${API}/auth/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({ name, role, email: sbUser.email }),
-    });
-
-    if (!res.ok && res.status !== 409) return null;
-    return fetchLocalProfile(accessToken);
-  } catch {
-    return null;
+          // 409 = already exists (race condition), anything else = wait and retry
+          if (!registerRes.ok && registerRes.status !== 409) {
+            await delay(4000);
+          }
+        }
+      } catch {
+        await delay(4000);
+      }
+    }
   }
+
+  throw new Error('Could not reach the server. It may be starting up — please wait a moment and try again.');
 }
 
 function unwrapResponse(json: any) {
@@ -152,8 +161,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       if (session?.access_token) {
-        const profile = await fetchLocalProfile(session.access_token);
-        setUser(profile);
+        try {
+          const profile = await fetchLocalProfile(session.access_token);
+          setUser(profile);
+        } catch {
+          setUser(null);
+        }
       } else if (typeof window !== 'undefined') {
         // Restore from local dev token
         const localToken = localStorage.getItem(LOCAL_TOKEN_KEY);
@@ -172,8 +185,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       if (session?.access_token) {
-        const profile = await fetchLocalProfile(session.access_token);
-        setUser(profile);
+        try {
+          const profile = await fetchLocalProfile(session.access_token);
+          setUser(profile);
+        } catch {
+          setUser(null);
+        }
       } else {
         setUser(null);
       }
@@ -187,7 +204,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       const profile = await ensureLocalProfile(data.session.access_token);
-      if (!profile) throw new Error('Unable to load your profile. Please contact an administrator.');
       setUser(profile);
     } catch (err: any) {
       if (shouldFallbackToLocal(err)) {
