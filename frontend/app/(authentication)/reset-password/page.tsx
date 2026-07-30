@@ -15,32 +15,28 @@ export default function ResetPasswordPage() {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    // Supabase fires PASSWORD_RECOVERY when the user lands from the reset email link.
-    // It reads the token from the URL hash automatically.
+    // Listen for PASSWORD_RECOVERY — fires after the code/token is exchanged
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         setReady(true);
       }
     });
 
-    // Also check if a session already exists (handles page reload after recovery link)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setReady(true);
-    });
-
-    // Show expired message if no recovery event fires within 5 seconds
-    const timeout = setTimeout(() => {
-      setExpired(prev => {
-        if (!ready) return true;
-        return prev;
+    // Supabase v2 PKCE flow: reset link arrives as ?code=xxx query param.
+    // The client doesn't auto-exchange it in Next.js App Router, so do it explicitly.
+    const code = new URLSearchParams(window.location.search).get('code');
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+        if (error) setExpired(true);
+        // On success, PASSWORD_RECOVERY event fires via onAuthStateChange above
       });
-    }, 5000);
+    } else {
+      // No code in URL — either already expired/invalid or user navigated here directly
+      setExpired(true);
+    }
 
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timeout);
-    };
-  }, [ready]);
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,11 +53,10 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
     try {
-      // Update password in Supabase
       const { error: sbError } = await supabase.auth.updateUser({ password });
       if (sbError) throw sbError;
 
-      // Sync new password hash to local backend so local login still works
+      // Sync new bcrypt hash to local backend so local login fallback still works
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.access_token) {
         await fetch(`${API}/auth/set-password`, {
@@ -92,7 +87,7 @@ export default function ResetPasswordPage() {
             </svg>
           </div>
           <h2 className="text-2xl font-semibold text-slate-900">Password updated</h2>
-          <p className="text-slate-500 text-sm">Your password has been changed successfully. You can now sign in with your new password.</p>
+          <p className="text-slate-500 text-sm">Your password has been changed. You can now sign in with your new password.</p>
           <Link
             href="/login"
             className="inline-flex items-center justify-center rounded-full bg-sky-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-sky-700 transition mt-2"
