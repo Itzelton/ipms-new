@@ -57,7 +57,8 @@ async function fetchLocalProfile(accessToken: string): Promise<SessionUser | nul
 }
 
 async function ensureLocalProfile(accessToken: string): Promise<SessionUser> {
-  // Try to fetch existing profile — retry once after 4s to handle Railway cold starts
+  let sbUserCache: any = null;
+
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const existing = await fetchLocalProfile(accessToken);
@@ -67,9 +68,9 @@ async function ensureLocalProfile(accessToken: string): Promise<SessionUser> {
     }
 
     if (attempt === 0) {
-      // Profile missing or backend warming up — try auto-creating the profile
       try {
         const { data: { user: sbUser } } = await supabase.auth.getUser(accessToken);
+        sbUserCache = sbUser;
         if (sbUser) {
           const meta = sbUser.user_metadata ?? {};
           const name = meta.name || sbUser.email?.split('@')[0] || 'User';
@@ -81,7 +82,7 @@ async function ensureLocalProfile(accessToken: string): Promise<SessionUser> {
             body: JSON.stringify({ name, role, email: sbUser.email }),
           });
 
-          // 409 = already exists (race condition), anything else = wait and retry
+          // 409 = already exists, anything else = wait and retry
           if (!registerRes.ok && registerRes.status !== 409) {
             await delay(4000);
           }
@@ -92,7 +93,17 @@ async function ensureLocalProfile(accessToken: string): Promise<SessionUser> {
     }
   }
 
-  throw new Error('Could not reach the server. It may be starting up — please wait a moment and try again.');
+  // Final fallback: build a minimal user from the Supabase JWT claims so login
+  // still works when Railway is temporarily unreachable.
+  const sbUser = sbUserCache ?? (await supabase.auth.getUser(accessToken).then(r => r.data.user).catch(() => null));
+  if (sbUser?.email) {
+    const meta = sbUser.user_metadata ?? {};
+    const name = meta.name || sbUser.email.split('@')[0] || 'User';
+    const role: Role = (['STUDENT', 'SUPERVISOR', 'ADMIN'].includes(meta.role) ? meta.role : 'STUDENT') as Role;
+    return { id: sbUser.id, email: sbUser.email, name, role, mustChangePassword: false };
+  }
+
+  throw new Error('Could not reach the server. Please try again in a moment.');
 }
 
 function unwrapResponse(json: any) {

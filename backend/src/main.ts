@@ -10,12 +10,22 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
-  const allowedOrigins = process.env.CORS_ORIGIN
+  const explicitOrigins = process.env.CORS_ORIGIN
     ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
-    : ['http://localhost:3002', 'http://localhost:3000', 'http://localhost:3001'];
+    : [];
 
   app.enableCors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+      // Always allow localhost dev origins
+      if (/^https?:\/\/localhost(:\d+)?$/.test(origin)) return callback(null, true);
+      // Always allow Vercel preview / production deployments
+      if (/\.vercel\.app$/.test(origin)) return callback(null, true);
+      // Allow any explicitly configured origins
+      if (explicitOrigins.includes(origin)) return callback(null, true);
+      callback(new Error(`CORS: origin not allowed — ${origin}`));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
