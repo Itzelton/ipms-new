@@ -55,17 +55,24 @@ export default function StudentSubmissionsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded bg-white p-6 shadow">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="card-static p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-2xl font-semibold">Evidence Submission</h2>
-            <p className="mt-1 text-gray-600">Upload documents, links, files, and meeting records with version tracking.</p>
+            <span className="inline-flex items-center rounded-full bg-sky-100 px-2.5 py-0.5 text-[11px] font-semibold text-sky-700">Submissions</span>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">Evidence Submission</h2>
+            <p className="mt-1 text-sm text-slate-500">Upload documents, links, files, and meeting records with version tracking.</p>
           </div>
-          <div className="rounded bg-slate-50 px-4 py-2 text-sm text-slate-700">Statuses: Draft, Submitted, Under Review, Approved, Revision Required</div>
+          <div className="flex flex-wrap gap-1.5">
+            {['Draft', 'Submitted', 'Under Review', 'Approved', 'Revision Required'].map((s) => (
+              <span key={s} className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500">{s}</span>
+            ))}
+          </div>
         </div>
       </div>
 
-      {error && <div className="rounded bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+      {error && (
+        <div className="rounded-2xl bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-700">{error}</div>
+      )}
 
       <div className="grid gap-6 xl:grid-cols-[1.4fr_0.9fr]">
         <div className="space-y-6">
@@ -74,9 +81,25 @@ export default function StudentSubmissionsPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="rounded bg-white p-6 shadow">
-            <h3 className="text-lg font-semibold mb-4">All Submissions</h3>
-            {loading ? <p className="text-gray-500">Loading submissions...</p> : <SubmissionList submissions={submissions} selectedId={selectedId} onSelect={setSelectedId} />}
+          <div className="card p-6">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400 to-blue-500 shadow-sm">
+                <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">History</p>
+                <p className="text-sm font-semibold text-slate-900">All Submissions</p>
+              </div>
+            </div>
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="h-6 w-6 animate-spin rounded-full border-4 border-sky-200 border-t-sky-500" />
+              </div>
+            ) : (
+              <SubmissionList submissions={submissions} selectedId={selectedId} onSelect={setSelectedId} />
+            )}
           </div>
           <SubmissionDiscussionPanel submissionId={selectedId} />
         </div>

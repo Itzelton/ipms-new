@@ -25,7 +25,7 @@ function fmtTime(d: string) {
   } catch { return ''; }
 }
 
-export default function Navbar() {
+export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) {
   const { user, logout } = useAuth();
   const { toggle } = useSidebar();
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -128,10 +128,33 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* Right — notification bell + user chip + logout */}
+        {/* Right — search + notification bell + user chip + logout */}
         <div className="flex items-center gap-1.5">
           {user ? (
             <>
+              {/* Search trigger */}
+              <button
+                onClick={onSearchOpen}
+                className="hidden sm:flex items-center gap-2 rounded-xl border border-slate-200/80 bg-white/60 px-3 py-1.5 text-[12px] text-slate-400 hover:bg-white/80 hover:text-slate-600 transition"
+                aria-label="Search"
+              >
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
+                </svg>
+                <span>Search</span>
+                <kbd className="rounded-md border border-slate-200 bg-slate-50 px-1.5 text-[10px] font-medium text-slate-400">⌘K</kbd>
+              </button>
+              {/* Mobile search icon-only */}
+              <button
+                onClick={onSearchOpen}
+                className="sm:hidden flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-white/60 transition"
+                aria-label="Search"
+              >
+                <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
+                </svg>
+              </button>
+
               <div className="relative" ref={wrapperRef}>
                 {/* Bell button */}
                 <button

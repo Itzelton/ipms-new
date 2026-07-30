@@ -1,6 +1,7 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { apiGet, apiPost, apiUpload } from '../../../services/api';
+import FilterBar from '../../../components/ui/FilterBar';
 
 type Supervisor = { id: string; email: string; firstName?: string; lastName?: string; preferredName?: string };
 type Project = {
@@ -9,6 +10,7 @@ type Project = {
   supervisor?: { id: string; firstName?: string; lastName?: string; email: string };
   proposalDocUrl?: string;
   createdAt: string;
+  progress?: number;
 };
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
@@ -21,6 +23,21 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
 
 const PROJECT_TYPES = ['CAPSTONE', 'RESEARCH', 'THESIS', 'INTERNSHIP', 'OTHER'];
 
+const STATUS_OPTIONS = [
+  { value: 'PROPOSED',  label: 'Pending' },
+  { value: 'ACTIVE',    label: 'Active' },
+  { value: 'ON_HOLD',   label: 'On Hold' },
+  { value: 'COMPLETED', label: 'Completed' },
+  { value: 'CANCELLED', label: 'Rejected' },
+];
+
+const SORT_OPTIONS = [
+  { value: 'created_desc', label: 'Newest first' },
+  { value: 'created_asc',  label: 'Oldest first' },
+  { value: 'title_asc',    label: 'Title A–Z' },
+  { value: 'title_desc',   label: 'Title Z–A' },
+];
+
 export default function StudentProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [supervisors, setSupervisors] = useState<Supervisor[]>([]);
@@ -28,6 +45,9 @@ export default function StudentProjectsPage() {
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [sort, setSort] = useState('created_desc');
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -52,6 +72,25 @@ export default function StudentProjectsPage() {
   }
 
   useEffect(() => { load(); }, []);
+
+  const filteredProjects = useMemo(() => {
+    let list = [...projects];
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter((p) =>
+        p.title?.toLowerCase().includes(q) ||
+        p.description?.toLowerCase().includes(q)
+      );
+    }
+    if (statusFilter) list = list.filter((p) => p.status === statusFilter);
+    list.sort((a, b) => {
+      if (sort === 'title_asc')    return (a.title ?? '').localeCompare(b.title ?? '');
+      if (sort === 'title_desc')   return (b.title ?? '').localeCompare(a.title ?? '');
+      if (sort === 'created_asc')  return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+    return list;
+  }, [projects, search, statusFilter, sort]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -198,9 +237,27 @@ export default function StudentProjectsPage() {
         </div>
       )}
 
+      {/* Filter bar — only show when there are projects */}
+      {!loading && projects.length > 0 && (
+        <FilterBar
+          search={search}
+          onSearch={setSearch}
+          statusOptions={STATUS_OPTIONS}
+          activeStatus={statusFilter}
+          onStatus={setStatusFilter}
+          sortOptions={SORT_OPTIONS}
+          activeSort={sort}
+          onSort={setSort}
+          resultCount={filteredProjects.length}
+          totalCount={projects.length}
+        />
+      )}
+
       {/* Project list */}
       {loading ? (
-        <div className="card p-8 text-center text-sm text-slate-400">Loading…</div>
+        <div className="card p-8 text-center">
+          <div className="mx-auto h-7 w-7 animate-spin rounded-full border-4 border-sky-200 border-t-sky-500" />
+        </div>
       ) : projects.length === 0 ? (
         <div className="card p-10 text-center">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-sky-50">
@@ -209,14 +266,24 @@ export default function StudentProjectsPage() {
             </svg>
           </div>
           <p className="text-sm font-medium text-slate-700">No proposals yet</p>
-          <p className="mt-1 text-xs text-slate-400">Click "New Proposal" to pick a supervisor and get started.</p>
+          <p className="mt-1 text-xs text-slate-400">Submit your first proposal to get started.</p>
           <button onClick={() => setShowForm(true)} className="mt-4 rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 transition">
             + New Proposal
           </button>
         </div>
+      ) : filteredProjects.length === 0 ? (
+        <div className="card p-8 text-center">
+          <p className="text-sm font-medium text-slate-700">No projects match your filters.</p>
+          <button
+            onClick={() => { setSearch(''); setStatusFilter(''); }}
+            className="mt-3 text-xs text-sky-600 hover:text-sky-700 font-medium"
+          >
+            Clear filters
+          </button>
+        </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {projects.map((p) => {
+          {filteredProjects.map((p) => {
             const st = STATUS_LABEL[p.status] ?? { label: p.status, color: 'bg-slate-100 text-slate-600' };
             const supName = p.supervisor
               ? [p.supervisor.firstName, p.supervisor.lastName].filter(Boolean).join(' ') || p.supervisor.email
@@ -228,6 +295,20 @@ export default function StudentProjectsPage() {
                   <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${st.color}`}>{st.label}</span>
                 </div>
                 {p.description && <p className="text-xs text-slate-500 line-clamp-2">{p.description}</p>}
+                {typeof p.progress === 'number' && p.status === 'ACTIVE' && (
+                  <div>
+                    <div className="mb-1 flex items-center justify-between text-[11px]">
+                      <span className="text-slate-400">Progress</span>
+                      <span className="font-semibold tabular-nums text-slate-600">{p.progress}%</span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-sky-400 to-blue-500 transition-all duration-500"
+                        style={{ width: `${Math.min(100, Math.max(0, p.progress))}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-500">
                   <span><span className="font-medium text-slate-600">Type:</span> {p.type.charAt(0) + p.type.slice(1).toLowerCase()}</span>
                   <span><span className="font-medium text-slate-600">Supervisor:</span> {supName}</span>

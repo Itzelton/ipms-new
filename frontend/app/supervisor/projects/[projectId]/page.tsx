@@ -14,6 +14,7 @@ import ActivityHeatmap from '../../../../components/dashboard/ActivityHeatmap';
 import { apiGet } from '../../../../services/api';
 import ChatAssistant from '../../../../components/ai/ChatAssistant';
 import { useAuth } from '../../../../components/auth/auth-context';
+import Breadcrumb from '../../../../components/ui/Breadcrumb';
 
 export default function SupervisorProjectDetailsPage({ params }: { params: { projectId: string } }) {
   const { user } = useAuth();
@@ -42,7 +43,12 @@ export default function SupervisorProjectDetailsPage({ params }: { params: { pro
   return (
     <div className="space-y-6">
       <header className="card-static p-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <Breadcrumb crumbs={[
+          { label: 'Dashboard', href: '/supervisor' },
+          { label: 'Projects', href: '/supervisor/projects' },
+          { label: project.title },
+        ]} />
+        <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-xl font-bold tracking-tight text-slate-900">{project.title}</h1>
             {project.description && (
