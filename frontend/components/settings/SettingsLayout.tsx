@@ -88,8 +88,9 @@ export default function SettingsLayout() {
 
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
         {/* Section nav — desktop sidebar / mobile scroll strip */}
-        <nav className="flex gap-1 overflow-x-auto pb-1 lg:w-[200px] lg:flex-shrink-0 lg:flex-col lg:pb-0">
-          <div className="card p-2 flex gap-1 lg:flex-col">
+        <nav className="lg:w-[200px] lg:flex-shrink-0">
+          <div className="card p-2 flex gap-1 overflow-x-auto lg:flex-col"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' } as React.CSSProperties}>
             {SECTIONS.map((s) => {
               const active_ = active === s.id;
               return (
@@ -97,7 +98,7 @@ export default function SettingsLayout() {
                   key={s.id}
                   onClick={() => setActive(s.id)}
                   className={[
-                    'flex min-w-max items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium',
+                    'flex flex-shrink-0 items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium',
                     'transition-all duration-150 text-left whitespace-nowrap lg:w-full',
                     active_
                       ? 'text-sky-700'

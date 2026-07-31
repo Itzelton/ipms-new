@@ -111,37 +111,41 @@ export default function SubmissionForm({ onSubmit, isSubmitting }: { onSubmit: (
     setStatus('DRAFT');
   }
 
+  const fieldLabel = 'mb-1.5 block text-[12px] font-semibold text-slate-600';
+
   return (
-    <form onSubmit={handleSubmit} className="rounded bg-white p-6 shadow">
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end">
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700">Project</label>
-          <select value={projectId} onChange={(e) => setProjectId(e.target.value)} className="mt-1 w-full rounded border px-3 py-2" disabled={projects.length === 0}>
+    <form onSubmit={handleSubmit} className="card p-5 space-y-4">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">New Submission</p>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label className={fieldLabel}>Project</label>
+          <select value={projectId} onChange={(e) => setProjectId(e.target.value)} className="input" disabled={projects.length === 0}>
             {projects.length === 0
               ? <option value="">No active projects — get your proposal accepted first</option>
               : projects.map((p) => <option value={p.id} key={p.id}>{p.title}</option>)
             }
           </select>
-          {errors.projectId && <p className="mt-1 text-sm text-red-600">{errors.projectId}</p>}
+          {errors.projectId && <p className="mt-1 text-xs text-red-600">{errors.projectId}</p>}
         </div>
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700">Milestone (optional)</label>
-          <select value={milestoneId} onChange={(e) => setMilestoneId(e.target.value)} className="mt-1 w-full rounded border px-3 py-2" disabled={milestones.length === 0}>
+        <div>
+          <label className={fieldLabel}>Milestone (optional)</label>
+          <select value={milestoneId} onChange={(e) => setMilestoneId(e.target.value)} className="input" disabled={milestones.length === 0}>
             <option value="">— none —</option>
             {milestones.map((m) => <option value={m.id} key={m.id}>{m.title}</option>)}
           </select>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Evidence Title</label>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 w-full rounded border px-3 py-2" />
-          {errors.title && <p className="mt-1 text-sm text-red-600">{errors.title}</p>}
+          <label className={fieldLabel}>Evidence Title</label>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} className="input" placeholder="e.g. Sprint 1 report" />
+          {errors.title && <p className="mt-1 text-xs text-red-600">{errors.title}</p>}
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700">Evidence Type</label>
-          <select value={evidenceType} onChange={(e) => setEvidenceType(e.target.value as EvidenceType)} className="mt-1 w-full rounded border px-3 py-2">
+          <label className={fieldLabel}>Evidence Type</label>
+          <select value={evidenceType} onChange={(e) => setEvidenceType(e.target.value as EvidenceType)} className="input">
             {evidenceOptions.map((option) => (
               <option value={option.value} key={option.value}>{option.label}</option>
             ))}
@@ -149,48 +153,54 @@ export default function SubmissionForm({ onSubmit, isSubmitting }: { onSubmit: (
         </div>
       </div>
 
-      <div className="mt-4">
-        <label className="block text-sm font-medium text-gray-700">Description / Notes</label>
-        <textarea value={details} onChange={(e) => setDetails(e.target.value)} rows={4} className="mt-1 w-full rounded border px-3 py-2" />
-        {errors.details && <p className="mt-1 text-sm text-red-600">{errors.details}</p>}
+      <div>
+        <label className={fieldLabel}>Description / Notes</label>
+        <textarea value={details} onChange={(e) => setDetails(e.target.value)} rows={3} className="input resize-none" placeholder="Describe what this evidence demonstrates…" />
+        {errors.details && <p className="mt-1 text-xs text-red-600">{errors.details}</p>}
       </div>
 
       {(evidenceType === 'GITHUB' || evidenceType === 'WEBSITE' || evidenceType === 'DEMO_VIDEO') && (
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700">URL</label>
-          <input value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} className="mt-1 w-full rounded border px-3 py-2" placeholder="https://example.com" />
-          {errors.sourceUrl && <p className="mt-1 text-sm text-red-600">{errors.sourceUrl}</p>}
+        <div>
+          <label className={fieldLabel}>URL</label>
+          <input value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} className="input" placeholder="https://example.com" />
+          {errors.sourceUrl && <p className="mt-1 text-xs text-red-600">{errors.sourceUrl}</p>}
         </div>
       )}
 
       {(evidenceType === 'DOCUMENT' || evidenceType === 'APK' || evidenceType === 'SCREENSHOT') && (
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700">{fileLabel}</label>
-          <input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} className="mt-1 w-full" />
-          {file && <p className="mt-1 text-xs text-emerald-600">File ready: {file.name}</p>}
+        <div>
+          <label className={fieldLabel}>{fileLabel}</label>
+          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/60 px-4 py-3 text-[13px] text-slate-500 transition hover:border-sky-300 hover:bg-sky-50/40 hover:text-sky-600">
+            <svg className="h-5 w-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            <span className="truncate">{file ? file.name : `Choose ${fileLabel}`}</span>
+            <input type="file" className="sr-only" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+          </label>
+          {file && <p className="mt-1 text-xs text-emerald-600">Ready: {file.name}</p>}
         </div>
       )}
 
       {evidenceType === 'MEETING_RECORD' && (
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700">Meeting Notes</label>
-          <textarea value={meetingNotes} onChange={(e) => setMeetingNotes(e.target.value)} rows={3} className="mt-1 w-full rounded border px-3 py-2" />
+        <div>
+          <label className={fieldLabel}>Meeting Notes</label>
+          <textarea value={meetingNotes} onChange={(e) => setMeetingNotes(e.target.value)} rows={3} className="input resize-none" />
         </div>
       )}
 
-      <div className="mt-4">
-        <label className="block text-sm font-medium text-gray-700">Submission Status</label>
-        <select value={status} onChange={(e) => setStatus(e.target.value as SubmissionStatus)} className="mt-1 w-full rounded border px-3 py-2">
+      <div>
+        <label className={fieldLabel}>Submission Status</label>
+        <select value={status} onChange={(e) => setStatus(e.target.value as SubmissionStatus)} className="input">
           {statusOptions.map((option) => (
             <option value={option.value} key={option.value}>{option.label}</option>
           ))}
         </select>
       </div>
 
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-sm text-gray-500">Upload evidence and create a versioned submission entry.</div>
-        <button type="submit" disabled={isSubmitting || !projectId} className="rounded bg-blue-600 px-5 py-2 text-white hover:bg-blue-700 disabled:opacity-50">
-          {isSubmitting ? 'Submitting...' : 'Submit Evidence'}
+      <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+        <p className="text-[12px] text-slate-400">Upload evidence and create a versioned entry.</p>
+        <button type="submit" disabled={isSubmitting || !projectId} className="btn-primary px-5 py-2.5 disabled:opacity-50">
+          {isSubmitting ? 'Submitting…' : 'Submit Evidence'}
         </button>
       </div>
     </form>

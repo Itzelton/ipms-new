@@ -327,9 +327,13 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
               {/* Logout */}
               <button
                 onClick={() => logout()}
-                className="rounded-xl px-3 py-2 text-[13px] font-semibold text-slate-500 hover:text-slate-900 hover:bg-white/60 transition"
+                className="flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-[13px] font-semibold text-slate-500 hover:text-slate-900 hover:bg-white/60 transition"
+                aria-label="Logout"
               >
-                Logout
+                <svg className="h-4 w-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span className="hidden sm:inline">Logout</span>
               </button>
             </>
           ) : (

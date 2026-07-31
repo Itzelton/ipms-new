@@ -118,7 +118,8 @@ export default function StudentDashboard() {
             <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">Dashboard</h2>
             <p className="mt-1 text-sm text-slate-500">Track your project, submissions and advisor feedback.</p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2 overflow-x-auto pb-0.5 flex-nowrap"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' } as React.CSSProperties}>
             {[
               { href: '/student', label: 'Overview' },
               { href: '/student/projects', label: 'Projects' },
@@ -128,7 +129,7 @@ export default function StudentDashboard() {
               <Link
                 key={href}
                 href={href}
-                className="rounded-full px-3.5 py-1.5 text-[12px] font-medium text-slate-600 no-underline transition hover:text-slate-900"
+                className="flex-shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-medium text-slate-600 no-underline transition hover:text-slate-900"
                 style={{ background: 'rgba(248,250,252,0.80)', border: '1px solid rgba(226,232,240,0.80)' }}
               >
                 {label}
