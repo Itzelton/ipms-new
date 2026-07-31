@@ -42,10 +42,13 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="card p-8 w-full max-w-md">
-        <div className="mb-6 space-y-3">
-          <div className="inline-flex items-center gap-2 rounded-full bg-sky-100 px-3 py-1.5 text-sm font-semibold text-sky-800">
-            Welcome to IPMS
-          </div>
+        <div className="mb-6 space-y-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo-full.png"
+            alt="IPMS"
+            className="mx-auto block w-full h-auto max-h-56 object-contain"
+          />
           <div>
             <h1 className="text-3xl font-semibold text-slate-900">Sign in</h1>
             <p className="mt-1.5 text-slate-500 text-sm">Access your dashboard, view projects, and stay on top of submissions.</p>

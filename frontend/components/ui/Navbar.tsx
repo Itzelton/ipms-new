@@ -123,8 +123,15 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
               </svg>
             </button>
           )}
-          <Link href="/" className="lg:hidden text-[15px] font-bold tracking-tight text-slate-900 no-underline">
-            IPMS
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <Link href="/" className="lg:hidden flex items-center gap-2 no-underline">
+            <img
+              src="/logo-icon.png"
+              alt="IPMS"
+              className="h-8 w-8 object-contain"
+              style={{ mixBlendMode: 'multiply' }}
+            />
+            <span className="text-[15px] font-bold tracking-tight text-slate-900">IPMS</span>
           </Link>
         </div>
 

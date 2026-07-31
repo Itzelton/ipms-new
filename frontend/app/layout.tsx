@@ -4,6 +4,10 @@ import Providers from '../components/providers';
 export const metadata = {
   title: 'IPMS',
   description: 'Intelligent Project Monitoring System',
+  icons: {
+    icon: '/logo-icon.png',
+    apple: '/logo-icon.png',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

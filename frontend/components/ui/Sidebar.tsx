@@ -141,26 +141,25 @@ export default function Sidebar() {
         ].join(' ')}
       >
         {/* ── Brand ── */}
-        <div className="flex items-center gap-3 px-5 pt-6 pb-5">
-          <div
-            className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} shadow-md ring-2 ring-white/60`}
-          >
-            <span className="text-[13px] font-black text-white tracking-tight leading-none">IP</span>
+        <div className="px-3 pt-5 pb-2">
+          <div className="relative overflow-hidden rounded-2xl bg-white">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo-inapp.png"
+              alt="IPMS"
+              className="block w-full h-auto"
+            />
+            {/* Close — mobile only */}
+            <button
+              onClick={close}
+              className="lg:hidden absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition"
+              aria-label="Close menu"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[14px] font-bold text-slate-900 tracking-tight leading-tight">IPMS</div>
-            <div className="text-[11px] text-slate-400 font-medium">Project Monitor</div>
-          </div>
-          {/* Close — mobile only */}
-          <button
-            onClick={close}
-            className="lg:hidden flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-slate-400 hover:bg-white/60 hover:text-slate-600"
-            aria-label="Close menu"
-          >
-            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          </button>
         </div>
 
         {/* ── User profile pill ── */}
