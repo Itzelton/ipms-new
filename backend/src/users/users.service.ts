@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { UserRepository } from './repositories/user.repository';
 import { sanitizeUser } from '../common/utils/sanitize-user.util';
@@ -51,6 +52,13 @@ export class UsersService {
 
   async update(id: string, updateUserDto: UpdateUserDto) {
     const user = await this.userRepository.update(id, updateUserDto);
+    return this.sanitizeUser(user);
+  }
+
+  async updateProfile(id: string, dto: UpdateProfileDto) {
+    const user = await this.userRepository.update(id, {
+      ...(dto.name !== undefined ? { preferredName: dto.name } : {}),
+    } as any);
     return this.sanitizeUser(user);
   }
 

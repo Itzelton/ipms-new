@@ -17,7 +17,7 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 export default function ProfileSection() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const nameStr = user?.name || user?.email || '';
   const initials = nameStr.slice(0, 2).toUpperCase();
 
@@ -38,6 +38,7 @@ export default function ProfileSection() {
     setError('');
     try {
       await apiPatch('/users/me', { name, bio, avatarId: customUrl ? 'custom' : avatarId });
+      await refreshUser();
       setSaved(true);
       setShowPicker(false);
       setTimeout(() => setSaved(false), 3000);

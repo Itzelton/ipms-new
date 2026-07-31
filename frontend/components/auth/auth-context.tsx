@@ -33,6 +33,7 @@ type AuthContextType = {
   register: (email: string, password: string, name: string, role: Role) => Promise<void>;
   logout: () => Promise<void>;
   getAccessToken: () => Promise<string | null>;
+  refreshUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -285,8 +286,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return null;
   };
 
+  const refreshUser = async () => {
+    const token = await getAccessToken();
+    if (!token) return;
+    const profile = await fetchLocalProfile(token);
+    if (profile) setUser(profile);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, hydrated, login, register, logout, getAccessToken }}>
+    <AuthContext.Provider value={{ user, session, hydrated, login, register, logout, getAccessToken, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
