@@ -71,6 +71,12 @@ enum ChannelType {
   ANNOUNCEMENT
 }
 
+enum MeetingStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
 enum RiskSeverity {
   LOW
   MEDIUM
@@ -231,6 +237,8 @@ model User {
   messageReactions    MessageReaction[] @relation("MessageReactions")
   messageReads        MessageRead[]    @relation("MessageReads")
   pinnedMessages      PinnedMessage[]  @relation("PinnedMessages")
+  studentMeetings     Meeting[]        @relation("StudentMeetings")
+  supervisorMeetings  Meeting[]        @relation("SupervisorMeetings")
   supervisedReports Report[]        @relation("SupervisedReports")
   createdInvites  ProjectInvite[] @relation("CreatedInvites")
   notificationReceipts Notification[] @relation("RecipientNotifications")
@@ -580,6 +588,25 @@ model Report {
   status        String      @default("PENDING")
   createdAt     DateTime    @default(now())
   completedAt   DateTime?
+}
+
+model Meeting {
+  id           String        @id @default(uuid())
+  student      User          @relation("StudentMeetings", fields: [studentId], references: [id])
+  studentId    String
+  supervisor   User          @relation("SupervisorMeetings", fields: [supervisorId], references: [id])
+  supervisorId String
+  title        String
+  scheduledAt  DateTime
+  location     String?
+  agenda       String?
+  status       MeetingStatus @default(SCHEDULED)
+  outcome      String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([studentId])
+  @@index([supervisorId])
 }
 
 model AuditLog {

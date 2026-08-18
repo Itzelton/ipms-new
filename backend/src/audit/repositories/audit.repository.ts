@@ -18,6 +18,12 @@ export class AuditRepository {
   }
 
   async findRecent(limit = 50) {
-    return this.prisma.auditLog.findMany({ orderBy: { createdAt: 'desc' }, take: limit });
+    return this.prisma.auditLog.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      include: {
+        actor: { select: { id: true, email: true, firstName: true, lastName: true, preferredName: true } },
+      },
+    });
   }
 }

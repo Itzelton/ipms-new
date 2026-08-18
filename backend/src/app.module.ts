@@ -16,6 +16,7 @@ import { ReportsModule } from './reports/reports.module';
 import { AuditModule } from './audit/audit.module';
 import { StorageModule } from './storage/storage.module';
 import { ChannelsModule } from './channels/channels.module';
+import { MeetingsModule } from './meetings/meetings.module';
 import { RolesGuard } from './common/guards/roles.guard';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
@@ -39,6 +40,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     AuditModule,
     StorageModule,
     ChannelsModule,
+    MeetingsModule,
   ],
   controllers: [RootController],
   providers: [

@@ -8,10 +8,14 @@ const stats = [
 ];
 
 const quickLinks = [
-  { href: '/admin/users',    label: 'User management',    icon: '👥' },
-  { href: '/admin/projects', label: 'Project oversight',  icon: '📁' },
-  { href: '/admin/reports',  label: 'Reports & analytics',icon: '📊' },
-  { href: '/admin/settings', label: 'Platform settings',  icon: '⚙️' },
+  { href: '/admin/students',    label: 'Students',           icon: '🎓' },
+  { href: '/admin/supervisors', label: 'Supervisors',        icon: '👨‍🏫' },
+  { href: '/admin/assignments', label: 'Assignments',        icon: '🔗' },
+  { href: '/admin/projects',    label: 'Project oversight',  icon: '📁' },
+  { href: '/admin/reports',     label: 'Reports & analytics',icon: '📊' },
+  { href: '/admin/bulk-upload', label: 'Bulk upload',        icon: '📤' },
+  { href: '/admin/approvals',   label: 'Approvals',          icon: '✅' },
+  { href: '/admin/audit',       label: 'Audit trail',        icon: '🔍' },
 ];
 
 const recentActivity = [
@@ -63,7 +67,7 @@ export default function AdminIndex() {
         {/* Quick actions */}
         <section className="card p-6">
           <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">Quick Actions</p>
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-2">
             {quickLinks.map((link) => (
               <Link
                 key={link.href}
