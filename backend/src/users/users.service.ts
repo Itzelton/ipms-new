@@ -46,6 +46,10 @@ export class UsersService {
     return this.userRepository.findStudentsWithAdvisors();
   }
 
+  async findStudentsBySupervisor(supervisorId: string) {
+    return this.userRepository.findStudentsBySupervisor(supervisorId);
+  }
+
   async assignSupervisor(studentId: string, supervisorId: string | null) {
     return this.userRepository.assignSupervisor(studentId, supervisorId);
   }

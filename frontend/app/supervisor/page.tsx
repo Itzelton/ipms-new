@@ -34,16 +34,18 @@ export default function SupervisorIndex() {
     let mounted = true;
     async function load() {
       try {
-        const [projects, submissions, notifications, heatmapRes] = await Promise.allSettled([
+        const [projects, submissions, notifications, heatmapRes, myStudentsRes] = await Promise.allSettled([
           apiGet('/projects'),
           apiGet('/submissions'),
           apiGet('/notifications'),
           apiGet(`/analytics/heatmap?year=${YEAR}`),
+          apiGet('/users/my-students'),
         ]);
 
         const projectList = projects.status === 'fulfilled' && Array.isArray(projects.value) ? projects.value : [];
         const submissionList = submissions.status === 'fulfilled' && Array.isArray(submissions.value) ? submissions.value : [];
         const notificationList = notifications.status === 'fulfilled' && Array.isArray(notifications.value) ? notifications.value : [];
+        const myStudentsList = myStudentsRes.status === 'fulfilled' && Array.isArray(myStudentsRes.value) ? myStudentsRes.value : [];
 
         const underReview = projectList.filter((p: any) => ['REVIEW_PENDING', 'IN_REVIEW', 'ACTIVE'].includes(p.status));
         const pendingReviews = submissionList
@@ -51,12 +53,23 @@ export default function SupervisorIndex() {
           .slice(0, 5)
           .map((s: any) => ({ id: s.id, title: s.metadata?.title || `Submission ${s.id.slice(0, 6)}`, student: s.author?.firstName || s.author?.email || '—', dueDate: s.updatedAt }));
 
-        const students = projectList
-          .filter((p: any) => p.student)
+        // Build students list from assigned students endpoint (includes those without projects)
+        const studentsFromAssignment = myStudentsList.map((s: any) => {
+          const name = [s.firstName, s.lastName].filter(Boolean).join(' ') || s.preferredName || s.email || '—';
+          const proj = s.projects?.[0];
+          return { id: s.id, name, project: proj?.title || '(No project yet)', progress: proj ? 0 : null, status: proj?.status || null };
+        });
+
+        // Merge with project list (project list may have progress info)
+        const studentIdsFromAssignment = new Set(studentsFromAssignment.map((s: any) => s.id));
+        const studentsFromProjects = projectList
+          .filter((p: any) => p.student && !studentIdsFromAssignment.has(p.student?.id))
           .map((p: any) => {
             const name = typeof p.student === 'string' ? p.student : [p.student?.firstName, p.student?.lastName].filter(Boolean).join(' ') || p.student?.email || '—';
             return { id: p.student?.id || p.id, name, project: p.title, progress: p.progress ?? 0, status: p.status };
           });
+
+        const students = [...studentsFromAssignment, ...studentsFromProjects];
 
         if (mounted) {
           setDashboard({

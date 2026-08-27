@@ -204,6 +204,28 @@ export class UserRepository {
     });
   }
 
+  async findStudentsBySupervisor(supervisorId: string) {
+    if (this.useInMemoryData) {
+      return [];
+    }
+    return this.prisma.user.findMany({
+      where: {
+        roles: { some: { role: { name: RoleName.STUDENT } } },
+        studentProfile: { advisorId: supervisorId },
+      },
+      include: {
+        ...userWithRolesInclude,
+        studentProfile: true,
+        projects: {
+          select: { id: true, title: true, status: true },
+          take: 1,
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async assignSupervisor(studentId: string, supervisorId: string | null) {
     if (this.useInMemoryData) {
       return { studentId, supervisorId };

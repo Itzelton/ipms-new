@@ -30,6 +30,12 @@ export class UsersController {
     return this.usersService.findStudentsWithAdvisors();
   }
 
+  @Roles('SUPERVISOR')
+  @Get('my-students')
+  findMyStudents(@CurrentUser() user: AuthenticatedUser) {
+    return this.usersService.findStudentsBySupervisor(user.id);
+  }
+
   @Roles('ADMIN')
   @Patch(':id/assign-supervisor')
   assignSupervisor(@Param('id') id: string, @Body() dto: AssignSupervisorDto) {
