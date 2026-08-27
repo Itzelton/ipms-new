@@ -19,6 +19,7 @@ export default function StudentMessagesPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -72,13 +73,17 @@ export default function StudentMessagesPage() {
   async function sendMessage() {
     if (!input.trim() || sending || !supervisorId) return;
     setSending(true);
+    setSendError(null);
     try {
       const ch = await ensureChannel();
       await apiPost(`/channels/${ch.id}/messages`, { content: input.trim() });
       setInput('');
-      loadMessages();
-    } catch {
-      // ignore
+      // Reload using the channel id we have (avoids stale closure in loadMessages)
+      apiGet(`/channels/${ch.id}/messages`)
+        .then((data: any) => setMessages(Array.isArray(data) ? data : []))
+        .catch(() => {});
+    } catch (e: any) {
+      setSendError(e?.message || 'Failed to send message. Please try again.');
     } finally {
       setSending(false);
     }
@@ -153,10 +158,14 @@ export default function StudentMessagesPage() {
       </div>
 
       {/* Input */}
-      <div className="card p-3 flex items-center gap-2">
+      <div className="card">
+        {sendError && (
+          <p className="px-4 pt-2 text-[11px] text-red-500">{sendError}</p>
+        )}
+        <div className="p-3 flex items-center gap-2">
         <input
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => { setInput(e.target.value); if (sendError) setSendError(null); }}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
           placeholder={`Message ${supervisorName}…`}
           disabled={sending || !supervisorId}
@@ -172,6 +181,7 @@ export default function StudentMessagesPage() {
             <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
           </svg>
         </button>
+        </div>
       </div>
     </div>
   );

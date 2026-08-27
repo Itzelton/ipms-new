@@ -41,10 +41,12 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   }
 
   emitNew(payload: NotificationPayload) {
+    if (!this.server) return;
     this.server.to(`user:${payload.recipientId}`).emit('notification:new', payload);
   }
 
   emitUpdated(payload: NotificationPayload) {
+    if (!this.server) return;
     this.server.to(`user:${payload.recipientId}`).emit('notification:updated', payload);
   }
 }

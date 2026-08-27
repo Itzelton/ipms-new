@@ -23,6 +23,7 @@ export default function SupervisorMessagesPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [msgLoading, setMsgLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -72,13 +73,20 @@ export default function SupervisorMessagesPage() {
   async function sendMessage() {
     if (!input.trim() || sending || !selected) return;
     setSending(true);
+    setSendError(null);
     try {
       const ch = await ensureChannel();
       await apiPost(`/channels/${ch.id}/messages`, { content: input.trim() });
       setInput('');
-      loadMessages();
-    } catch { /* ignore */ }
-    setSending(false);
+      // Reload using the channel id we have (avoids stale closure in loadMessages)
+      apiGet(`/channels/${ch.id}/messages`)
+        .then((data: any) => setMessages(Array.isArray(data) ? data : []))
+        .catch(() => {});
+    } catch (e: any) {
+      setSendError(e?.message || 'Failed to send message. Please try again.');
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -177,22 +185,27 @@ export default function SupervisorMessagesPage() {
               </div>
 
               {/* Input */}
-              <div className="border-t border-slate-100 p-3 flex items-center gap-2">
-                <input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-                  placeholder={`Message ${displayName(selected)}…`}
-                  disabled={sending}
-                  className="flex-1 bg-transparent text-[13px] text-slate-800 placeholder:text-slate-400 outline-none px-2"
-                />
-                <button onClick={sendMessage} disabled={sending || !input.trim()}
-                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white disabled:opacity-50 transition-opacity"
-                  aria-label="Send">
-                  <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-                  </svg>
-                </button>
+              <div className="border-t border-slate-100">
+                {sendError && (
+                  <p className="px-4 pt-2 text-[11px] text-red-500">{sendError}</p>
+                )}
+                <div className="p-3 flex items-center gap-2">
+                  <input
+                    value={input}
+                    onChange={(e) => { setInput(e.target.value); if (sendError) setSendError(null); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+                    placeholder={`Message ${displayName(selected)}…`}
+                    disabled={sending}
+                    className="flex-1 bg-transparent text-[13px] text-slate-800 placeholder:text-slate-400 outline-none px-2"
+                  />
+                  <button onClick={sendMessage} disabled={sending || !input.trim()}
+                    className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white disabled:opacity-50 transition-opacity"
+                    aria-label="Send">
+                    <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </>
           )}

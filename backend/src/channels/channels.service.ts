@@ -47,20 +47,22 @@ export class ChannelsService {
   async sendMessage(channelId: string, userId: string, dto: SendMessageDto) {
     const message = await this.repo.sendMessage(channelId, userId, dto);
 
-    // notify other members (exclude sender)
-    const channel = await this.repo.findChannel(channelId);
-    if (channel?.members) {
-      for (const member of channel.members) {
-        if (member.userId !== userId) {
-          await this.notificationsService.create({
-            recipientId: member.userId,
-            title: 'New message',
-            message: `New message in #${channel.name}`,
-            link: `/discussions`,
-          });
+    // Notify other members — wrapped so a notification failure never breaks the send
+    try {
+      const channel = await this.repo.findChannel(channelId);
+      if (channel?.members) {
+        for (const member of channel.members) {
+          if (member.userId !== userId) {
+            await this.notificationsService.create({
+              recipientId: member.userId,
+              title: 'New message',
+              message: `New message in #${channel.name}`,
+              link: `/discussions`,
+            });
+          }
         }
       }
-    }
+    } catch { /* notification failure must not fail the message send */ }
 
     return message;
   }
