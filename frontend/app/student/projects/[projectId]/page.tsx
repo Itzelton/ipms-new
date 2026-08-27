@@ -12,7 +12,6 @@ import ProjectTabs from '../../../../components/project/ProjectTabs';
 import ProjectCollaboratorsPanel from '../../../../components/project/ProjectCollaboratorsPanel';
 import ActivityHeatmap from '../../../../components/dashboard/ActivityHeatmap';
 import { apiGet } from '../../../../services/api';
-import ChatAssistant from '../../../../components/ai/ChatAssistant';
 import { useAuth } from '../../../../components/auth/auth-context';
 import Breadcrumb from '../../../../components/ui/Breadcrumb';
 
@@ -111,18 +110,6 @@ export default function ProjectDetailsPage({ params }: { params: { projectId: st
         <aside className="space-y-6">
           <ProjectHealthRiskPanel healthScore={project.healthScore} riskStatus={project.riskStatus} analytics={project.analytics} />
           <ProjectRecommendationsPanel recommendations={project.recommendedActions} />
-          <ChatAssistant
-            role="STUDENT"
-            projectId={project.id}
-            userId={user?.id}
-            projectContext={{
-              title: project.title,
-              status: project.status,
-              milestones: project.milestones,
-              submissions: project.submissions,
-              healthScore: project.healthScore,
-            }}
-          />
           <ActivityTimeline items={project.activity} />
         </aside>
       </div>

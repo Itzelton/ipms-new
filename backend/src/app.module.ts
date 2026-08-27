@@ -11,7 +11,6 @@ import { SubmissionsModule } from './submissions/submissions.module';
 import { DiscussionsModule } from './discussions/discussions.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AnalyticsModule } from './analytics/analytics.module';
-import { AiModule } from './ai/ai.module';
 import { ReportsModule } from './reports/reports.module';
 import { AuditModule } from './audit/audit.module';
 import { StorageModule } from './storage/storage.module';
@@ -35,7 +34,6 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     DiscussionsModule,
     NotificationsModule,
     AnalyticsModule,
-    AiModule,
     ReportsModule,
     AuditModule,
     StorageModule,

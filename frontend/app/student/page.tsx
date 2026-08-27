@@ -8,8 +8,6 @@ import MilestonesList from '../../components/dashboard/MilestonesList';
 import RecentSubmissions from '../../components/dashboard/RecentSubmissions';
 import ActivityTimeline from '../../components/dashboard/ActivityTimeline';
 import HealthScoreCard from '../../components/dashboard/HealthScoreCard';
-import AIInsightsCard from '../../components/dashboard/AIInsightsCard';
-import ChatAssistant from '../../components/ai/ChatAssistant';
 import ActivityHeatmap from '../../components/dashboard/ActivityHeatmap';
 
 const YEAR = new Date().getFullYear();
@@ -21,7 +19,6 @@ const EMPTY: any = {
   notifications: [],
   activity: [],
   healthScore: null,
-  aiInsights: [],
   heatmap: { year: YEAR, days: [] },
   supervisor: null,
 };
@@ -94,7 +91,6 @@ export default function StudentDashboard() {
             })),
             activity: [],
             healthScore,
-            aiInsights: [],
             heatmap: heatmapRes.status === 'fulfilled' ? heatmapRes.value : { year: YEAR, days: [] },
             supervisor,
           });
@@ -178,8 +174,6 @@ export default function StudentDashboard() {
                 <MilestonesList milestones={data.milestones} />
                 <div className="space-y-6">
                   <HealthScoreCard score={data.healthScore} />
-                  <AIInsightsCard insights={data.aiInsights} />
-                  <ChatAssistant role="STUDENT" projectId={data.activeProject?.id} userId={user?.id} />
                 </div>
               </div>
               <RecentSubmissions submissions={data.recentSubmissions} />

@@ -9,7 +9,6 @@ import ProjectsUnderReview from '../../components/supervisor/ProjectsUnderReview
 import AssignedStudentsTable from '../../components/supervisor/AssignedStudentsTable';
 import RiskAlertsPanel from '../../components/supervisor/RiskAlertsPanel';
 import ActivityTimeline from '../../components/dashboard/ActivityTimeline';
-import ChatAssistant from '../../components/ai/ChatAssistant';
 import ActivityHeatmap from '../../components/dashboard/ActivityHeatmap';
 import PendingProposalsCard from '../../components/supervisor/PendingProposalsCard';
 
@@ -132,7 +131,6 @@ export default function SupervisorIndex() {
           <aside className="space-y-6">
             <PendingProposalsCard />
             <ActivityTimeline items={dashboard.activityFeed} />
-            <ChatAssistant role="SUPERVISOR" userId={user?.id} />
           </aside>
         </div>
       )}

@@ -132,7 +132,6 @@ const navItems: Record<string, { href: string; label: string; icon: React.ReactN
     { href: '/student/submissions',   label: 'Submissions',  icon: <UploadIcon /> },
     { href: '/student/meetings',      label: 'Meetings',     icon: <CalendarIcon /> },
     { href: '/student/messages',      label: 'Messages',     icon: <MessageIcon /> },
-    { href: '/student/assistant',     label: 'AI Assistant', icon: <BotIcon /> },
     { href: '/student/discussions',   label: 'Discussions',  icon: <ChatIcon /> },
     { href: '/student/settings',      label: 'Settings',     icon: <CogIcon /> },
   ],
