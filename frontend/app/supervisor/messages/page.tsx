@@ -28,7 +28,7 @@ export default function SupervisorMessagesPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    apiGet('/users/students')
+    apiGet('/users/my-students')
       .then((data: any) => setStudents(Array.isArray(data) ? data : []))
       .catch(() => {})
       .finally(() => setLoading(false));
