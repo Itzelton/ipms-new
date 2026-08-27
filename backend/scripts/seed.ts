@@ -212,6 +212,13 @@ async function main() {
 
   const [proj1, proj2, proj3, proj4] = projects;
 
+  // Sync StudentProfile.advisorId from Project.supervisorId
+  await Promise.all(projects.map(p =>
+    p.supervisorId
+      ? prisma.studentProfile.updateMany({ where: { userId: p.studentId }, data: { advisorId: p.supervisorId } })
+      : Promise.resolve(),
+  ));
+
   // Milestones for each project
   const milestoneData = [
     // Project 1 — AI Health Monitor (healthy)
