@@ -208,15 +208,22 @@ export class UserRepository {
     if (this.useInMemoryData) {
       return { studentId, supervisorId };
     }
-    return this.prisma.studentProfile.upsert({
-      where: { userId: studentId },
-      create: {
-        userId: studentId,
-        enrollmentId: `STU-${Date.now()}`,
-        advisorId: supervisorId,
-      },
-      update: { advisorId: supervisorId },
-    });
+    const [profile] = await this.prisma.$transaction([
+      this.prisma.studentProfile.upsert({
+        where: { userId: studentId },
+        create: {
+          userId: studentId,
+          enrollmentId: `STU-${Date.now()}`,
+          advisorId: supervisorId,
+        },
+        update: { advisorId: supervisorId },
+      }),
+      this.prisma.project.updateMany({
+        where: { studentId },
+        data: { supervisorId },
+      }),
+    ]);
+    return profile;
   }
 
   async remove(id: string) {
