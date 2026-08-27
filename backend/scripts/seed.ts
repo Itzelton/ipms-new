@@ -99,7 +99,7 @@ async function main() {
     update: {},
     create: {
       email: 'admin@ipms.edu', password: await hash('Admin@1234'),
-      firstName: 'Grace', lastName: 'Mensah', preferredName: 'Grace',
+      firstName: 'Admin', lastName: '', preferredName: 'Admin',
       phone: '+233-24-000-0001', isActive: true, departmentId: dept.id,
       roles: { create: { roleId: adminRole!.id } },
     },

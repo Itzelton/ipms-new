@@ -1,33 +1,88 @@
+"use client";
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-
-const stats = [
-  { label: 'Active Users',       value: '1,284', detail: 'Students, supervisors, admins', gradient: 'from-sky-400 to-blue-600',     valueColor: 'text-sky-600' },
-  { label: 'Projects',           value: '128',   detail: 'All active capstone projects',   gradient: 'from-violet-400 to-indigo-600', valueColor: 'text-violet-600' },
-  { label: 'Pending Approvals',  value: '12',    detail: 'Awaiting admin review',           gradient: 'from-amber-400 to-orange-500',  valueColor: 'text-amber-600' },
-  { label: 'System Alerts',      value: '3',     detail: 'Security or workflow flags',      gradient: 'from-rose-400 to-rose-600',     valueColor: 'text-rose-600' },
-];
+import { apiGet } from '../../services/api';
 
 const quickLinks = [
-  { href: '/admin/students',    label: 'Students',           icon: '🎓' },
-  { href: '/admin/supervisors', label: 'Supervisors',        icon: '👨‍🏫' },
-  { href: '/admin/assignments', label: 'Assignments',        icon: '🔗' },
-  { href: '/admin/projects',    label: 'Project oversight',  icon: '📁' },
-  { href: '/admin/reports',     label: 'Reports & analytics',icon: '📊' },
-  { href: '/admin/bulk-upload', label: 'Bulk upload',        icon: '📤' },
-  { href: '/admin/approvals',   label: 'Approvals',          icon: '✅' },
-  { href: '/admin/audit',       label: 'Audit trail',        icon: '🔍' },
+  { href: '/admin/students',    label: 'Students',            icon: '🎓' },
+  { href: '/admin/supervisors', label: 'Supervisors',         icon: '👨‍🏫' },
+  { href: '/admin/assignments', label: 'Assignments',         icon: '🔗' },
+  { href: '/admin/projects',    label: 'Project oversight',   icon: '📁' },
+  { href: '/admin/reports',     label: 'Reports & analytics', icon: '📊' },
+  { href: '/admin/bulk-upload', label: 'Bulk upload',         icon: '📤' },
+  { href: '/admin/approvals',   label: 'Approvals',           icon: '✅' },
+  { href: '/admin/audit',       label: 'Audit trail',         icon: '🔍' },
 ];
 
-const recentActivity = [
-  { title: 'Approval workflow updated', body: 'New user onboarding now requires supervisor consent.' },
-  { title: 'System audit scheduled',    body: 'Quarterly audit starts in 5 days.' },
-  { title: 'Report generated',          body: 'Faculty performance metrics are ready for review.' },
-];
+function fmt(n: number) {
+  return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
+}
 
 export default function AdminIndex() {
+  const [stats, setStats] = useState([
+    { label: 'Active Users',      value: '—', detail: 'Students, supervisors, admins', gradient: 'from-sky-400 to-blue-600',      valueColor: 'text-sky-600' },
+    { label: 'Projects',          value: '—', detail: 'All active capstone projects',  gradient: 'from-violet-400 to-indigo-600', valueColor: 'text-violet-600' },
+    { label: 'Pending Approvals', value: '—', detail: 'Awaiting admin review',          gradient: 'from-amber-400 to-orange-500',  valueColor: 'text-amber-600' },
+    { label: 'System Alerts',     value: '—', detail: 'Critical risk signals',          gradient: 'from-rose-400 to-rose-600',     valueColor: 'text-rose-600' },
+  ]);
+  const [activity, setActivity] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      try {
+        const [usersRes, projectsRes, approvalsRes, auditRes] = await Promise.allSettled([
+          apiGet('/users'),
+          apiGet('/projects'),
+          apiGet('/users?isActive=false'),
+          apiGet('/audit?limit=5'),
+        ]);
+
+        const users      = usersRes.status      === 'fulfilled' ? (Array.isArray(usersRes.value)      ? usersRes.value      : usersRes.value?.data      ?? []) : [];
+        const projects   = projectsRes.status   === 'fulfilled' ? (Array.isArray(projectsRes.value)   ? projectsRes.value   : projectsRes.value?.data   ?? []) : [];
+        const inactive   = approvalsRes.status  === 'fulfilled' ? (Array.isArray(approvalsRes.value)  ? approvalsRes.value  : approvalsRes.value?.data  ?? []) : [];
+        const auditRows  = auditRes.status       === 'fulfilled' ? (Array.isArray(auditRes.value)       ? auditRes.value       : auditRes.value?.data       ?? []) : [];
+
+        const activeUsers   = users.filter((u: any) => u.isActive).length;
+        const activeProjects = projects.filter((p: any) => p.status === 'ACTIVE').length;
+        const pendingCount  = inactive.length;
+
+        // Count critical/high risk signals across all projects that have them
+        const alertCount = projects.filter((p: any) =>
+          p.riskSignals?.some((r: any) => r.severity === 'CRITICAL' || r.severity === 'HIGH')
+        ).length;
+
+        if (mounted) {
+          setStats([
+            { label: 'Active Users',      value: fmt(activeUsers),    detail: 'Students, supervisors, admins', gradient: 'from-sky-400 to-blue-600',      valueColor: 'text-sky-600' },
+            { label: 'Projects',          value: fmt(activeProjects), detail: 'Active capstone projects',      gradient: 'from-violet-400 to-indigo-600', valueColor: 'text-violet-600' },
+            { label: 'Pending Approvals', value: fmt(pendingCount),   detail: 'Awaiting admin review',          gradient: 'from-amber-400 to-orange-500',  valueColor: 'text-amber-600' },
+            { label: 'System Alerts',     value: fmt(alertCount),     detail: 'Critical risk signals',          gradient: 'from-rose-400 to-rose-600',     valueColor: 'text-rose-600' },
+          ]);
+
+          setActivity(
+            auditRows.slice(0, 5).map((a: any) => ({
+              title: `${a.action} — ${a.entity}`,
+              body: a.actor
+                ? `by ${a.actor.preferredName || [a.actor.firstName, a.actor.lastName].filter(Boolean).join(' ') || a.actor.email}`
+                : 'System action',
+              ts: a.createdAt,
+            }))
+          );
+        }
+      } catch {
+        // leave placeholder state
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    load();
+    return () => { mounted = false; };
+  }, []);
+
   return (
     <div className="space-y-6">
-      {/* Page header */}
       <header className="card-static p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -54,7 +109,9 @@ export default function AdminIndex() {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">{stat.label}</p>
-                <p className={`mt-2 text-3xl font-bold tabular-nums tracking-tight ${stat.valueColor}`}>{stat.value}</p>
+                <p className={`mt-2 text-3xl font-bold tabular-nums tracking-tight ${stat.valueColor} ${loading ? 'opacity-40' : ''}`}>
+                  {stat.value}
+                </p>
                 <p className="mt-1.5 text-[12px] text-slate-400">{stat.detail}</p>
               </div>
               <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${stat.gradient} opacity-15`} />
@@ -67,16 +124,13 @@ export default function AdminIndex() {
         {/* Quick actions */}
         <section className="card p-6">
           <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">Quick Actions</p>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             {quickLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 className="group flex items-center gap-3 rounded-xl px-4 py-3.5 text-[13px] font-medium text-slate-700 no-underline transition-all hover:text-slate-900"
-                style={{
-                  background: 'rgba(248,250,252,0.70)',
-                  border: '1px solid rgba(226,232,240,0.60)',
-                }}
+                style={{ background: 'rgba(248,250,252,0.70)', border: '1px solid rgba(226,232,240,0.60)' }}
               >
                 <span className="text-base leading-none">{link.icon}</span>
                 {link.label}
@@ -91,19 +145,28 @@ export default function AdminIndex() {
         {/* Recent activity */}
         <section className="card p-6">
           <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">Recent Activity</p>
-          <ul className="divide-y divide-slate-100">
-            {recentActivity.map((item) => (
-              <li key={item.title} className="py-3.5 first:pt-0 last:pb-0">
-                <div className="flex items-start gap-2.5">
-                  <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-sky-400" />
-                  <div>
-                    <p className="text-[13px] font-medium text-slate-800">{item.title}</p>
-                    <p className="mt-0.5 text-[12px] text-slate-500">{item.body}</p>
+          {loading ? (
+            <p className="text-[13px] text-slate-400">Loading…</p>
+          ) : activity.length === 0 ? (
+            <p className="text-[13px] text-slate-400">No recent activity.</p>
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {activity.map((item, i) => (
+                <li key={i} className="py-3.5 first:pt-0 last:pb-0">
+                  <div className="flex items-start gap-2.5">
+                    <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-sky-400" />
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-medium text-slate-800 truncate">{item.title}</p>
+                      <p className="mt-0.5 text-[12px] text-slate-500">{item.body}</p>
+                    </div>
                   </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+                </li>
+              ))}
+            </ul>
+          )}
+          <Link href="/admin/audit" className="mt-4 inline-block text-[12px] font-medium text-sky-600 hover:text-sky-700 no-underline">
+            View full audit trail →
+          </Link>
         </section>
       </div>
     </div>
