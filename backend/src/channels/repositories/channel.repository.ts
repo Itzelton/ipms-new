@@ -290,11 +290,15 @@ export class ChannelRepository {
 
   async getUserPrimaryRole(userId: string): Promise<string | null> {
     if (this.useInMemory) return null;
-    const ur = await this.prisma.userRole.findFirst({
-      where: { userId },
-      include: { role: true },
-      orderBy: { assignedAt: 'desc' },
-    });
+    const [svProfile, ur] = await Promise.all([
+      this.prisma.supervisorProfile.findUnique({ where: { userId } }),
+      this.prisma.userRole.findFirst({
+        where: { userId },
+        include: { role: true },
+        orderBy: { assignedAt: 'desc' },
+      }),
+    ]);
+    if (svProfile) return 'SUPERVISOR';
     return (ur as any)?.role?.name ?? null;
   }
 
