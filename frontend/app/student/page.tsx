@@ -45,32 +45,26 @@ export default function StudentDashboard() {
         const notificationList = notifications.status === 'fulfilled' && Array.isArray(notifications.value) ? notifications.value : [];
 
         const firstProject = projectList[0] ?? null;
-        let milestones: any[] = [];
-        let healthScore: any = null;
+        const advisorId = meRes.status === 'fulfilled' ? meRes.value?.studentProfile?.advisorId : null;
 
-        if (firstProject?.id) {
-          try {
-            const details = await apiGet(`/projects/${firstProject.id}/details`);
-            milestones = details?.milestones ?? [];
-            healthScore = details?.healthScore ?? null;
-          } catch { /* leave empty */ }
-        }
+        // Fetch project details and supervisor in parallel (neither depends on the other)
+        const [detailsRes, svRes] = await Promise.allSettled([
+          firstProject?.id ? apiGet(`/projects/${firstProject.id}/details`) : Promise.resolve(null),
+          advisorId ? apiGet(`/users/${advisorId}`) : Promise.resolve(null),
+        ]);
 
-        // Resolve supervisor from studentProfile.advisorId
+        const details = detailsRes.status === 'fulfilled' ? detailsRes.value : null;
+        const milestones: any[] = details?.milestones ?? [];
+        const healthScore: any = details?.healthScore ?? null;
+
         let supervisor: any = null;
-        if (meRes.status === 'fulfilled') {
-          const me = meRes.value;
-          const advisorId = me?.studentProfile?.advisorId;
-          if (advisorId) {
-            try {
-              const sv = await apiGet(`/users/${advisorId}`);
-              supervisor = {
-                id: sv.id,
-                name: sv.preferredName || [sv.firstName, sv.lastName].filter(Boolean).join(' ') || sv.email,
-                email: sv.email,
-              };
-            } catch { /* no supervisor info */ }
-          }
+        if (svRes.status === 'fulfilled' && svRes.value) {
+          const sv = svRes.value;
+          supervisor = {
+            id: sv.id,
+            name: sv.preferredName || [sv.firstName, sv.lastName].filter(Boolean).join(' ') || sv.email,
+            email: sv.email,
+          };
         }
 
         if (mounted) {
