@@ -2,9 +2,17 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { apiGet, apiPost } from '../../../services/api';
 import { useAuth } from '../../../components/auth/auth-context';
+import { useSocket } from '../../../hooks/useSocket';
 
 type Student = { id: string; email: string; preferredName?: string; firstName?: string; lastName?: string };
-type Message = { id: string; content: string; authorId: string; createdAt: string; deletedAt?: string | null };
+type Message = {
+  id: string;
+  content: string;
+  authorId: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  _pending?: boolean;
+};
 type Channel = { id: string; name: string };
 
 function displayName(u: Student | null) {
@@ -27,6 +35,24 @@ export default function SupervisorMessagesPage() {
   const [loading, setLoading] = useState(true);
   const [msgLoading, setMsgLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  const { joinChannel, on, off } = useSocket(user?.id ?? null, []);
+
+  // Join channel room and listen for real-time messages whenever channel changes
+  useEffect(() => {
+    if (!channel?.id) return;
+    joinChannel(channel.id);
+    const handler = ({ channelId: cid, message }: any) => {
+      if (cid !== channel.id) return;
+      setMessages(prev => {
+        const withoutPending = prev.filter(m => !(m._pending && m.content === message.content));
+        if (withoutPending.some(m => m.id === message.id)) return withoutPending;
+        return [...withoutPending, message];
+      });
+    };
+    on('message:new', handler);
+    return () => { off('message:new', handler); };
+  }, [channel?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     apiGet('/users/my-students')
@@ -53,9 +79,10 @@ export default function SupervisorMessagesPage() {
       .catch(() => {});
   }, [channel?.id]);
 
+  // Initial load + fallback poll (WebSocket handles real-time)
   useEffect(() => {
     loadMessages();
-    const interval = setInterval(loadMessages, 3000);
+    const interval = setInterval(loadMessages, 10000);
     return () => clearInterval(interval);
   }, [loadMessages]);
 
@@ -74,16 +101,27 @@ export default function SupervisorMessagesPage() {
     if (!input.trim() || sending || !selected) return;
     setSending(true);
     setSendError(null);
+    const content = input.trim();
+    setInput('');
+
+    // Optimistic: show message immediately
+    const tempId = `temp-${Date.now()}`;
+    setMessages(prev => [...prev, {
+      id: tempId,
+      content,
+      authorId: user?.id ?? '',
+      createdAt: new Date().toISOString(),
+      _pending: true,
+    }]);
+
     try {
       const ch = await ensureChannel();
-      await apiPost(`/channels/${ch.id}/messages`, { content: input.trim() });
-      setInput('');
-      // Reload using the channel id we have (avoids stale closure in loadMessages)
-      apiGet(`/channels/${ch.id}/messages`)
-        .then((data: any) => setMessages(Array.isArray(data) ? data : []))
-        .catch(() => {});
+      await apiPost(`/channels/${ch.id}/messages`, { content });
+      // WebSocket delivers the real message and replaces the pending one
     } catch (e: any) {
+      setMessages(prev => prev.filter(m => m.id !== tempId));
       setSendError(e?.message || 'Failed to send message. Please try again.');
+      setInput(content);
     } finally {
       setSending(false);
     }
@@ -170,12 +208,16 @@ export default function SupervisorMessagesPage() {
                       <div key={m.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                         <div className="max-w-[75%]">
                           <div
-                            className={`rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed ${isMe ? 'bg-gradient-to-br from-violet-500 to-indigo-600 text-white rounded-br-sm' : 'text-slate-700 rounded-bl-sm'}`}
+                            className={`rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed transition-opacity ${
+                              isMe ? 'bg-gradient-to-br from-violet-500 to-indigo-600 text-white rounded-br-sm' : 'text-slate-700 rounded-bl-sm'
+                            } ${m._pending ? 'opacity-60' : 'opacity-100'}`}
                             style={!isMe ? { background: 'rgba(248,250,252,0.95)', border: '1px solid rgba(226,232,240,0.8)' } : undefined}
                           >
                             {m.content}
                           </div>
-                          <p className={`mt-1 text-[10px] text-slate-400 ${isMe ? 'text-right' : 'text-left'}`}>{timeFmt(m.createdAt)}</p>
+                          <p className={`mt-1 text-[10px] text-slate-400 ${isMe ? 'text-right' : 'text-left'}`}>
+                            {m._pending ? 'Sending…' : timeFmt(m.createdAt)}
+                          </p>
                         </div>
                       </div>
                     );

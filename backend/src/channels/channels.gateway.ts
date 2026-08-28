@@ -120,14 +120,17 @@ export class ChannelsGateway implements OnGatewayConnection, OnGatewayDisconnect
   // ── Server → Client helpers (called from REST handlers too) ───────────────
 
   emitNewMessage(channelId: string, message: any) {
+    if (!this.server) return;
     this.server.to(`channel:${channelId}`).emit('message:new', { channelId, message });
   }
 
   emitMessageEdited(channelId: string, message: any) {
+    if (!this.server) return;
     this.server.to(`channel:${channelId}`).emit('message:edited', { channelId, message });
   }
 
   emitMessageDeleted(channelId: string, messageId: string) {
+    if (!this.server) return;
     this.server.to(`channel:${channelId}`).emit('message:deleted', { channelId, messageId });
   }
 }

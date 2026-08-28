@@ -4,6 +4,7 @@ import {
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
 import { ChannelsService } from './channels.service';
+import { ChannelsGateway } from './channels.gateway';
 import { CreateChannelDto } from './dto/create-channel.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 import { EditMessageDto } from './dto/edit-message.dto';
@@ -11,7 +12,10 @@ import { EditMessageDto } from './dto/edit-message.dto';
 @UseGuards(JwtAuthGuard)
 @Controller('channels')
 export class ChannelsController {
-  constructor(private readonly channelsService: ChannelsService) {}
+  constructor(
+    private readonly channelsService: ChannelsService,
+    private readonly channelsGateway: ChannelsGateway,
+  ) {}
 
   // ── Channels ──────────────────────────────────────────────────────────────
 
@@ -80,12 +84,14 @@ export class ChannelsController {
   }
 
   @Post(':id/messages')
-  sendMessage(
+  async sendMessage(
     @Param('id') channelId: string,
     @CurrentUser('id') userId: string,
     @Body() dto: SendMessageDto,
   ) {
-    return this.channelsService.sendMessage(channelId, userId, dto);
+    const message = await this.channelsService.sendMessage(channelId, userId, dto);
+    this.channelsGateway.emitNewMessage(channelId, message);
+    return message;
   }
 
   @Get(':id/messages/:messageId/thread')

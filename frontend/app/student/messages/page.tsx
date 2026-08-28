@@ -2,8 +2,16 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { apiGet, apiPost } from '../../../services/api';
 import { useAuth } from '../../../components/auth/auth-context';
+import { useSocket } from '../../../hooks/useSocket';
 
-type Message = { id: string; content: string; authorId: string; createdAt: string; deletedAt?: string | null };
+type Message = {
+  id: string;
+  content: string;
+  authorId: string;
+  createdAt: string;
+  deletedAt?: string | null;
+  _pending?: boolean;
+};
 type Channel = { id: string; name: string };
 
 function timeFmt(iso: string) {
@@ -23,6 +31,24 @@ export default function StudentMessagesPage() {
   const [loading, setLoading] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  const { joinChannel, on, off } = useSocket(user?.id ?? null, []);
+
+  // Join channel room and listen for real-time messages
+  useEffect(() => {
+    if (!channel?.id) return;
+    joinChannel(channel.id);
+    const handler = ({ channelId: cid, message }: any) => {
+      if (cid !== channel.id) return;
+      setMessages(prev => {
+        const withoutPending = prev.filter(m => !(m._pending && m.content === message.content));
+        if (withoutPending.some(m => m.id === message.id)) return withoutPending;
+        return [...withoutPending, message];
+      });
+    };
+    on('message:new', handler);
+    return () => { off('message:new', handler); };
+  }, [channel?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Resolve supervisor
   useEffect(() => {
     apiGet('/auth/me').then((me: any) => {
@@ -40,9 +66,7 @@ export default function StudentMessagesPage() {
     if (!supervisorId) return;
     apiGet(`/channels/dm/${supervisorId}`)
       .then((ch: any) => setChannel(ch))
-      .catch(() => {
-        // Channel may not exist yet — create on first send
-      })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [supervisorId]);
 
@@ -53,9 +77,10 @@ export default function StudentMessagesPage() {
       .catch(() => {});
   }, [channel?.id]);
 
+  // Initial load + fallback poll (WebSocket handles real-time)
   useEffect(() => {
     loadMessages();
-    const interval = setInterval(loadMessages, 3000);
+    const interval = setInterval(loadMessages, 10000);
     return () => clearInterval(interval);
   }, [loadMessages]);
 
@@ -74,16 +99,27 @@ export default function StudentMessagesPage() {
     if (!input.trim() || sending || !supervisorId) return;
     setSending(true);
     setSendError(null);
+    const content = input.trim();
+    setInput('');
+
+    // Optimistic: show message immediately
+    const tempId = `temp-${Date.now()}`;
+    setMessages(prev => [...prev, {
+      id: tempId,
+      content,
+      authorId: user?.id ?? '',
+      createdAt: new Date().toISOString(),
+      _pending: true,
+    }]);
+
     try {
       const ch = await ensureChannel();
-      await apiPost(`/channels/${ch.id}/messages`, { content: input.trim() });
-      setInput('');
-      // Reload using the channel id we have (avoids stale closure in loadMessages)
-      apiGet(`/channels/${ch.id}/messages`)
-        .then((data: any) => setMessages(Array.isArray(data) ? data : []))
-        .catch(() => {});
+      await apiPost(`/channels/${ch.id}/messages`, { content });
+      // WebSocket delivers the real message and replaces the pending one
     } catch (e: any) {
+      setMessages(prev => prev.filter(m => m.id !== tempId));
       setSendError(e?.message || 'Failed to send message. Please try again.');
+      setInput(content);
     } finally {
       setSending(false);
     }
@@ -141,14 +177,16 @@ export default function StudentMessagesPage() {
               <div key={m.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                 <div className="max-w-[75%]">
                   <div
-                    className={`rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed ${
+                    className={`rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed transition-opacity ${
                       isMe ? 'bg-gradient-to-br from-sky-500 to-blue-600 text-white rounded-br-sm' : 'text-slate-700 rounded-bl-sm'
-                    }`}
+                    } ${m._pending ? 'opacity-60' : 'opacity-100'}`}
                     style={!isMe ? { background: 'rgba(248,250,252,0.95)', border: '1px solid rgba(226,232,240,0.8)' } : undefined}
                   >
                     {m.content}
                   </div>
-                  <p className={`mt-1 text-[10px] text-slate-400 ${isMe ? 'text-right' : 'text-left'}`}>{timeFmt(m.createdAt)}</p>
+                  <p className={`mt-1 text-[10px] text-slate-400 ${isMe ? 'text-right' : 'text-left'}`}>
+                    {m._pending ? 'Sending…' : timeFmt(m.createdAt)}
+                  </p>
                 </div>
               </div>
             );
@@ -163,24 +201,24 @@ export default function StudentMessagesPage() {
           <p className="px-4 pt-2 text-[11px] text-red-500">{sendError}</p>
         )}
         <div className="p-3 flex items-center gap-2">
-        <input
-          value={input}
-          onChange={(e) => { setInput(e.target.value); if (sendError) setSendError(null); }}
-          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-          placeholder={`Message ${supervisorName}…`}
-          disabled={sending || !supervisorId}
-          className="flex-1 bg-transparent text-[13px] text-slate-800 placeholder:text-slate-400 outline-none px-2"
-        />
-        <button
-          onClick={sendMessage}
-          disabled={sending || !input.trim() || !supervisorId}
-          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white disabled:opacity-50 transition-opacity"
-          aria-label="Send"
-        >
-          <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-          </svg>
-        </button>
+          <input
+            value={input}
+            onChange={(e) => { setInput(e.target.value); if (sendError) setSendError(null); }}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+            placeholder={`Message ${supervisorName}…`}
+            disabled={sending || !supervisorId}
+            className="flex-1 bg-transparent text-[13px] text-slate-800 placeholder:text-slate-400 outline-none px-2"
+          />
+          <button
+            onClick={sendMessage}
+            disabled={sending || !input.trim() || !supervisorId}
+            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white disabled:opacity-50 transition-opacity"
+            aria-label="Send"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>
