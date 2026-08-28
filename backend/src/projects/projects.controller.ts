@@ -21,6 +21,12 @@ export class ProjectsController {
     return this.projectsService.findAll(pagination, userId);
   }
 
+  // Must be before @Get(':id') so 'proposals' is not captured as a project id
+  @Get('proposals')
+  findProposals(@CurrentUser('id') userId: string) {
+    return this.projectsService.findProposalsForSupervisor(userId);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.projectsService.findOne(id);
@@ -44,11 +50,6 @@ export class ProjectsController {
   @Get(':id/recommendations')
   findRecommendations(@Param('id') id: string) {
     return this.projectsService.getRecommendations(id);
-  }
-
-  @Get('proposals')
-  findProposals(@CurrentUser('id') userId: string) {
-    return this.projectsService.findProposalsForSupervisor(userId);
   }
 
   @Post()

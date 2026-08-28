@@ -4,6 +4,7 @@ import { apiGet, apiPost, apiUpload } from '../../../services/api';
 import FilterBar from '../../../components/ui/FilterBar';
 
 type Supervisor = { id: string; email: string; firstName?: string; lastName?: string; preferredName?: string };
+type Me = { studentProfile?: { advisorId?: string | null } };
 type Project = {
   id: string; title: string; description?: string; status: string;
   type: string; supervisorId?: string;
@@ -40,7 +41,7 @@ const SORT_OPTIONS = [
 
 export default function StudentProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [supervisors, setSupervisors] = useState<Supervisor[]>([]);
+  const [assignedSupervisor, setAssignedSupervisor] = useState<Supervisor | null>(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -57,14 +58,20 @@ export default function StudentProjectsPage() {
 
   async function load() {
     try {
-      const [p, s] = await Promise.allSettled([
+      const [p, meRes] = await Promise.allSettled([
         apiGet('/projects'),
-        apiGet('/users/supervisors'),
+        apiGet('/auth/me'),
       ]);
       if (p.status === 'fulfilled' && Array.isArray(p.value)) setProjects(p.value);
-      if (s.status === 'fulfilled' && Array.isArray(s.value)) {
-        setSupervisors(s.value);
-        if (s.value.length > 0 && !supervisorId) setSupervisorId(s.value[0].id);
+      if (meRes.status === 'fulfilled') {
+        const advisorId = (meRes.value as Me)?.studentProfile?.advisorId;
+        if (advisorId) {
+          setSupervisorId(advisorId);
+          try {
+            const sv = await apiGet(`/users/${advisorId}`);
+            setAssignedSupervisor(sv);
+          } catch { /* ignore */ }
+        }
       }
     } finally {
       setLoading(false);
@@ -95,7 +102,7 @@ export default function StudentProjectsPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) { setError('Title is required.'); return; }
-    if (!supervisorId) { setError('Please select a supervisor.'); return; }
+    if (!supervisorId || !assignedSupervisor) { setError('No supervisor assigned. Please contact an admin.'); return; }
     setError(null);
     setSubmitting(true);
     try {
@@ -175,12 +182,20 @@ export default function StudentProjectsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Supervisor <span className="text-rose-500">*</span></label>
-                {supervisors.length === 0 ? (
-                  <p className="text-sm text-slate-400">No supervisors available yet.</p>
+                {assignedSupervisor ? (
+                  <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+                    <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-400 to-indigo-500 text-xs font-bold text-white">
+                      {supervisorName(assignedSupervisor).charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-slate-800">{supervisorName(assignedSupervisor)}</p>
+                      <p className="text-[11px] text-slate-400">{assignedSupervisor.email}</p>
+                    </div>
+                  </div>
                 ) : (
-                  <select value={supervisorId} onChange={(e) => setSupervisorId(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100">
-                    {supervisors.map((s) => <option key={s.id} value={s.id}>{supervisorName(s)}</option>)}
-                  </select>
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-700">
+                    No supervisor assigned yet. Contact an admin to get assigned.
+                  </div>
                 )}
               </div>
               <div className="sm:col-span-2">
@@ -229,7 +244,7 @@ export default function StudentProjectsPage() {
             </div>
             <div className="flex justify-end gap-2">
               <button type="button" onClick={() => setShowForm(false)} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition">Cancel</button>
-              <button type="submit" disabled={submitting || supervisors.length === 0} className="rounded-xl bg-sky-600 px-5 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-50 transition">
+              <button type="submit" disabled={submitting || !assignedSupervisor} className="rounded-xl bg-sky-600 px-5 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-50 transition">
                 {submitting ? 'Submitting…' : 'Submit Proposal'}
               </button>
             </div>

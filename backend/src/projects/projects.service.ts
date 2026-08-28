@@ -27,7 +27,12 @@ export class ProjectsService {
     const project = await this.projectRepository.create(createProjectDto);
     await this.auditService.log(actorId || null, 'create_project', 'Project', project.id, { title: project.title });
     if (createProjectDto.supervisorId) {
-      await this.notificationsService.create({ recipientId: createProjectDto.supervisorId, message: `Project created: ${project.title}`, link: `/projects/${project.id}` });
+      await this.notificationsService.create({
+        recipientId: createProjectDto.supervisorId,
+        title: 'New proposal awaiting review',
+        message: `A student submitted a proposal: "${project.title}"`,
+        link: `/supervisor/projects`,
+      });
     }
     // Auto-provision discussion channels for this project
     try {
