@@ -286,6 +286,18 @@ export class ChannelRepository {
     return ch;
   }
 
+  // ── User role lookup (for notification link routing) ─────────────────────
+
+  async getUserPrimaryRole(userId: string): Promise<string | null> {
+    if (this.useInMemory) return null;
+    const ur = await this.prisma.userRole.findFirst({
+      where: { userId },
+      include: { role: true },
+      orderBy: { assignedAt: 'desc' },
+    });
+    return (ur as any)?.role?.name ?? null;
+  }
+
   // ── Search ────────────────────────────────────────────────────────────────
 
   async searchMessages(query: string, channelId?: string): Promise<any[]> {

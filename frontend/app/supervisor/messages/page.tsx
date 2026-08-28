@@ -55,7 +55,7 @@ export default function SupervisorMessagesPage() {
 
   useEffect(() => {
     loadMessages();
-    const interval = setInterval(loadMessages, 5000);
+    const interval = setInterval(loadMessages, 3000);
     return () => clearInterval(interval);
   }, [loadMessages]);
 

@@ -53,11 +53,13 @@ export class ChannelsService {
       if (channel?.members) {
         for (const member of channel.members) {
           if (member.userId !== userId) {
+            const role = await this.repo.getUserPrimaryRole(member.userId);
+            const link = role === 'SUPERVISOR' ? '/supervisor/messages' : '/student/messages';
             await this.notificationsService.create({
               recipientId: member.userId,
               title: 'New message',
-              message: `New message in #${channel.name}`,
-              link: `/discussions`,
+              message: `New message from ${channel.name}`,
+              link,
             });
           }
         }
