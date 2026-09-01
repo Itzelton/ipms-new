@@ -84,15 +84,17 @@ export default function SupervisorProjectDetailsPage({ params }: { params: { pro
         </div>
       </header>
 
-      <div className="grid gap-6 xl:grid-cols-[1.8fr_1fr]">
-        <div className="space-y-6">
+      <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
+        <div className="min-w-0 space-y-5">
           {project.status === 'PROPOSED' && (
             <ProposalReviewPanel project={project} onStatusChange={(status) => setProject((current: any) => ({ ...current, status }))} />
           )}
           <ProjectOverviewPanel project={project} />
-          <div className="card p-6">
-            <ProjectTabs activeTab={activeTab} onChange={setActiveTab} />
-            <div className="mt-6 space-y-6">
+          <div className="card overflow-hidden">
+            <div className="border-b border-slate-100 px-6 pt-5 pb-0">
+              <ProjectTabs activeTab={activeTab} onChange={setActiveTab} />
+            </div>
+            <div className="space-y-5 p-6">
               {activeTab === 'overview' && (
                 <>
                   <ProjectMilestonesPanel milestones={project.milestones} />
@@ -101,15 +103,15 @@ export default function SupervisorProjectDetailsPage({ params }: { params: { pro
                   <ActivityHeatmap days={heatmap.days} year={heatmap.year} label="Project activity" />
                 </>
               )}
-              {activeTab === 'milestones' && <ProjectMilestonesPanel milestones={project.milestones} />}
-              {activeTab === 'submissions' && <ProjectSubmissionsPanel submissions={project.submissions} />}
-              {activeTab === 'discussions' && <ProjectDiscussionsPanel discussions={project.discussionThreads ?? project.discussions} />}
+              {activeTab === 'milestones'    && <ProjectMilestonesPanel milestones={project.milestones} />}
+              {activeTab === 'submissions'   && <ProjectSubmissionsPanel submissions={project.submissions} />}
+              {activeTab === 'discussions'   && <ProjectDiscussionsPanel discussions={project.discussionThreads ?? project.discussions} />}
               {activeTab === 'collaborators' && <ProjectCollaboratorsPanel projectId={params.projectId} />}
             </div>
           </div>
         </div>
 
-        <aside className="space-y-6">
+        <aside className="space-y-4">
           <ProjectHealthRiskPanel healthScore={project.healthScore} riskStatus={project.riskStatus} analytics={project.analytics} />
           <ProjectRecommendationsPanel recommendations={project.recommendedActions} />
           <ActivityTimeline items={project.activity} />

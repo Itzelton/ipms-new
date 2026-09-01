@@ -7,41 +7,55 @@ function displayName(value: any): string {
   return [value.firstName, value.lastName].filter(Boolean).join(' ') || value.email || '—';
 }
 
-export default function ProjectOverviewPanel({ project }: { project: any }) {
+function fmtDate(d: string | null | undefined) {
+  if (!d) return '—';
+  try { return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(d)); }
+  catch { return d; }
+}
+
+function StatCell({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid gap-6 rounded bg-white p-6 shadow sm:grid-cols-2">
-      <div className="space-y-4">
-        <div>
-          <h3 className="text-lg font-semibold">Project Overview</h3>
-          <p className="text-sm text-gray-600">Key milestones, submissions and status in one place.</p>
+    <div className="flex flex-col gap-0.5">
+      <p className="text-[11px] font-medium uppercase tracking-[0.07em] text-slate-400">{label}</p>
+      <p className="text-[13px] font-semibold text-slate-800">{value}</p>
+    </div>
+  );
+}
+
+export default function ProjectOverviewPanel({ project }: { project: any }) {
+  const progress = Math.min(100, Math.max(0, project.progress ?? 0));
+  const progressColor =
+    progress >= 70 ? 'from-emerald-400 to-teal-500' :
+    progress >= 40 ? 'from-amber-400 to-orange-400' :
+    'from-rose-400 to-red-500';
+
+  return (
+    <div className="card p-6 space-y-5">
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">Overview</p>
+        <p className="mt-0.5 text-sm text-slate-500">Key details and progress at a glance.</p>
+      </div>
+
+      {/* Progress */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-[12px]">
+          <span className="font-medium text-slate-500">Progress</span>
+          <span className="font-bold tabular-nums text-slate-700">{progress}%</span>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="rounded border border-gray-100 p-4">
-            <div className="text-sm text-gray-500">Student</div>
-            <div className="mt-2 font-semibold">{displayName(project.student)}</div>
-          </div>
-          <div className="rounded border border-gray-100 p-4">
-            <div className="text-sm text-gray-500">Supervisor</div>
-            <div className="mt-2 font-semibold">{displayName(project.supervisor)}</div>
-          </div>
-          <div className="rounded border border-gray-100 p-4">
-            <div className="text-sm text-gray-500">Start Date</div>
-            <div className="mt-2 font-semibold">{project.startDate ?? '—'}</div>
-          </div>
-          <div className="rounded border border-gray-100 p-4">
-            <div className="text-sm text-gray-500">Due Date</div>
-            <div className="mt-2 font-semibold">{project.dueDate ?? '—'}</div>
-          </div>
+        <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+          <div
+            className={`h-full rounded-full bg-gradient-to-r transition-all duration-500 ${progressColor}`}
+            style={{ width: `${progress}%` }}
+          />
         </div>
       </div>
-      <div className="rounded border border-gray-100 p-4 bg-slate-50">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-500">Progress</span>
-          <span className="text-sm font-semibold">{project.progress ?? 0}%</span>
-        </div>
-        <div className="mt-4 h-3 rounded-full bg-gray-200 overflow-hidden">
-          <div style={{ width: `${project.progress ?? 0}%` }} className="h-full bg-blue-600" />
-        </div>
+
+      {/* Meta grid */}
+      <div className="grid grid-cols-2 gap-x-6 gap-y-4 border-t border-slate-100 pt-4 sm:grid-cols-4">
+        <StatCell label="Student"   value={displayName(project.student)} />
+        <StatCell label="Supervisor" value={displayName(project.supervisor)} />
+        <StatCell label="Start date" value={fmtDate(project.startDate)} />
+        <StatCell label="Due date"   value={fmtDate(project.dueDate ?? project.expectedEndDate)} />
       </div>
     </div>
   );
