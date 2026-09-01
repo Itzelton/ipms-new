@@ -27,13 +27,24 @@ type View = 'list' | 'board';
 export default function ProjectMilestonesPanel({ milestones: initial, projectId }: { milestones?: any[]; projectId?: string }) {
   const [view, setView] = useState<View>('list');
   const [milestones, setMilestones] = useState<any[]>(initial ?? []);
+  const [fetching, setFetching] = useState(!!projectId);
 
   useEffect(() => {
     if (!projectId) return;
+    setFetching(true);
     apiGet(`/milestones?projectId=${projectId}&limit=100`)
       .then((data) => { if (Array.isArray(data)) setMilestones(data); })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setFetching(false));
   }, [projectId]);
+
+  if (fetching) {
+    return (
+      <div className="card p-8 text-center">
+        <p className="text-sm text-slate-400">Loading milestones…</p>
+      </div>
+    );
+  }
 
   if (!milestones || milestones.length === 0) {
     return (

@@ -1,6 +1,6 @@
 "use client";
-import React, { useState } from 'react';
-import { apiPost, apiPatch, apiDelete } from '../../services/api';
+import React, { useEffect, useState } from 'react';
+import { apiGet, apiPost, apiPatch, apiDelete } from '../../services/api';
 
 const STATUS_OPTIONS = ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'OVERDUE'];
 
@@ -20,6 +20,12 @@ function fmtDate(d: string) {
 export default function SupervisorMilestonesPanel({ projectId, milestones: initial }: { projectId: string; milestones?: any[] }) {
   const [milestones, setMilestones] = useState<any[]>(initial ?? []);
   const [showForm, setShowForm] = useState(false);
+
+  useEffect(() => {
+    apiGet(`/milestones?projectId=${projectId}&limit=100`)
+      .then((data) => { if (Array.isArray(data)) setMilestones(data); })
+      .catch(() => {});
+  }, [projectId]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
