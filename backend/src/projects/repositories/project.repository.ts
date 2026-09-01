@@ -44,18 +44,31 @@ export class ProjectRepository {
     const where = userId
       ? { OR: [{ studentId: userId }, { supervisorId: userId }, { assignments: { some: { userId } } }] }
       : {};
-    return this.prisma.project.findMany({
-      skip,
-      take,
-      where,
-      include: {
-        student: { select: { id: true, email: true, firstName: true, lastName: true } },
-        supervisor: { select: { id: true, email: true, firstName: true, lastName: true } },
-        assignments: {
-          include: { user: { select: { id: true, email: true, firstName: true, lastName: true } } },
+    try {
+      return await this.prisma.project.findMany({
+        skip,
+        take,
+        where,
+        include: {
+          student: { select: { id: true, email: true, firstName: true, lastName: true } },
+          supervisor: { select: { id: true, email: true, firstName: true, lastName: true } },
+          assignments: {
+            include: { user: { select: { id: true, email: true, firstName: true, lastName: true } } },
+          },
         },
-      },
-    });
+      });
+    } catch {
+      // Fall back without assignments join if ProjectAssignment table is missing
+      return this.prisma.project.findMany({
+        skip,
+        take,
+        where: userId ? { OR: [{ studentId: userId }, { supervisorId: userId }] } : {},
+        include: {
+          student: { select: { id: true, email: true, firstName: true, lastName: true } },
+          supervisor: { select: { id: true, email: true, firstName: true, lastName: true } },
+        },
+      });
+    }
   }
 
   async findOne(id: string) {
@@ -96,28 +109,45 @@ export class ProjectRepository {
       } as any;
     }
 
-    return this.prisma.project.findUnique({
-      where: { id },
-      include: {
-        student: true,
-        supervisor: true,
-        department: true,
-        cohort: true,
-        assignments: {
-          include: { user: true },
+    try {
+      return await this.prisma.project.findUnique({
+        where: { id },
+        include: {
+          student: true,
+          supervisor: true,
+          department: true,
+          cohort: true,
+          assignments: { include: { user: true } },
+          milestones: true,
+          submissions: true,
+          discussionThreads: true,
+          notifications: true,
+          analytics: true,
+          healthScores: true,
+          riskSignals: true,
+          recommendations: true,
+          forecasts: true,
+          reports: true,
         },
-        milestones: true,
-        submissions: true,
-        discussionThreads: true,
-        notifications: true,
-        analytics: true,
-        healthScores: true,
-        riskSignals: true,
-        recommendations: true,
-        forecasts: true,
-        reports: true,
-      },
-    });
+      });
+    } catch {
+      // Some optional tables (analytics, healthScores, etc.) may not exist in this
+      // deployment yet. Fall back to the core fields so the page always renders.
+      return this.prisma.project.findUnique({
+        where: { id },
+        include: {
+          student: true,
+          supervisor: true,
+          department: true,
+          cohort: true,
+          assignments: { include: { user: true } },
+          milestones: true,
+          submissions: true,
+          discussionThreads: true,
+          notifications: true,
+        },
+      }) as any;
+    }
   }
 
   async countDiscussionMessages(projectId: string) {
@@ -221,10 +251,46 @@ export class ProjectRepository {
 
   async findCollaborators(projectId: string) {
     if (this.useInMemoryData) return [];
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      select: { studentId: true, supervisorId: true },
+    });
+    const excludedIds = [project?.studentId, project?.supervisorId].filter(Boolean) as string[];
     return this.prisma.projectAssignment.findMany({
-      where: { projectId },
+      where: { projectId, ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}) },
       include: { user: { select: { id: true, email: true, firstName: true, lastName: true } } },
     });
+  }
+
+  async getCollaborationSettings(projectId: string) {
+    if (this.useInMemoryData) {
+      const project = this.mockProjects.find((item) => item.id === projectId);
+      return project ? { id: project.id, supervisorId: project.supervisorId, studentId: project.studentId, collaboratorLimit: project.collaboratorLimit ?? 1 } : null;
+    }
+    return this.prisma.project.findUnique({
+      where: { id: projectId },
+      select: { id: true, supervisorId: true, studentId: true, collaboratorLimit: true },
+    });
+  }
+
+  async countTeamCollaborators(projectId: string, ownerIds: string[]) {
+    if (this.useInMemoryData) return 0;
+    const assignments = await this.prisma.projectAssignment.findMany({
+      where: { projectId },
+      select: { userId: true },
+      distinct: ['userId'],
+    });
+    return assignments.filter(({ userId }) => !ownerIds.includes(userId)).length;
+  }
+
+  async updateCollaboratorLimit(projectId: string, collaboratorLimit: number) {
+    if (this.useInMemoryData) {
+      const project = this.mockProjects.find((item) => item.id === projectId);
+      if (!project) return null;
+      project.collaboratorLimit = collaboratorLimit;
+      return project;
+    }
+    return this.prisma.project.update({ where: { id: projectId }, data: { collaboratorLimit } });
   }
 
   async addCollaborator(projectId: string, userId: string, role: RoleName = RoleName.REVIEWER) {
