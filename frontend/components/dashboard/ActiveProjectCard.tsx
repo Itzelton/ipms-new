@@ -1,8 +1,10 @@
 "use client";
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function ActiveProjectCard({ project }: { project: any }) {
+  const router = useRouter();
   if (!project) return (
     <div className="card p-6">
       <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -29,7 +31,13 @@ export default function ActiveProjectCard({ project }: { project: any }) {
   const progress = Math.min(100, Math.max(0, project.progress ?? 0));
 
   return (
-    <Link href={`/student/projects/${project.id}`} className="card block p-6 no-underline hover:shadow-md transition-shadow">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => router.push(`/student/projects/${project.id}`)}
+      onKeyDown={(e) => e.key === 'Enter' && router.push(`/student/projects/${project.id}`)}
+      className="card block p-6 cursor-pointer hover:shadow-md transition-shadow"
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 shadow-sm">
@@ -72,6 +80,6 @@ export default function ActiveProjectCard({ project }: { project: any }) {
           </svg>
         </span>
       </div>
-    </Link>
+    </div>
   );
 }

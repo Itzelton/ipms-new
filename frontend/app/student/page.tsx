@@ -113,17 +113,15 @@ export default function StudentDashboard() {
             <p className="mt-1 text-sm text-slate-500">Track your project, submissions and advisor feedback.</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            {!loading && (
-              <Link
-                href="/student/projects"
-                className="flex-shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white no-underline hover:bg-sky-700 transition"
-              >
-                <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                </svg>
-                New Proposal
-              </Link>
-            )}
+            <Link
+              href="/student/projects"
+              className="flex-shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white no-underline hover:bg-sky-700 transition"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+              </svg>
+              New Proposal
+            </Link>
             <div className="flex gap-2 overflow-x-auto pb-0.5 flex-nowrap"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' } as React.CSSProperties}>
               {[
