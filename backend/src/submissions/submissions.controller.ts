@@ -13,8 +13,8 @@ export class SubmissionsController {
   constructor(private readonly submissionsService: SubmissionsService) {}
 
   @Get()
-  findAll(@Query() pagination: PaginationDto, @CurrentUser('id') userId: string) {
-    return this.submissionsService.findByAuthor(userId, pagination);
+  findAll(@Query() pagination: PaginationDto, @CurrentUser('id') userId: string, @Query('projectId') projectId?: string) {
+    return this.submissionsService.findByAuthor(userId, pagination, projectId);
   }
 
   @Get(':id')

@@ -94,7 +94,7 @@ export default function ProjectDetailsPage({ params }: { params: { projectId: st
               {activeTab === 'overview' && (
                 <>
                   <ProjectMilestonesPanel milestones={project.milestones} projectId={params.projectId} />
-                  <ProjectSubmissionsPanel submissions={project.submissions} />
+                  <ProjectSubmissionsPanel submissions={project.submissions} projectId={params.projectId} />
                   <ProjectDiscussionsPanel discussions={project.discussionThreads ?? project.discussions} />
                   <ActivityHeatmap days={heatmap.days} year={heatmap.year} label="Project activity" />
                 </>

@@ -51,8 +51,8 @@ export class SubmissionsService {
     return this.submissionRepository.findAll(pagination);
   }
 
-  async findByAuthor(authorId: string, pagination: PaginationDto) {
-    return this.submissionRepository.findByAuthor(authorId, pagination);
+  async findByAuthor(authorId: string, pagination: PaginationDto, projectId?: string) {
+    return this.submissionRepository.findByAuthor(authorId, pagination, projectId);
   }
 
   async findOne(id: string) {
