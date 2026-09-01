@@ -1,4 +1,4 @@
-import { IsDateString, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsDateString, IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 import { ProjectStatus, ProjectType } from '@prisma/client';
 
 export class UpdateProjectDto {
@@ -43,4 +43,10 @@ export class UpdateProjectDto {
 
   @IsOptional()
   type?: ProjectType;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(50)
+  collaboratorLimit?: number;
 }

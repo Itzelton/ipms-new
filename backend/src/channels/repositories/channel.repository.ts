@@ -52,6 +52,7 @@ export class ChannelRepository {
       where: { members: { some: { userId } } },
       include: {
         members: { include: { user: { select: { id: true, firstName: true, lastName: true, email: true } } } },
+        project: { select: { id: true, title: true } },
         _count: { select: { messages: true } },
       },
       orderBy: { updatedAt: 'desc' },
@@ -83,6 +84,19 @@ export class ChannelRepository {
       create: { channelId, userId, role },
       update: {},
     });
+  }
+
+  async findProjectChannels(projectId: string): Promise<any[]> {
+    if (this.useInMemory) return this.channels.filter((channel) => channel.projectId === projectId);
+    return this.prisma.channel.findMany({ where: { projectId }, select: { id: true } });
+  }
+
+  async removeMember(channelId: string, userId: string): Promise<void> {
+    if (this.useInMemory) {
+      this.members = this.members.filter((member) => member.channelId !== channelId || member.userId !== userId);
+      return;
+    }
+    await this.prisma.channelMember.deleteMany({ where: { channelId, userId } });
   }
 
   async updateLastRead(channelId: string, userId: string): Promise<void> {

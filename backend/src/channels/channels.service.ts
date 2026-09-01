@@ -115,6 +115,16 @@ export class ChannelsService {
     return this.repo.searchMessages(query, channelId);
   }
 
+  async addProjectMember(projectId: string, userId: string) {
+    const channels = await this.repo.findProjectChannels(projectId);
+    await Promise.all(channels.map((channel) => this.repo.addMember(channel.id, userId)));
+  }
+
+  async removeProjectMember(projectId: string, userId: string) {
+    const channels = await this.repo.findProjectChannels(projectId);
+    await Promise.all(channels.map((channel) => this.repo.removeMember(channel.id, userId)));
+  }
+
   // Called by ProjectsService after project creation
   async provisionProjectChannels(projectId: string, createdById: string, studentId?: string, supervisorId?: string) {
     const general = await this.createChannel(
