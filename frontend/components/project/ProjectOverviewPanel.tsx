@@ -15,9 +15,9 @@ function fmtDate(d: string | null | undefined) {
 
 function StatCell({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col gap-0.5">
-      <p className="text-[11px] font-medium uppercase tracking-[0.07em] text-slate-400">{label}</p>
-      <p className="text-[13px] font-semibold text-slate-800">{value}</p>
+    <div className="min-w-0 flex flex-col gap-0.5">
+      <p className="text-[11px] font-medium uppercase tracking-[0.07em] text-slate-400 truncate">{label}</p>
+      <p className="text-[13px] font-semibold text-slate-800 truncate" title={value}>{value}</p>
     </div>
   );
 }
