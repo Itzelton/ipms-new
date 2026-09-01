@@ -14,6 +14,7 @@ const YEAR = new Date().getFullYear();
 
 const EMPTY: any = {
   activeProject: null,
+  hasActive: false,
   milestones: [],
   recentSubmissions: [],
   notifications: [],
@@ -44,7 +45,9 @@ export default function StudentDashboard() {
         const submissionList = submissions.status === 'fulfilled' && Array.isArray(submissions.value) ? submissions.value : [];
         const notificationList = notifications.status === 'fulfilled' && Array.isArray(notifications.value) ? notifications.value : [];
 
-        const firstProject = projectList[0] ?? null;
+        const activeProject = projectList.find((p: any) => p.status === 'ACTIVE') ?? projectList[0] ?? null;
+        const firstProject = activeProject;
+        const hasActive = projectList.some((p: any) => p.status === 'ACTIVE');
         const advisorId = meRes.status === 'fulfilled' ? meRes.value?.studentProfile?.advisorId : null;
 
         // Fetch project details and supervisor in parallel (neither depends on the other)
@@ -70,6 +73,7 @@ export default function StudentDashboard() {
         if (mounted) {
           setData({
             activeProject: firstProject ? { id: firstProject.id, title: firstProject.title, progress: firstProject.progress ?? 0 } : null,
+            hasActive,
             milestones,
             recentSubmissions: submissionList.slice(0, 5).map((s: any) => ({
               id: s.id,
@@ -108,23 +112,36 @@ export default function StudentDashboard() {
             <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">Dashboard</h2>
             <p className="mt-1 text-sm text-slate-500">Track your project, submissions and advisor feedback.</p>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-0.5 flex-nowrap"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' } as React.CSSProperties}>
-            {[
-              { href: '/student', label: 'Overview' },
-              { href: '/student/projects', label: 'Projects' },
-              { href: '/student/submissions', label: 'Submissions' },
-              { href: '/student/discussions', label: 'Discussions' },
-            ].map(({ href, label }) => (
+          <div className="flex items-center gap-2 flex-wrap">
+            {!loading && !data.hasActive && (
               <Link
-                key={href}
-                href={href}
-                className="flex-shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-medium text-slate-600 no-underline transition hover:text-slate-900"
-                style={{ background: 'rgba(248,250,252,0.80)', border: '1px solid rgba(226,232,240,0.80)' }}
+                href="/student/projects"
+                className="flex-shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white no-underline hover:bg-sky-700 transition"
               >
-                {label}
+                <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                </svg>
+                New Proposal
               </Link>
-            ))}
+            )}
+            <div className="flex gap-2 overflow-x-auto pb-0.5 flex-nowrap"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' } as React.CSSProperties}>
+              {[
+                { href: '/student', label: 'Overview' },
+                { href: '/student/projects', label: 'Projects' },
+                { href: '/student/submissions', label: 'Submissions' },
+                { href: '/student/discussions', label: 'Discussions' },
+              ].map(({ href, label }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="flex-shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-medium text-slate-600 no-underline transition hover:text-slate-900"
+                  style={{ background: 'rgba(248,250,252,0.80)', border: '1px solid rgba(226,232,240,0.80)' }}
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </header>

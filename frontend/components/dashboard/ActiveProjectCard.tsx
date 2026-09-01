@@ -12,7 +12,16 @@ export default function ActiveProjectCard({ project }: { project: any }) {
           </svg>
         </div>
         <p className="text-sm font-medium text-slate-500">No active project</p>
-        <p className="mt-1 text-xs text-slate-400">Projects assigned to you will appear here</p>
+        <p className="mt-1 text-xs text-slate-400">Submit a proposal to get started.</p>
+        <Link
+          href="/student/projects"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white no-underline hover:bg-sky-700 transition"
+        >
+          <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+          </svg>
+          New Proposal
+        </Link>
       </div>
     </div>
   );
@@ -20,7 +29,7 @@ export default function ActiveProjectCard({ project }: { project: any }) {
   const progress = Math.min(100, Math.max(0, project.progress ?? 0));
 
   return (
-    <div className="card p-6">
+    <Link href={`/student/projects/${project.id}`} className="card block p-6 no-underline hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 shadow-sm">
@@ -56,18 +65,13 @@ export default function ActiveProjectCard({ project }: { project: any }) {
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
           <span className="text-[12px] text-slate-500">In progress</span>
         </div>
-        {project.id && (
-          <Link
-            href={`/student/projects/${project.id}`}
-            className="flex items-center gap-1 text-[12px] font-semibold text-sky-600 hover:text-sky-700 transition-colors no-underline"
-          >
-            View project
-            <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-            </svg>
-          </Link>
-        )}
+        <span className="flex items-center gap-1 text-[12px] font-semibold text-sky-600">
+          View Insights
+          <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+          </svg>
+        </span>
       </div>
-    </div>
+    </Link>
   );
 }
