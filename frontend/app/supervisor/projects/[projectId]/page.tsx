@@ -3,8 +3,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { getProjectDetails } from '../../../../services/project';
 import ActivityTimeline from '../../../../components/dashboard/ActivityTimeline';
 import ProjectOverviewPanel from '../../../../components/project/ProjectOverviewPanel';
-import ProjectMilestonesPanel from '../../../../components/project/ProjectMilestonesPanel';
-import ProjectSubmissionsPanel from '../../../../components/project/ProjectSubmissionsPanel';
+import SupervisorMilestonesPanel from '../../../../components/supervisor/SupervisorMilestonesPanel';
+import SupervisorSubmissionsPanel from '../../../../components/supervisor/SupervisorSubmissionsPanel';
 import ProjectDiscussionsPanel from '../../../../components/project/ProjectDiscussionsPanel';
 import ProjectHealthRiskPanel from '../../../../components/project/ProjectHealthRiskPanel';
 import ProjectRecommendationsPanel from '../../../../components/project/ProjectRecommendationsPanel';
@@ -97,14 +97,14 @@ export default function SupervisorProjectDetailsPage({ params }: { params: { pro
             <div className="space-y-5 p-6">
               {activeTab === 'overview' && (
                 <>
-                  <ProjectMilestonesPanel milestones={project.milestones} />
-                  <ProjectSubmissionsPanel submissions={project.submissions} />
+                  <SupervisorMilestonesPanel projectId={params.projectId} milestones={project.milestones} />
+                  <SupervisorSubmissionsPanel submissions={project.submissions} />
                   <ProjectDiscussionsPanel discussions={project.discussionThreads ?? project.discussions} />
                   <ActivityHeatmap days={heatmap.days} year={heatmap.year} label="Project activity" />
                 </>
               )}
-              {activeTab === 'milestones'    && <ProjectMilestonesPanel milestones={project.milestones} />}
-              {activeTab === 'submissions'   && <ProjectSubmissionsPanel submissions={project.submissions} />}
+              {activeTab === 'milestones'    && <SupervisorMilestonesPanel projectId={params.projectId} milestones={project.milestones} />}
+              {activeTab === 'submissions'   && <SupervisorSubmissionsPanel submissions={project.submissions} />}
               {activeTab === 'discussions'   && <ProjectDiscussionsPanel discussions={project.discussionThreads ?? project.discussions} />}
               {activeTab === 'collaborators' && <ProjectCollaboratorsPanel projectId={params.projectId} />}
             </div>
