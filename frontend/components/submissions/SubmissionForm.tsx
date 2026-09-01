@@ -38,10 +38,9 @@ export default function SubmissionForm({ onSubmit, isSubmitting }: { onSubmit: (
   useEffect(() => {
     apiGet('/projects').then((data: any) => {
       const all = Array.isArray(data) ? data : [];
-      // Only active projects can receive submissions
-      const active = all.filter((p: any) => p.status === 'ACTIVE');
-      setProjects(active);
-      if (active.length > 0) setProjectId(active[0].id);
+      const relevant = all.filter((p: any) => p.status !== 'CANCELLED' && p.status !== 'COMPLETED');
+      setProjects(relevant);
+      if (relevant.length > 0) setProjectId(relevant[0].id);
     }).catch(() => {});
   }, []);
 
@@ -122,7 +121,7 @@ export default function SubmissionForm({ onSubmit, isSubmitting }: { onSubmit: (
           <label className={fieldLabel}>Project</label>
           <select value={projectId} onChange={(e) => setProjectId(e.target.value)} className="input" disabled={projects.length === 0}>
             {projects.length === 0
-              ? <option value="">No active projects — get your proposal accepted first</option>
+              ? <option value="">No projects found — submit a proposal first</option>
               : projects.map((p) => <option value={p.id} key={p.id}>{p.title}</option>)
             }
           </select>
