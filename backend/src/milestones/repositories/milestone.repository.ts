@@ -13,7 +13,7 @@ export class MilestoneRepository {
     return this.prisma.milestone.create({
       data: {
         ...data,
-        dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+        dueDate: new Date(data.dueDate),
       },
     });
   }
