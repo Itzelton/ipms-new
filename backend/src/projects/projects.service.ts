@@ -140,6 +140,11 @@ export class ProjectsService {
     if (!user) throw new NotFoundException(`No user found with email ${email}`);
     const ownerIds = [settings.studentId, settings.supervisorId].filter(Boolean) as string[];
     if (ownerIds.includes(user.id)) throw new BadRequestException('The project owner and supervisor are already part of the project team.');
+    // Students can only collaborate on projects supervised by their own advisor
+    const advisorId = (user as any).studentProfile?.advisorId;
+    if (advisorId && advisorId !== settings.supervisorId) {
+      throw new ForbiddenException('This student is assigned to a different supervisor and cannot be added to this project.');
+    }
     const existing = (await this.projectRepository.findCollaborators(projectId)).some((assignment: any) => assignment.userId === user.id);
     if (!existing && user.id !== settings.studentId && user.id !== settings.supervisorId) {
       const count = await this.projectRepository.countTeamCollaborators(projectId, ownerIds);

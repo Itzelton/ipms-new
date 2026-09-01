@@ -152,165 +152,186 @@ export default function ProjectCollaboratorsPanel({ projectId }: { projectId: st
   }
 
   if (loading) {
-    return <div className="py-4 text-sm text-gray-500">Loading collaborators...</div>;
+    return <div className="py-6 text-sm text-slate-400 text-center">Loading collaborators…</div>;
   }
 
+  const isSupervisor = user?.role === 'SUPERVISOR';
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+
+      {/* Team limit (supervisor only) */}
+      {isSupervisor && (
+        <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <label className="text-[12px] font-medium text-slate-600 shrink-0" htmlFor="collaborator-limit">
+            Team-member limit
+          </label>
+          <input
+            id="collaborator-limit"
+            type="number" min="0" max="50"
+            value={collaboratorLimit}
+            onChange={(e) => setCollaboratorLimit(Math.max(0, Number(e.target.value)))}
+            className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100"
+          />
+          <button
+            type="button" onClick={saveLimit} disabled={savingLimit}
+            className="rounded-lg bg-sky-600 px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-sky-700 disabled:opacity-50 transition"
+          >
+            {savingLimit ? 'Saving…' : 'Save'}
+          </button>
+          {addError && <p className="text-[12px] text-rose-600">{addError}</p>}
+        </div>
+      )}
 
       {/* Collaborators list */}
-      <section>
-        <h4 className="mb-3 text-sm font-semibold text-gray-700">
+      <div>
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
           {collaborators.length === 0
             ? `No collaborators yet · limit ${collaboratorLimit}`
             : `${collaborators.length} of ${collaboratorLimit} collaborator${collaboratorLimit !== 1 ? 's' : ''}`}
-        </h4>
-        {user?.role === 'SUPERVISOR' && (
-          <div className="mb-4 flex items-center gap-2 rounded border border-gray-100 bg-gray-50 p-3">
-            <label className="text-xs font-medium text-gray-600" htmlFor="collaborator-limit">Team-member limit</label>
-            <input id="collaborator-limit" type="number" min="0" max="50" value={collaboratorLimit}
-              onChange={(e) => setCollaboratorLimit(Math.max(0, Number(e.target.value)))}
-              className="w-20 rounded border px-2 py-1 text-sm" />
-            <button type="button" onClick={saveLimit} disabled={savingLimit}
-              className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white disabled:opacity-50">
-              {savingLimit ? 'Saving...' : 'Save limit'}
-            </button>
+        </p>
+        {collaborators.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-200 py-8 text-center">
+            <p className="text-sm text-slate-400">No collaborators have been added yet.</p>
           </div>
-        )}
-        {collaborators.length > 0 && (
-          <ul className="divide-y divide-gray-100 rounded border border-gray-100">
+        ) : (
+          <ul className="divide-y divide-slate-100 rounded-xl border border-slate-100 overflow-hidden">
             {collaborators.map((c) => (
-              <li key={c.id} className="flex items-center justify-between px-4 py-3">
-                <div>
-                  <p className="text-sm font-medium text-gray-800">{displayName(c)}</p>
-                  <p className="text-xs text-gray-500">
-                    {c.user?.email}
-                    <span className="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">
-                      {ROLE_LABELS[c.role] ?? c.role}
-                    </span>
-                  </p>
+              <li key={c.id} className="flex items-center justify-between gap-3 px-4 py-3 bg-white">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-400 to-indigo-500 text-[11px] font-bold text-white">
+                    {displayName(c).charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-[13px] font-medium text-slate-800">{displayName(c)}</p>
+                    <p className="truncate text-[11px] text-slate-400">{c.user?.email}</p>
+                  </div>
                 </div>
-                <button
-                  onClick={() => handleRemove(c.user?.id)}
-                  disabled={removingId === c.user?.id}
-                  className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50"
-                >
-                  {removingId === c.user?.id ? 'Removing...' : 'Remove'}
-                </button>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                    {ROLE_LABELS[c.role] ?? c.role}
+                  </span>
+                  {isSupervisor && (
+                    <button
+                      onClick={() => handleRemove(c.user?.id)}
+                      disabled={removingId === c.user?.id}
+                      className="rounded-lg p-1.5 text-slate-300 hover:bg-rose-50 hover:text-rose-500 disabled:opacity-50 transition"
+                      title="Remove collaborator"
+                    >
+                      <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
         )}
-      </section>
+      </div>
 
-      {/* Add by email */}
-      <form onSubmit={handleAdd} className="space-y-3 rounded border border-dashed border-gray-200 p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Add by email</p>
-        <div className="flex gap-2">
-          <input
-            type="email"
-            value={newEmail}
-            onChange={(e) => setNewEmail(e.target.value)}
-            placeholder="user@example.com"
-            className="flex-1 rounded border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <select
-            value={newRole}
-            onChange={(e) => setNewRole(e.target.value)}
-            className="rounded border px-2 py-1.5 text-sm"
-          >
-            <option value="REVIEWER">Reviewer</option>
-            <option value="STUDENT">Student</option>
-            <option value="SUPERVISOR">Supervisor</option>
-            <option value="GUEST">Guest</option>
-          </select>
-          <button
-            type="submit"
-            disabled={adding || !newEmail.trim()}
-            className="rounded bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-          >
-            {adding ? 'Adding...' : 'Add'}
-          </button>
-        </div>
-        {addError && <p className="text-xs text-red-600">{addError}</p>}
-      </form>
-
-      {/* Invite links */}
-      <section className="space-y-3">
-        <h4 className="text-sm font-semibold text-gray-700">Invite links</h4>
-
-        {invites.length > 0 && (
-          <ul className="divide-y divide-gray-100 rounded border border-gray-100">
-            {invites.map((inv) => {
-              const link = `${ORIGIN}/invite/${inv.token}`;
-              const expired = inv.expiresAt && new Date(inv.expiresAt) < new Date();
-              return (
-                <li key={inv.id} className="flex items-start justify-between gap-4 px-4 py-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">
-                        {ROLE_LABELS[inv.role] ?? inv.role}
-                      </span>
-                      {expired && (
-                        <span className="rounded bg-red-100 px-1.5 py-0.5 text-xs font-medium text-red-600">Expired</span>
-                      )}
-                      <span className="text-xs text-gray-400">
-                        Used {inv.usedCount} time{inv.usedCount !== 1 ? 's' : ''}
-                        {inv.expiresAt && !expired && ` · expires ${new Date(inv.expiresAt).toLocaleDateString()}`}
-                      </span>
-                    </div>
-                    <p className="mt-1 truncate font-mono text-xs text-gray-500">{link}</p>
-                  </div>
-                  <div className="flex shrink-0 gap-2">
-                    <button
-                      onClick={() => handleCopy(inv.token)}
-                      className="rounded px-2 py-1 text-xs text-blue-600 hover:bg-blue-50"
-                    >
-                      {copiedToken === inv.token ? 'Copied!' : 'Copy'}
-                    </button>
-                    <button
-                      onClick={() => handleRevokeInvite(inv.token)}
-                      className="rounded px-2 py-1 text-xs text-red-600 hover:bg-red-50"
-                    >
-                      Revoke
-                    </button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-
-        <form onSubmit={handleGenerateInvite} className="flex flex-wrap gap-2">
-          <select
-            value={inviteRole}
-            onChange={(e) => setInviteRole(e.target.value)}
-            className="rounded border px-2 py-1.5 text-sm"
-          >
-            <option value="REVIEWER">Reviewer</option>
-            <option value="STUDENT">Student</option>
-            <option value="SUPERVISOR">Supervisor</option>
-            <option value="GUEST">Guest</option>
-          </select>
-          <select
-            value={inviteExpiry}
-            onChange={(e) => setInviteExpiry(e.target.value)}
-            className="rounded border px-2 py-1.5 text-sm"
-          >
-            <option value="1">Expires in 1 day</option>
-            <option value="7">Expires in 7 days</option>
-            <option value="30">Expires in 30 days</option>
-            <option value="">Never expires</option>
-          </select>
-          <button
-            type="submit"
-            disabled={generating}
-            className="rounded bg-slate-700 px-4 py-1.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
-          >
-            {generating ? 'Generating...' : 'Generate link'}
-          </button>
+      {/* Add by email (supervisor only) */}
+      {isSupervisor && (
+        <form onSubmit={handleAdd} className="space-y-3 rounded-xl border border-dashed border-slate-200 p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">Add collaborator by email</p>
+          <p className="text-[11px] text-slate-400">Only students supervised by you can be added.</p>
+          <div className="flex gap-2">
+            <input
+              type="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              placeholder="student@example.com"
+              className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100"
+            />
+            <button
+              type="submit"
+              disabled={adding || !newEmail.trim()}
+              className="rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-50 transition"
+            >
+              {adding ? 'Adding…' : 'Add'}
+            </button>
+          </div>
+          {addError && <p className="text-[12px] text-rose-600">{addError}</p>}
         </form>
-      </section>
+      )}
+
+      {/* Invite links (supervisor only) */}
+      {isSupervisor && (
+        <section className="space-y-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">Invite links</p>
+
+          {invites.length > 0 && (
+            <ul className="divide-y divide-slate-100 rounded-xl border border-slate-100 overflow-hidden">
+              {invites.map((inv) => {
+                const link = `${ORIGIN}/invite/${inv.token}`;
+                const expired = inv.expiresAt && new Date(inv.expiresAt) < new Date();
+                return (
+                  <li key={inv.id} className="flex items-start justify-between gap-4 bg-white px-4 py-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                          {ROLE_LABELS[inv.role] ?? inv.role}
+                        </span>
+                        {expired && (
+                          <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-600">Expired</span>
+                        )}
+                        <span className="text-[11px] text-slate-400">
+                          Used {inv.usedCount}×
+                          {inv.expiresAt && !expired && ` · expires ${new Date(inv.expiresAt).toLocaleDateString()}`}
+                        </span>
+                      </div>
+                      <p className="mt-1 truncate font-mono text-[11px] text-slate-400">{link}</p>
+                    </div>
+                    <div className="flex shrink-0 gap-2">
+                      <button
+                        onClick={() => handleCopy(inv.token)}
+                        className="rounded-lg px-2 py-1 text-[11px] font-medium text-sky-600 hover:bg-sky-50 transition"
+                      >
+                        {copiedToken === inv.token ? 'Copied!' : 'Copy'}
+                      </button>
+                      <button
+                        onClick={() => handleRevokeInvite(inv.token)}
+                        className="rounded-lg px-2 py-1 text-[11px] font-medium text-rose-500 hover:bg-rose-50 transition"
+                      >
+                        Revoke
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          <form onSubmit={handleGenerateInvite} className="flex flex-wrap gap-2">
+            <select
+              value={inviteRole}
+              onChange={(e) => setInviteRole(e.target.value)}
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100"
+            >
+              <option value="REVIEWER">Reviewer</option>
+              <option value="STUDENT">Student</option>
+              <option value="GUEST">Guest</option>
+            </select>
+            <select
+              value={inviteExpiry}
+              onChange={(e) => setInviteExpiry(e.target.value)}
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100"
+            >
+              <option value="1">Expires in 1 day</option>
+              <option value="7">Expires in 7 days</option>
+              <option value="30">Expires in 30 days</option>
+              <option value="">Never expires</option>
+            </select>
+            <button
+              type="submit"
+              disabled={generating}
+              className="rounded-xl bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50 transition"
+            >
+              {generating ? 'Generating…' : 'Generate invite link'}
+            </button>
+          </form>
+        </section>
+      )}
     </div>
   );
 }
