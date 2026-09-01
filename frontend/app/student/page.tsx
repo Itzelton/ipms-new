@@ -113,7 +113,7 @@ export default function StudentDashboard() {
             <p className="mt-1 text-sm text-slate-500">Track your project, submissions and advisor feedback.</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            {!loading && !data.hasActive && (
+            {!loading && (
               <Link
                 href="/student/projects"
                 className="flex-shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white no-underline hover:bg-sky-700 transition"
