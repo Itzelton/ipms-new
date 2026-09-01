@@ -2,8 +2,8 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } f
 import { MilestonesService } from './milestones.service';
 import { CreateMilestoneDto } from './dto/create-milestone.dto';
 import { UpdateMilestoneDto } from './dto/update-milestone.dto';
+import { MilestoneQueryDto } from './dto/milestone-query.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import { PaginationDto } from '../common/dto/pagination.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('milestones')
@@ -11,7 +11,8 @@ export class MilestonesController {
   constructor(private readonly milestonesService: MilestonesService) {}
 
   @Get()
-  findAll(@Query() pagination: PaginationDto, @Query('projectId') projectId?: string) {
+  findAll(@Query() query: MilestoneQueryDto) {
+    const { projectId, ...pagination } = query;
     return this.milestonesService.findAll(pagination, projectId);
   }
 

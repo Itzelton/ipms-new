@@ -3,8 +3,8 @@ import { SubmissionsService } from './submissions.service';
 import { CreateSubmissionDto } from './dto/create-submission.dto';
 import { UpdateSubmissionDto } from './dto/update-submission.dto';
 import { CreateSubmissionVersionDto } from './dto/create-submission-version.dto';
+import { SubmissionQueryDto } from './dto/submission-query.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import { PaginationDto } from '../common/dto/pagination.dto';
 import { CurrentUser } from '../common/decorators/user.decorator';
 
 @UseGuards(JwtAuthGuard)
@@ -13,7 +13,8 @@ export class SubmissionsController {
   constructor(private readonly submissionsService: SubmissionsService) {}
 
   @Get()
-  findAll(@Query() pagination: PaginationDto, @CurrentUser('id') userId: string, @Query('projectId') projectId?: string) {
+  findAll(@Query() query: SubmissionQueryDto, @CurrentUser('id') userId: string) {
+    const { projectId, ...pagination } = query;
     return this.submissionsService.findByAuthor(userId, pagination, projectId);
   }
 
