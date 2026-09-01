@@ -18,10 +18,15 @@ export class MilestoneRepository {
     });
   }
 
-  async findAll(pagination: PaginationDto) {
+  async findAll(pagination: PaginationDto, projectId?: string) {
     const take = pagination.limit || 20;
     const skip = pagination.page ? (pagination.page - 1) * take : 0;
-    return this.prisma.milestone.findMany({ skip, take });
+    return this.prisma.milestone.findMany({
+      skip,
+      take,
+      where: projectId ? { projectId } : undefined,
+      orderBy: { dueDate: 'asc' },
+    });
   }
 
   async findOne(id: string) {

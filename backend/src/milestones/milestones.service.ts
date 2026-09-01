@@ -34,8 +34,8 @@ export class MilestonesService {
     return m;
   }
 
-  async findAll(pagination: PaginationDto) {
-    return this.milestoneRepository.findAll(pagination);
+  async findAll(pagination: PaginationDto, projectId?: string) {
+    return this.milestoneRepository.findAll(pagination, projectId);
   }
 
   async findOne(id: string) {

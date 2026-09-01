@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { apiGet } from '../../services/api';
 
 const COLUMNS = [
   { key: 'PENDING',     label: 'To Do',       dot: 'bg-amber-400',   card: 'border-amber-200 bg-amber-50/40' },
@@ -23,8 +24,16 @@ function fmtDate(d: string) {
 
 type View = 'list' | 'board';
 
-export default function ProjectMilestonesPanel({ milestones }: { milestones?: any[] }) {
+export default function ProjectMilestonesPanel({ milestones: initial, projectId }: { milestones?: any[]; projectId?: string }) {
   const [view, setView] = useState<View>('list');
+  const [milestones, setMilestones] = useState<any[]>(initial ?? []);
+
+  useEffect(() => {
+    if (!projectId) return;
+    apiGet(`/milestones?projectId=${projectId}&limit=100`)
+      .then((data) => { if (Array.isArray(data)) setMilestones(data); })
+      .catch(() => {});
+  }, [projectId]);
 
   if (!milestones || milestones.length === 0) {
     return (

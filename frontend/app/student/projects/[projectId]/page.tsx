@@ -93,13 +93,13 @@ export default function ProjectDetailsPage({ params }: { params: { projectId: st
             <div className="mt-6 space-y-6">
               {activeTab === 'overview' && (
                 <>
-                  <ProjectMilestonesPanel milestones={project.milestones} />
+                  <ProjectMilestonesPanel milestones={project.milestones} projectId={params.projectId} />
                   <ProjectSubmissionsPanel submissions={project.submissions} />
                   <ProjectDiscussionsPanel discussions={project.discussionThreads ?? project.discussions} />
                   <ActivityHeatmap days={heatmap.days} year={heatmap.year} label="Project activity" />
                 </>
               )}
-              {activeTab === 'milestones' && <ProjectMilestonesPanel milestones={project.milestones} />}
+              {activeTab === 'milestones' && <ProjectMilestonesPanel milestones={project.milestones} projectId={params.projectId} />}
               {activeTab === 'submissions' && <ProjectSubmissionsPanel submissions={project.submissions} />}
               {activeTab === 'discussions' && <ProjectDiscussionsPanel discussions={project.discussionThreads ?? project.discussions} />}
               {activeTab === 'collaborators' && <ProjectCollaboratorsPanel projectId={params.projectId} />}

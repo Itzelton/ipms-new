@@ -11,8 +11,8 @@ export class MilestonesController {
   constructor(private readonly milestonesService: MilestonesService) {}
 
   @Get()
-  findAll(@Query() pagination: PaginationDto) {
-    return this.milestonesService.findAll(pagination);
+  findAll(@Query() pagination: PaginationDto, @Query('projectId') projectId?: string) {
+    return this.milestonesService.findAll(pagination, projectId);
   }
 
   @Get(':id')
