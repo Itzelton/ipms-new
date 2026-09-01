@@ -14,8 +14,9 @@ export class CreateSubmissionDto {
   @IsUUID()
   projectId: string;
 
+  @IsOptional()
   @IsUUID()
-  milestoneId: string;
+  milestoneId?: string;
 
   @IsNotEmpty()
   @IsString()

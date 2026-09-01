@@ -46,11 +46,23 @@ export default function SubmissionForm({ onSubmit, isSubmitting }: { onSubmit: (
 
   useEffect(() => {
     if (!projectId) { setMilestones([]); setMilestoneId(''); return; }
-    apiGet(`/milestones?projectId=${projectId}&limit=100`).then((data: any) => {
-      const ms: { id: string; title: string }[] = Array.isArray(data) ? data : [];
-      setMilestones(ms);
-      setMilestoneId(ms.length > 0 ? ms[0].id : '');
-    }).catch(() => { setMilestones([]); setMilestoneId(''); });
+    Promise.allSettled([
+      apiGet(`/milestones?projectId=${projectId}&limit=100`),
+      apiGet(`/projects/${projectId}/details`),
+    ]).then(([msRes, projRes]) => {
+      // Try dedicated milestones endpoint first
+      if (msRes.status === 'fulfilled' && Array.isArray(msRes.value) && msRes.value.length > 0) {
+        setMilestones(msRes.value);
+        setMilestoneId(msRes.value[0].id);
+        return;
+      }
+      // Fall back to project details milestones
+      if (projRes.status === 'fulfilled') {
+        const ms: any[] = Array.isArray(projRes.value?.milestones) ? projRes.value.milestones : [];
+        setMilestones(ms);
+        setMilestoneId(ms.length > 0 ? ms[0].id : '');
+      }
+    });
   }, [projectId]);
 
   const fileLabel = useMemo(() => {
