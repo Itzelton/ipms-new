@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { apiGet, apiPatch } from '../../services/api';
 
 type Proposal = {
@@ -57,7 +58,7 @@ export default function PendingProposalsCard() {
           {proposals.map((p) => (
             <li key={p.id} className="rounded-xl border border-slate-100 bg-slate-50 p-4">
               <div className="flex items-start justify-between gap-2 mb-1">
-                <p className="text-sm font-semibold text-slate-800 leading-snug">{p.title}</p>
+                <Link href={`/supervisor/projects/${p.id}`} className="text-sm font-semibold text-slate-800 leading-snug hover:text-sky-700 no-underline">{p.title}</Link>
                 <span className="flex-shrink-0 rounded-full bg-slate-200 px-2 py-0.5 text-[10px] text-slate-500">{p.type.charAt(0) + p.type.slice(1).toLowerCase()}</span>
               </div>
               <p className="text-[12px] text-slate-500 mb-1">From: <span className="font-medium text-slate-700">{studentName(p.student)}</span></p>

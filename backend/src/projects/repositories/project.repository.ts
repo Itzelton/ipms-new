@@ -109,45 +109,39 @@ export class ProjectRepository {
       } as any;
     }
 
-    try {
-      return await this.prisma.project.findUnique({
+    // Try progressively simpler queries until one succeeds, to handle production
+    // databases where optional tables may not yet exist.
+    const queries = [
+      () => this.prisma.project.findUnique({
         where: { id },
         include: {
-          student: true,
-          supervisor: true,
-          department: true,
-          cohort: true,
+          student: true, supervisor: true, department: true, cohort: true,
           assignments: { include: { user: true } },
-          milestones: true,
-          submissions: true,
-          discussionThreads: true,
-          notifications: true,
-          analytics: true,
-          healthScores: true,
-          riskSignals: true,
-          recommendations: true,
-          forecasts: true,
-          reports: true,
+          milestones: true, submissions: true, discussionThreads: true,
+          notifications: true, analytics: true, healthScores: true,
+          riskSignals: true, recommendations: true, forecasts: true, reports: true,
         },
-      });
-    } catch {
-      // Some optional tables (analytics, healthScores, etc.) may not exist in this
-      // deployment yet. Fall back to the core fields so the page always renders.
-      return this.prisma.project.findUnique({
+      }),
+      () => this.prisma.project.findUnique({
         where: { id },
         include: {
-          student: true,
-          supervisor: true,
-          department: true,
-          cohort: true,
+          student: true, supervisor: true,
           assignments: { include: { user: true } },
-          milestones: true,
-          submissions: true,
-          discussionThreads: true,
-          notifications: true,
+          milestones: true, submissions: true, discussionThreads: true,
         },
-      }) as any;
+      }),
+      () => this.prisma.project.findUnique({
+        where: { id },
+        include: { student: true, supervisor: true },
+      }),
+    ];
+
+    for (const query of queries) {
+      try {
+        return await query() as any;
+      } catch { /* try next fallback */ }
     }
+    return null;
   }
 
   async countDiscussionMessages(projectId: string) {
