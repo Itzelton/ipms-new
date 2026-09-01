@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { apiGet, apiPost, apiUpload } from '../../../services/api';
 import FilterBar from '../../../components/ui/FilterBar';
+import Link from 'next/link';
 
 type Supervisor = { id: string; email: string; firstName?: string; lastName?: string; preferredName?: string };
 type Me = { studentProfile?: { advisorId?: string | null } };
@@ -147,14 +148,12 @@ export default function StudentProjectsPage() {
             <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">Projects &amp; Proposals</h2>
             <p className="mt-1 text-sm text-slate-500">Submit a proposal to a supervisor, then track its status here.</p>
           </div>
-          {!hasActive && (
-            <button
-              onClick={() => setShowForm((v) => !v)}
-              className="rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 transition"
-            >
-              {showForm ? 'Cancel' : '+ New Proposal'}
-            </button>
-          )}
+          <button
+            onClick={() => setShowForm((v) => !v)}
+            className="rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 transition"
+          >
+            {showForm ? 'Cancel' : '+ New Proposal'}
+          </button>
         </div>
       </div>
 
@@ -350,6 +349,17 @@ export default function StudentProjectsPage() {
                   <p className="rounded-lg bg-rose-50 px-3 py-2 text-[11px] text-rose-700">
                     This proposal was not accepted. You may submit a new one.
                   </p>
+                )}
+                {p.status === 'ACTIVE' && (
+                  <Link
+                    href={`/student/projects/${p.id}`}
+                    className="mt-auto inline-flex items-center gap-1 text-[12px] font-semibold text-sky-600 hover:text-sky-700 no-underline transition"
+                  >
+                    View Insights
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </Link>
                 )}
               </div>
             );
