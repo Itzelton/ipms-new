@@ -10,7 +10,12 @@ export class MilestoneRepository {
   constructor(public readonly prisma: PrismaService) {}
 
   async create(data: CreateMilestoneDto) {
-    return this.prisma.milestone.create({ data });
+    return this.prisma.milestone.create({
+      data: {
+        ...data,
+        dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+      },
+    });
   }
 
   async findAll(pagination: PaginationDto) {
