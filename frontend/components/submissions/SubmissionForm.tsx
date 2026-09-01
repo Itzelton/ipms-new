@@ -47,8 +47,8 @@ export default function SubmissionForm({ onSubmit, isSubmitting }: { onSubmit: (
 
   useEffect(() => {
     if (!projectId) { setMilestones([]); setMilestoneId(''); return; }
-    apiGet(`/projects/${projectId}/details`).then((data: any) => {
-      const ms: { id: string; title: string }[] = data?.milestones ?? [];
+    apiGet(`/milestones?projectId=${projectId}&limit=100`).then((data: any) => {
+      const ms: { id: string; title: string }[] = Array.isArray(data) ? data : [];
       setMilestones(ms);
       setMilestoneId(ms.length > 0 ? ms[0].id : '');
     }).catch(() => { setMilestones([]); setMilestoneId(''); });
