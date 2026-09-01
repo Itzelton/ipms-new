@@ -427,7 +427,13 @@ function ChannelSidebar({ channels, activeId, meId, onSelect, onNewDm }: {
         <p className="text-[11px] text-slate-400 mt-0.5">Your workspaces</p>
       </div>
       <div className="flex-1 overflow-y-auto p-3">
-        {projects.length > 0 && <Section label="Channels" items={projects} />}
+        {Object.entries(projects.reduce<Record<string, Channel[]>>((groups, channel) => {
+          const key = channel.projectId ?? channel.id;
+          (groups[key] ??= []).push(channel);
+          return groups;
+        }, {})).map(([projectId, items]) => (
+          <Section key={projectId} label={items[0].project?.title ?? 'Project discussion'} items={items} />
+        ))}
         {announcements.length > 0 && <Section label="Announcements" items={announcements} />}
         {dms.length > 0 && <Section label="Direct Messages" items={dms} />}
         {channels.length === 0 && (
@@ -526,6 +532,7 @@ export default function DiscussionsLayout({ userId, userName, role = 'STUDENT' }
   const [threadMsg, setThreadMsg] = useState<Message | null>(null);
   const [typingUsers, setTypingUsers] = useState<Record<string, { name: string; timer: any }>>({});
   const [dmModalOpen, setDmModalOpen] = useState(false);
+  const [activeProject, setActiveProject] = useState<{ title: string; milestones: Array<{ id: string; title: string; status: string }> } | null>(null);
   const feedRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -583,6 +590,13 @@ export default function DiscussionsLayout({ userId, userName, role = 'STUDENT' }
 
     return () => { offNew(); offEdited(); offDeleted(); offReaction(); offTypingStart(); offTypingStop(); };
   }, [activeChannel?.id]); // eslint-disable-line
+
+  useEffect(() => {
+    if (!activeChannel?.projectId) { setActiveProject(null); return; }
+    apiGet(`/projects/${activeChannel.projectId}/details`)
+      .then((project) => setActiveProject({ title: project.title, milestones: project.milestones ?? [] }))
+      .catch(() => setActiveProject(null));
+  }, [activeChannel?.projectId]);
 
   // scroll to bottom on new messages
   useEffect(() => {
@@ -688,7 +702,7 @@ export default function DiscussionsLayout({ userId, userName, role = 'STUDENT' }
             <span className="text-[15px] text-slate-400">{CHANNEL_ICON[activeChannel.type] ?? '#'}</span>
             <div>
               <p className="text-[14px] font-semibold text-slate-800">
-                {activeChannel.type === 'DIRECT' ? dmDisplayName(activeChannel, userId) : activeChannel.name}
+                {activeChannel.type === 'DIRECT' ? dmDisplayName(activeChannel, userId) : `${activeProject?.title ?? activeChannel.project?.title ?? 'Project'} · ${activeChannel.name}`}
               </p>
               {activeChannel.description && activeChannel.type !== 'DIRECT' && (
                 <p className="text-[11px] text-slate-400">{activeChannel.description}</p>
@@ -697,6 +711,16 @@ export default function DiscussionsLayout({ userId, userName, role = 'STUDENT' }
             <span className="ml-auto rounded-full px-2 py-0.5 text-[10px] font-medium text-slate-400 bg-slate-100">
               {channelTypeLabel[activeChannel.type] ?? 'channel'}
             </span>
+            {activeProject && activeProject.milestones.length > 0 && (
+              <div className="hidden xl:flex items-center gap-1.5 max-w-[45%] overflow-x-auto">
+                {activeProject.milestones.slice(0, 4).map((milestone) => (
+                  <span key={milestone.id} title={milestone.title}
+                    className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] ${milestone.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                    {milestone.title}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         ) : (
           <div className="border-b border-slate-100 px-5 py-3.5">

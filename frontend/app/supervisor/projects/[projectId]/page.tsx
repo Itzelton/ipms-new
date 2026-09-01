@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { getProjectDetails } from '../../../../services/project';
 import ActivityTimeline from '../../../../components/dashboard/ActivityTimeline';
 import ProjectOverviewPanel from '../../../../components/project/ProjectOverviewPanel';
@@ -14,30 +14,47 @@ import ActivityHeatmap from '../../../../components/dashboard/ActivityHeatmap';
 import { apiGet } from '../../../../services/api';
 import { useAuth } from '../../../../components/auth/auth-context';
 import Breadcrumb from '../../../../components/ui/Breadcrumb';
+import Link from 'next/link';
+import ProposalReviewPanel from '../../../../components/supervisor/ProposalReviewPanel';
 
 export default function SupervisorProjectDetailsPage({ params }: { params: { projectId: string } }) {
   const { user } = useAuth();
   const [project, setProject] = useState<any>(null);
   const [heatmap, setHeatmap] = useState<{ year: number; days: any[] }>({ year: new Date().getFullYear(), days: [] });
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
 
-  useEffect(() => {
+  const loadProject = useCallback(() => {
     let mounted = true;
+    setLoading(true);
+    setLoadError('');
     const year = new Date().getFullYear();
     Promise.allSettled([
       getProjectDetails(params.projectId),
       apiGet(`/analytics/projects/${params.projectId}/heatmap?year=${year}`),
     ]).then(([detailsRes, heatmapRes]) => {
       if (!mounted) return;
-      if (detailsRes.status === 'fulfilled') setProject(detailsRes.value);
+      if (detailsRes.status === 'fulfilled' && detailsRes.value) setProject(detailsRes.value);
+      else setLoadError('We could not load this project. It may have been removed or you may no longer have access.');
       if (heatmapRes.status === 'fulfilled') setHeatmap(heatmapRes.value);
     }).finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };
   }, [params.projectId]);
 
+  useEffect(() => loadProject(), [loadProject]);
+
   if (loading) return <div className="p-6">Loading project details...</div>;
-  if (!project) return <div className="p-6 text-gray-600">Project not found.</div>;
+  if (!project) return (
+    <div className="card mx-auto max-w-xl p-8 text-center">
+      <h1 className="text-lg font-semibold text-slate-800">Project unavailable</h1>
+      <p className="mt-2 text-sm text-slate-500">{loadError || 'This project could not be found.'}</p>
+      <div className="mt-5 flex justify-center gap-3">
+        <button onClick={loadProject} className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white">Try again</button>
+        <Link href="/supervisor/projects" className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 no-underline">Back to projects</Link>
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -69,6 +86,9 @@ export default function SupervisorProjectDetailsPage({ params }: { params: { pro
 
       <div className="grid gap-6 xl:grid-cols-[1.8fr_1fr]">
         <div className="space-y-6">
+          {project.status === 'PROPOSED' && (
+            <ProposalReviewPanel project={project} onStatusChange={(status) => setProject((current: any) => ({ ...current, status }))} />
+          )}
           <ProjectOverviewPanel project={project} />
           <div className="card p-6">
             <ProjectTabs activeTab={activeTab} onChange={setActiveTab} />

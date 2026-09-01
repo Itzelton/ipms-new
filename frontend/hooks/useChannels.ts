@@ -10,6 +10,7 @@ export type Channel = {
   type: string;
   description?: string;
   projectId?: string;
+  project?: { id: string; title: string } | null;
   unread: number;
   members?: ChannelMember[];
 };

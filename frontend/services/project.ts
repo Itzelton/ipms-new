@@ -1,11 +1,34 @@
 import { apiGet } from './api';
 
 export async function getProjectDetails(projectId: string) {
+  async function fetchBasic() {
+    const project = await apiGet(`/api/v1/projects/${projectId}`);
+    if (!project) return null;
+    return {
+      ...project,
+      milestones: project.milestones ?? [],
+      submissions: project.submissions ?? [],
+      discussionThreads: project.discussionThreads ?? [],
+      analytics: project.analytics ?? [],
+      recommendedActions: project.recommendedActions ?? [],
+      activity: project.activity ?? [],
+    };
+  }
+
   try {
-    return await apiGet(`/api/v1/projects/${projectId}/details`);
-  } catch (e) {
+    const details = await apiGet(`/api/v1/projects/${projectId}/details`);
+    // Backend may return null if optional tables are missing — fall back gracefully
+    if (details) return details;
+    return await fetchBasic();
+  } catch (detailsError) {
+    // The details endpoint also calculates optional health/AI data. A failure
+    // there must not make a valid submitted proposal disappear from a
+    // supervisor's workspace, so fall back to the core project record.
+    try {
+      return await fetchBasic();
+    } catch {
     // In development return sample data to aid local UI work, but in production surface the error
-    if (process.env.NODE_ENV !== 'production') {
+      if (process.env.NODE_ENV !== 'production') {
       return {
       id: projectId,
       title: 'Capstone Platform Modernization',
@@ -71,8 +94,9 @@ export async function getProjectDetails(projectId: string) {
         summary: 'Resolve overdue work, review pending submissions, and keep communication active with the supervisor.',
       },
       };
+      }
+      throw detailsError;
     }
-    throw e;
   }
 }
 

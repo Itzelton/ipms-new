@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { apiGet, apiPost, apiDelete } from '../../services/api';
+import { apiGet, apiPost, apiPatch, apiDelete } from '../../services/api';
+import { useAuth } from '../auth/auth-context';
 
 interface CollaboratorUser {
   id: string;
@@ -43,7 +44,10 @@ const ROLE_LABELS: Record<string, string> = {
 const ORIGIN = typeof window !== 'undefined' ? window.location.origin : '';
 
 export default function ProjectCollaboratorsPanel({ projectId }: { projectId: string }) {
+  const { user } = useAuth();
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+  const [collaboratorLimit, setCollaboratorLimit] = useState(1);
+  const [savingLimit, setSavingLimit] = useState(false);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -60,13 +64,30 @@ export default function ProjectCollaboratorsPanel({ projectId }: { projectId: st
   const [removingId, setRemovingId] = useState<string | null>(null);
 
   async function load() {
-    const [collab, inv] = await Promise.allSettled([
+    const [collab, inv, project] = await Promise.allSettled([
       apiGet(`/projects/${projectId}/collaborators`),
       apiGet(`/projects/${projectId}/invites`),
+      apiGet(`/projects/${projectId}`),
     ]);
     setCollaborators(collab.status === 'fulfilled' && Array.isArray(collab.value) ? collab.value : []);
     setInvites(inv.status === 'fulfilled' && Array.isArray(inv.value) ? inv.value : []);
+    if (project.status === 'fulfilled' && typeof project.value?.collaboratorLimit === 'number') {
+      setCollaboratorLimit(project.value.collaboratorLimit);
+    }
     setLoading(false);
+  }
+
+  async function saveLimit() {
+    setSavingLimit(true);
+    setAddError('');
+    try {
+      await apiPatch(`/projects/${projectId}/collaborator-limit`, { collaboratorLimit });
+      await load();
+    } catch (err: any) {
+      setAddError(err?.message || 'Unable to update the collaborator limit.');
+    } finally {
+      setSavingLimit(false);
+    }
   }
 
   useEffect(() => { load(); }, [projectId]);
@@ -141,9 +162,21 @@ export default function ProjectCollaboratorsPanel({ projectId }: { projectId: st
       <section>
         <h4 className="mb-3 text-sm font-semibold text-gray-700">
           {collaborators.length === 0
-            ? 'No collaborators yet'
-            : `${collaborators.length} Collaborator${collaborators.length !== 1 ? 's' : ''}`}
+            ? `No collaborators yet · limit ${collaboratorLimit}`
+            : `${collaborators.length} of ${collaboratorLimit} collaborator${collaboratorLimit !== 1 ? 's' : ''}`}
         </h4>
+        {user?.role === 'SUPERVISOR' && (
+          <div className="mb-4 flex items-center gap-2 rounded border border-gray-100 bg-gray-50 p-3">
+            <label className="text-xs font-medium text-gray-600" htmlFor="collaborator-limit">Team-member limit</label>
+            <input id="collaborator-limit" type="number" min="0" max="50" value={collaboratorLimit}
+              onChange={(e) => setCollaboratorLimit(Math.max(0, Number(e.target.value)))}
+              className="w-20 rounded border px-2 py-1 text-sm" />
+            <button type="button" onClick={saveLimit} disabled={savingLimit}
+              className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white disabled:opacity-50">
+              {savingLimit ? 'Saving...' : 'Save limit'}
+            </button>
+          </div>
+        )}
         {collaborators.length > 0 && (
           <ul className="divide-y divide-gray-100 rounded border border-gray-100">
             {collaborators.map((c) => (
