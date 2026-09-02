@@ -15,6 +15,10 @@ export class UsersService {
     return this.userRepository.create(createUserDto);
   }
 
+  async createLocalAdmin(data: { email: string; password: string; preferredName: string }) {
+    return this.userRepository.createLocalAdmin(data);
+  }
+
   async findAll(pagination: PaginationDto, role?: string) {
     const users = await this.userRepository.findAll(pagination, role as any);
     return users.map((user) => this.sanitizeUser(user));

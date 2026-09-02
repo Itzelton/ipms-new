@@ -90,6 +90,14 @@ export class AuthService {
     };
   }
 
+  async registerAdmin(email: string, password: string, name: string) {
+    const existing = await this.usersService.findByEmail(email);
+    if (existing) throw new ConflictException('An account with this email already exists');
+
+    await this.usersService.createLocalAdmin({ email, password, preferredName: name });
+    return { message: 'Registration submitted. An existing admin will review and activate your account.' };
+  }
+
   async localLogin(email: string, password: string) {
     const user = await this.usersService.findByEmail(email);
     if (!user) throw new UnauthorizedException('Invalid credentials');

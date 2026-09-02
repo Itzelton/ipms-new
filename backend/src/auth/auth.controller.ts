@@ -44,6 +44,20 @@ class LocalRegisterDto {
   role!: RoleName;
 }
 
+class AdminRegisterDto {
+  @IsEmail()
+  email!: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @MinLength(8)
+  password!: string;
+
+  @IsNotEmpty()
+  @IsString()
+  name!: string;
+}
+
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -81,6 +95,12 @@ export class AuthController {
   @Post('local-register')
   localRegister(@Body() dto: LocalRegisterDto) {
     return this.authService.localRegister(dto.email, dto.password, dto.name, dto.role);
+  }
+
+  @Public()
+  @Post('register-admin')
+  registerAdmin(@Body() dto: AdminRegisterDto) {
+    return this.authService.registerAdmin(dto.email, dto.password, dto.name);
   }
 
   @Post('change-password')

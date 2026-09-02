@@ -132,6 +132,40 @@ export class UserRepository {
     return user;
   }
 
+  async createLocalAdmin(data: { email: string; password: string; preferredName: string }) {
+    const hashed = bcrypt.hashSync(data.password, 10);
+    if (this.useInMemoryData) {
+      const user = {
+        id: randomUUID(), email: data.email, password: hashed,
+        preferredName: data.preferredName, isActive: false,
+        createdAt: new Date(), updatedAt: new Date(),
+        roles: [{ role: { name: RoleName.ADMIN } }], studentProfile: null, supervisorProfile: null,
+      } as any;
+      this.inMemoryUsers.push(user);
+      return user;
+    }
+    return this.prisma.user.create({
+      data: {
+        email: data.email,
+        password: hashed,
+        preferredName: data.preferredName,
+        isActive: false,
+        mustChangePassword: false,
+        roles: {
+          create: {
+            role: {
+              connectOrCreate: {
+                where: { name: RoleName.ADMIN },
+                create: { name: RoleName.ADMIN },
+              },
+            },
+          },
+        },
+      },
+      include: userWithRolesInclude,
+    });
+  }
+
   async findAll(pagination: PaginationDto, role?: RoleName) {
     if (this.useInMemoryData) {
       const take = pagination.limit || 20;
