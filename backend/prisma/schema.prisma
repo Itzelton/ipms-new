@@ -404,16 +404,17 @@ model ProjectInvite {
 }
 
 model Milestone {
-  id          String          @id @default(uuid())
-  project     Project         @relation(fields: [projectId], references: [id])
-  projectId   String
-  title       String
-  description String?
-  dueDate     DateTime
-  status      MilestoneStatus @default(PENDING)
-  completedAt DateTime?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  id           String          @id @default(uuid())
+  project      Project         @relation(fields: [projectId], references: [id])
+  projectId    String
+  title        String
+  description  String?
+  requirements String?
+  dueDate      DateTime
+  status       MilestoneStatus @default(PENDING)
+  completedAt  DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
 
   submissions Submission[]
 }

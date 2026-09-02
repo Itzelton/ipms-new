@@ -199,7 +199,7 @@ export default function SupervisorSubmissionsPanel({ submissions: initial, proje
                   )}
 
                   {/* Inline remark form */}
-                  {isRemarking && (
+                  {isRemarking && remarking && (
                     <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-2">
                       <p className="text-[12px] font-semibold text-slate-700">
                         {remarking.action === 'APPROVED' ? '✓ Approving' : '⚠ Requesting Revision'} — add remarks (optional)
