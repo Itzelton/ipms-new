@@ -114,12 +114,7 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="block text-sm font-medium text-slate-700">Password</label>
-              <Link href="/forgot-password" className="text-xs text-sky-600 hover:text-sky-700 font-medium">
-                Forgot password?
-              </Link>
-            </div>
+            <label className="block text-sm font-medium text-slate-700">Password</label>
             <input
               type="password"
               value={password}
@@ -140,7 +135,12 @@ export default function LoginPage() {
         </form>
 
         {/* Admin registration */}
-        <div className="mt-6 border-t border-slate-100 pt-5">
+        <div className="mt-6 border-t border-slate-100 pt-5 space-y-3">
+          <p className="text-center text-sm text-slate-500">
+            <Link href="/forgot-password" className="font-medium text-sky-600 hover:text-sky-700">
+              Forgot your password?
+            </Link>
+          </p>
           {!showRegister ? (
             <p className="text-center text-sm text-slate-500">
               Are you an admin?{' '}
