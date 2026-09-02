@@ -63,6 +63,26 @@ export class SubmissionsService {
     const res = await this.submissionRepository.update(id, updateSubmissionDto);
     await this.auditService.log(actorId || null, 'update_submission', 'Submission', id, updateSubmissionDto);
 
+    // Notify student when supervisor approves or requests revision
+    if (updateSubmissionDto.status === 'APPROVED' || updateSubmissionDto.status === 'REVISION_REQUESTED') {
+      try {
+        const submission = await this.submissionRepository.prisma.submission.findUnique({
+          where: { id },
+          select: { authorId: true, projectId: true, project: { select: { title: true } } },
+        });
+        if (submission?.authorId) {
+          const isApproved = updateSubmissionDto.status === 'APPROVED';
+          await this.notificationsService.create({
+            recipientId: submission.authorId,
+            message: isApproved
+              ? `Your submission for "${submission.project?.title ?? 'your project'}" was approved.`
+              : `Revision requested on your submission for "${submission.project?.title ?? 'your project'}".`,
+            link: `/student/submissions`,
+          });
+        }
+      } catch { /* notification failure is non-critical */ }
+    }
+
     // When a submission is approved, automatically complete its linked milestone.
     if (updateSubmissionDto.status === 'APPROVED' && (res as any).milestoneId) {
       try {
