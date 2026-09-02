@@ -26,7 +26,7 @@ function fmtTime(d: string) {
 }
 
 export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) {
-  const { user, logout } = useAuth();
+  const { user, logout, hydrated } = useAuth();
   const { toggle } = useSidebar();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unread, setUnread] = useState(0);
@@ -336,11 +336,11 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
                 <span className="hidden sm:inline">Logout</span>
               </button>
             </>
-          ) : (
+          ) : hydrated ? (
             <Link href="/login" className="rounded-xl bg-white/60 px-3 py-2 text-[13px] font-medium text-slate-800 hover:bg-white/80 transition no-underline">
               Login
             </Link>
-          )}
+          ) : null}
         </div>
       </div>
     </header>

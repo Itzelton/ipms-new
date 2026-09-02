@@ -204,7 +204,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setUser(null);
         }
       } else {
-        setUser(null);
+        // No Supabase session — only clear user if there's also no local token.
+        // Locally-authenticated users (e.g. admins using local login) have no
+        // Supabase session, so Supabase auth events must not wipe them out.
+        const localToken = typeof window !== 'undefined' ? localStorage.getItem(LOCAL_TOKEN_KEY) : null;
+        if (!localToken) {
+          setUser(null);
+        }
       }
     });
 
