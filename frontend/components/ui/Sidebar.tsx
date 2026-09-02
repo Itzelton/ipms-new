@@ -107,6 +107,7 @@ const GridIcon = () => (
 const navItems: Record<string, { href: string; label: string; icon: React.ReactNode }[]> = {
   ADMIN: [
     { href: '/admin',                label: 'Dashboard',    icon: <GridIcon /> },
+    { href: '/admin/users',          label: 'Users',        icon: <UsersIcon /> },
     { href: '/admin/students',       label: 'Students',     icon: <UsersIcon /> },
     { href: '/admin/supervisors',    label: 'Supervisors',  icon: <ChartIcon /> },
     { href: '/admin/assignments',    label: 'Assignments',  icon: <ClipboardIcon /> },

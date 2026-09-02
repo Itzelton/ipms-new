@@ -70,6 +70,21 @@ export default function StudentDashboard() {
           };
         }
 
+        const activity = submissionList.slice(0, 8).map((s: any) => ({
+          id: s.id,
+          type: s.status === 'APPROVED' ? 'APPROVAL'
+               : s.status === 'REVISION_REQUIRED' ? 'REVISION_REQUEST'
+               : 'SUBMISSION_UPLOADED',
+          title: s.status === 'APPROVED'
+            ? `Submission approved: ${s.metadata?.title || 'Submission'}`
+            : s.status === 'REVISION_REQUIRED'
+            ? `Revision requested: ${s.metadata?.title || 'Submission'}`
+            : `Submission uploaded: ${s.metadata?.title || 'Submission'}`,
+          detail: s.feedback || '',
+          actor: s.status === 'APPROVED' || s.status === 'REVISION_REQUIRED' ? 'Supervisor' : 'You',
+          timestamp: s.updatedAt ?? s.submittedAt ?? s.createdAt,
+        }));
+
         if (mounted) {
           setData({
             activeProject: firstProject ? { id: firstProject.id, title: firstProject.title, progress: firstProject.progress ?? 0 } : null,
@@ -87,7 +102,7 @@ export default function StudentDashboard() {
               message: n.message,
               createdAt: n.createdAt,
             })),
-            activity: [],
+            activity,
             healthScore,
             heatmap: heatmapRes.status === 'fulfilled' ? heatmapRes.value : { year: YEAR, days: [] },
             supervisor,

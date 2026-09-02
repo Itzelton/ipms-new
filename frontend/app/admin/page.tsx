@@ -26,6 +26,7 @@ export default function AdminIndex() {
     { label: 'System Alerts',     value: '—', detail: 'Critical risk signals',          gradient: 'from-rose-400 to-rose-600',     valueColor: 'text-rose-600' },
   ]);
   const [activity, setActivity] = useState<any[]>([]);
+  const [alertCount, setAlertCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -54,6 +55,7 @@ export default function AdminIndex() {
         ).length;
 
         if (mounted) {
+          setAlertCount(alertCount);
           setStats([
             { label: 'Active Users',      value: fmt(activeUsers),    detail: 'Students, supervisors, admins', gradient: 'from-sky-400 to-blue-600',      valueColor: 'text-sky-600' },
             { label: 'Projects',          value: fmt(activeProjects), detail: 'Active capstone projects',      gradient: 'from-violet-400 to-indigo-600', valueColor: 'text-violet-600' },
@@ -92,13 +94,15 @@ export default function AdminIndex() {
             <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">Admin Dashboard</h2>
             <p className="mt-1 text-sm text-slate-500">Control center for users, projects and system insights.</p>
           </div>
-          <div
-            className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12px] font-medium text-slate-700"
-            style={{ background: 'rgba(248,250,252,0.80)', border: '1px solid rgba(226,232,240,0.80)' }}
-          >
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            System health: Good
-          </div>
+          {!loading && (
+            <div
+              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12px] font-medium text-slate-700"
+              style={{ background: 'rgba(248,250,252,0.80)', border: '1px solid rgba(226,232,240,0.80)' }}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${alertCount === 0 ? 'bg-emerald-400' : alertCount < 3 ? 'bg-amber-400' : 'bg-rose-400'}`} />
+              System health: {alertCount === 0 ? 'Good' : alertCount < 3 ? 'Caution' : 'At Risk'}
+            </div>
+          )}
         </div>
       </header>
 

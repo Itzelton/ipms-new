@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState, useCallback } from 'react';
-import { apiGet, apiPatch } from '../../../services/api';
+import { apiGet, apiPatch, apiDelete } from '../../../services/api';
 
 type PendingUser = { id: string; email: string; firstName?: string; lastName?: string; preferredName?: string; isActive: boolean; roles: string[]; createdAt: string };
 
@@ -46,10 +46,10 @@ export default function AdminApprovalsPage() {
   async function reject(id: string) {
     setProcessing(id);
     try {
-      // Keep inactive — just notify. In practice this could delete or set a rejected flag.
-      showToast('Account rejected (left inactive).');
+      await apiDelete(`/users/${id}`);
+      showToast('Account rejected and removed.');
       await load();
-    } catch (e: any) { showToast(e?.message || 'Failed.'); }
+    } catch (e: any) { showToast(e?.message || 'Failed to reject.'); }
     setProcessing(null);
   }
 

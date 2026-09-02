@@ -2,12 +2,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 
-const MOCK_SESSIONS = [
-  { device: 'Chrome · macOS',       location: 'Accra, Ghana', time: 'Active now',  current: true },
-  { device: 'Firefox · Windows 11', location: 'Accra, Ghana', time: '2 days ago',  current: false },
-  { device: 'Safari · iPhone 15',   location: 'Accra, Ghana', time: '4 days ago',  current: false },
-];
-
 export default function SecuritySection() {
   const [newPw, setNewPw]         = useState('');
   const [confirmPw, setConfirmPw] = useState('');
@@ -115,35 +109,24 @@ export default function SecuritySection() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
             Active Sessions
           </p>
-          <button className="text-[11px] font-semibold text-rose-500 transition-colors hover:text-rose-600">
-            Sign out all others
-          </button>
         </div>
         <ul className="divide-y divide-slate-100">
-          {MOCK_SESSIONS.map((s, i) => (
-            <li key={i} className="flex items-center justify-between gap-4 py-3.5 first:pt-0 last:pb-0">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-slate-100">
-                  <svg className="h-4 w-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-[13px] font-medium text-slate-800">{s.device}</p>
-                  <p className="text-[11px] text-slate-400">{s.location} · {s.time}</p>
-                </div>
+          <li className="flex items-center justify-between gap-4 py-3.5 first:pt-0 last:pb-0">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-slate-100">
+                <svg className="h-4 w-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
               </div>
-              {s.current ? (
-                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-                  This device
-                </span>
-              ) : (
-                <button className="text-[11px] font-semibold text-slate-500 transition-colors hover:text-rose-500">
-                  Sign out
-                </button>
-              )}
-            </li>
-          ))}
+              <div>
+                <p className="text-[13px] font-medium text-slate-800">Current browser session</p>
+                <p className="text-[11px] text-slate-400">Active now</p>
+              </div>
+            </div>
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+              This device
+            </span>
+          </li>
         </ul>
       </div>
 
