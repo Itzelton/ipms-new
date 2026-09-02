@@ -15,6 +15,10 @@ export class UpdateUserDto {
 
   @IsOptional()
   @IsString()
+  preferredName?: string;
+
+  @IsOptional()
+  @IsString()
   role?: string;
 
   @IsOptional()
@@ -22,10 +26,24 @@ export class UpdateUserDto {
   password?: string;
 
   @IsOptional()
-  @IsString()
-  preferredName?: string;
+  @IsBoolean()
+  mustChangePassword?: boolean;
 
   @IsOptional()
   @IsBoolean()
-  mustChangePassword?: boolean;
+  isActive?: boolean;
+
+  // Student profile
+  @IsOptional()
+  @IsString()
+  level?: string;
+
+  @IsOptional()
+  @IsString()
+  indexNumber?: string;
+
+  // Supervisor profile
+  @IsOptional()
+  @IsString()
+  referenceNumber?: string;
 }

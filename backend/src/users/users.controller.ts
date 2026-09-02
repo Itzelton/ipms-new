@@ -15,6 +15,12 @@ class AssignSupervisorDto {
   supervisorId?: string | null;
 }
 
+class UserQueryDto extends PaginationDto {
+  @IsOptional()
+  @IsString()
+  role?: string;
+}
+
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -43,8 +49,21 @@ export class UsersController {
   }
 
   @Roles('ADMIN')
+  @Patch(':id/activate')
+  activate(@Param('id') id: string) {
+    return this.usersService.setActive(id, true);
+  }
+
+  @Roles('ADMIN')
+  @Patch(':id/deactivate')
+  deactivate(@Param('id') id: string) {
+    return this.usersService.setActive(id, false);
+  }
+
+  @Roles('ADMIN')
   @Get()
-  findAll(@Query() pagination: PaginationDto, @Query('role') role?: string) {
+  findAll(@Query() query: UserQueryDto) {
+    const { role, ...pagination } = query;
     return this.usersService.findAll(pagination, role);
   }
 

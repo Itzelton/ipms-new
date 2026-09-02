@@ -71,6 +71,11 @@ export class UsersService {
     return this.sanitizeUser(user);
   }
 
+  async setActive(id: string, isActive: boolean) {
+    const user = await this.userRepository.update(id, { isActive });
+    return this.sanitizeUser(user);
+  }
+
   sanitizeUser(user: any): AuthenticatedUser {
     return sanitizeUser(user);
   }
