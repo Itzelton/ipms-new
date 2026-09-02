@@ -10,6 +10,10 @@ export class UpdateMilestoneDto {
   description?: string;
 
   @IsOptional()
+  @IsString()
+  requirements?: string;
+
+  @IsOptional()
   @IsDateString()
   dueDate?: string;
 

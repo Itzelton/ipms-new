@@ -28,6 +28,7 @@ export default function SupervisorMilestonesPanel({ projectId, milestones: initi
   }, [projectId]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [requirements, setRequirements] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -37,9 +38,15 @@ export default function SupervisorMilestonesPanel({ projectId, milestones: initi
     if (!title.trim() || !dueDate) { setError('Title and due date are required.'); return; }
     setSaving(true); setError('');
     try {
-      const m = await apiPost('/milestones', { title: title.trim(), description: description.trim() || undefined, projectId, dueDate });
+      const m = await apiPost('/milestones', {
+        title: title.trim(),
+        description: description.trim() || undefined,
+        requirements: requirements.trim() || undefined,
+        projectId,
+        dueDate,
+      });
       setMilestones((prev) => [...prev, m]);
-      setTitle(''); setDescription(''); setDueDate('');
+      setTitle(''); setDescription(''); setRequirements(''); setDueDate('');
       setShowForm(false);
     } catch (err: any) {
       setError(err?.message || 'Failed to create milestone.');
@@ -108,7 +115,19 @@ export default function SupervisorMilestonesPanel({ projectId, milestones: initi
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
-              placeholder="Optional notes for the student..."
+              placeholder="Optional context or notes..."
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm resize-none focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100"
+            />
+          </div>
+          <div>
+            <label className="block text-[12px] font-medium text-slate-700 mb-1">
+              Required deliverables <span className="text-rose-500">*</span>
+            </label>
+            <textarea
+              value={requirements}
+              onChange={(e) => setRequirements(e.target.value)}
+              rows={3}
+              placeholder="e.g. Submit a PDF of your literature review (min. 10 pages). Include a reference list in APA format."
               className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm resize-none focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100"
             />
           </div>
@@ -145,6 +164,9 @@ export default function SupervisorMilestonesPanel({ projectId, milestones: initi
                 <span className={`h-2 w-2 flex-shrink-0 rounded-full ${s.dot}`} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[13px] font-medium text-slate-800">{m.title}</p>
+                  {m.requirements && (
+                    <p className="text-[11px] text-sky-700 truncate">↳ {m.requirements}</p>
+                  )}
                   {m.description && <p className="text-[11px] text-slate-400 truncate">{m.description}</p>}
                   <p className="text-[11px] text-slate-400">Due {fmtDate(m.dueDate)}</p>
                 </div>

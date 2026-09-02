@@ -62,6 +62,17 @@ export class SubmissionsService {
   async update(id: string, updateSubmissionDto: UpdateSubmissionDto, actorId?: string) {
     const res = await this.submissionRepository.update(id, updateSubmissionDto);
     await this.auditService.log(actorId || null, 'update_submission', 'Submission', id, updateSubmissionDto);
+
+    // When a submission is approved, automatically complete its linked milestone.
+    if (updateSubmissionDto.status === 'APPROVED' && (res as any).milestoneId) {
+      try {
+        await this.submissionRepository.prisma.milestone.update({
+          where: { id: (res as any).milestoneId },
+          data: { status: 'COMPLETED', completedAt: new Date() },
+        });
+      } catch { /* milestone may not exist — ignore */ }
+    }
+
     return res;
   }
 

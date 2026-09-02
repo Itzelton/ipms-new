@@ -9,6 +9,10 @@ export class CreateMilestoneDto {
   @IsString()
   description?: string;
 
+  @IsOptional()
+  @IsString()
+  requirements?: string;
+
   @IsUUID()
   projectId: string;
 
