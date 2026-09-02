@@ -160,32 +160,47 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
           </select>
         </Field>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="First name">
-            <input value={form.firstName} onChange={(e) => set('firstName', e.target.value)} placeholder="e.g. Kwame" className={inputCls} />
-          </Field>
-          <Field label="Last name">
-            <input value={form.lastName} onChange={(e) => set('lastName', e.target.value)} placeholder="e.g. Mensah" className={inputCls} />
-          </Field>
-        </div>
-
         <Field label="Email address *">
           <input type="email" required value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="user@example.com" className={inputCls} />
         </Field>
 
+        {/* Supervisor: email + ID number only — they set their own name via the invite link */}
+        {form.role === 'SUPERVISOR' && (
+          <Field label="Staff ID / Reference number *">
+            <input
+              required
+              value={form.referenceNumber}
+              onChange={(e) => set('referenceNumber', e.target.value)}
+              placeholder="e.g. LEC-0042"
+              className={inputCls}
+            />
+          </Field>
+        )}
+
+        {/* Student: full details required */}
         {form.role === 'STUDENT' && (
           <>
-            <Field label="Index number (8 digits)">
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="First name *">
+                <input required value={form.firstName} onChange={(e) => set('firstName', e.target.value)} placeholder="e.g. Kwame" className={inputCls} />
+              </Field>
+              <Field label="Last name *">
+                <input required value={form.lastName} onChange={(e) => set('lastName', e.target.value)} placeholder="e.g. Mensah" className={inputCls} />
+              </Field>
+            </div>
+            <Field label="Index number (8 digits) *">
               <input
+                required
                 value={form.indexNumber}
-                onChange={(e) => set('indexNumber', e.target.value)}
+                onChange={(e) => set('indexNumber', e.target.value.replace(/\D/g, ''))}
                 placeholder="12345678"
                 maxLength={8}
+                minLength={8}
                 className={inputCls}
               />
             </Field>
-            <Field label="Level">
-              <select value={form.level} onChange={(e) => set('level', e.target.value)} className={selectCls}>
+            <Field label="Level *">
+              <select required value={form.level} onChange={(e) => set('level', e.target.value)} className={selectCls}>
                 <option value="">— Select level —</option>
                 <option value="100">100</option>
                 <option value="200">200</option>
@@ -196,10 +211,16 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
           </>
         )}
 
-        {form.role === 'SUPERVISOR' && (
-          <Field label="Reference number / Office">
-            <input value={form.referenceNumber} onChange={(e) => set('referenceNumber', e.target.value)} placeholder="e.g. REF-001 or Office B4" className={inputCls} />
-          </Field>
+        {/* Admin: just email, they set their name themselves */}
+        {form.role === 'ADMIN' && (
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="First name">
+              <input value={form.firstName} onChange={(e) => set('firstName', e.target.value)} placeholder="e.g. Kwame" className={inputCls} />
+            </Field>
+            <Field label="Last name">
+              <input value={form.lastName} onChange={(e) => set('lastName', e.target.value)} placeholder="e.g. Mensah" className={inputCls} />
+            </Field>
+          </div>
         )}
 
         {error && (

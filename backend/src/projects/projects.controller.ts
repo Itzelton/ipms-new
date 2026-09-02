@@ -7,6 +7,7 @@ import { UpdateProjectStatusDto } from './dto/update-project-status.dto';
 import { UpdateProjectTypeDto } from './dto/update-project-type.dto';
 import { AddCollaboratorDto } from './dto/add-collaborator.dto';
 import { CreateInviteDto } from './dto/create-invite.dto';
+import { UpdateCollaboratorLimitDto } from './dto/update-collaborator-limit.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { CurrentUser } from '../common/decorators/user.decorator';
@@ -58,8 +59,8 @@ export class ProjectsController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProjectDto: UpdateProjectDto) {
-    return this.projectsService.update(id, updateProjectDto);
+  update(@Param('id') id: string, @Body() updateProjectDto: UpdateProjectDto, @CurrentUser('id') actorId: string) {
+    return this.projectsService.update(id, updateProjectDto, actorId);
   }
 
   @Patch(':id/assign-supervisor')
@@ -82,6 +83,15 @@ export class ProjectsController {
     return this.projectsService.findCollaborators(id);
   }
 
+  @Patch(':id/collaborator-limit')
+  updateCollaboratorLimit(
+    @Param('id') id: string,
+    @Body() dto: UpdateCollaboratorLimitDto,
+    @CurrentUser('id') actorId: string,
+  ) {
+    return this.projectsService.updateCollaboratorLimit(id, dto.collaboratorLimit, actorId);
+  }
+
   @Get(':id/invites')
   listInvites(@Param('id') id: string) {
     return this.projectsService.listInvites(id);
@@ -97,8 +107,8 @@ export class ProjectsController {
   }
 
   @Delete(':id/invites/:token')
-  revokeInvite(@Param('token') token: string) {
-    return this.projectsService.revokeInvite(token);
+  revokeInvite(@Param('token') token: string, @CurrentUser('id') actorId: string) {
+    return this.projectsService.revokeInvite(token, actorId);
   }
 
   @Post(':id/collaborators')
