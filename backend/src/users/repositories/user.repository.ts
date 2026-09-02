@@ -177,7 +177,9 @@ export class UserRepository {
     const skip = pagination.page ? (pagination.page - 1) * take : 0;
     return this.prisma.user.findMany({
       skip, take,
-      where: role ? { roles: { some: { role: { name: role } } } } : undefined,
+      where: role
+        ? { deletedAt: null, roles: { some: { role: { name: role } } } }
+        : { deletedAt: null },
       include: userWithRolesInclude,
       orderBy: { createdAt: 'desc' },
     });
@@ -236,7 +238,7 @@ export class UserRepository {
       return this.inMemoryUsers.filter((u) => u.roles.some((r: any) => r.role.name === RoleName.STUDENT)).map((u) => ({ ...u, studentProfile: null }));
     }
     return this.prisma.user.findMany({
-      where: { roles: { some: { role: { name: RoleName.STUDENT } } } },
+      where: { deletedAt: null, roles: { some: { role: { name: RoleName.STUDENT } } } },
       include: { ...userWithRolesInclude, studentProfile: true },
       orderBy: { createdAt: 'desc' },
     });
@@ -245,7 +247,7 @@ export class UserRepository {
   async findStudentsBySupervisor(supervisorId: string) {
     if (this.useInMemoryData) return [];
     return this.prisma.user.findMany({
-      where: { roles: { some: { role: { name: RoleName.STUDENT } } }, studentProfile: { advisorId: supervisorId } },
+      where: { deletedAt: null, roles: { some: { role: { name: RoleName.STUDENT } } }, studentProfile: { advisorId: supervisorId } },
       include: { ...userWithRolesInclude, studentProfile: true, projects: { select: { id: true, title: true, status: true }, take: 1, orderBy: { createdAt: 'desc' } } },
       orderBy: { createdAt: 'desc' },
     });
