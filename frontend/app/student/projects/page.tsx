@@ -68,10 +68,7 @@ export default function StudentProjectsPage() {
         const advisorId = (meRes.value as Me)?.studentProfile?.advisorId;
         if (advisorId) {
           setSupervisorId(advisorId);
-          try {
-            const sv = await apiGet(`/users/${advisorId}`);
-            setAssignedSupervisor(sv);
-          } catch { /* ignore */ }
+          apiGet(`/users/${advisorId}`).then(setAssignedSupervisor).catch(() => {});
         }
       }
     } finally {

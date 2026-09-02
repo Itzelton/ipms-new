@@ -40,8 +40,8 @@ export type ProjectRecommendationsResult = {
 export class ProjectHealthService {
   constructor(private readonly projectRepository: ProjectRepository) {}
 
-  async compute(projectId: string): Promise<ProjectHealthScoreResult | null> {
-    const project = await this.projectRepository.findDetails(projectId);
+  async compute(projectId: string, project?: any): Promise<ProjectHealthScoreResult | null> {
+    if (!project) project = await this.projectRepository.findDetails(projectId);
     if (!project) return null;
 
     const totalMilestones = project.milestones?.length || 0;
@@ -96,8 +96,8 @@ export class ProjectHealthService {
     };
   }
 
-  async computeRisk(projectId: string) {
-    const project = await this.projectRepository.findDetails(projectId);
+  async computeRisk(projectId: string, project?: any) {
+    if (!project) project = await this.projectRepository.findDetails(projectId);
     if (!project) return null;
 
     const now = new Date();
@@ -158,8 +158,8 @@ export class ProjectHealthService {
     };
   }
 
-  async computeRecommendations(projectId: string): Promise<ProjectRecommendationsResult | null> {
-    const project = await this.projectRepository.findDetails(projectId);
+  async computeRecommendations(projectId: string, project?: any): Promise<ProjectRecommendationsResult | null> {
+    if (!project) project = await this.projectRepository.findDetails(projectId);
     if (!project) return null;
 
     const now = new Date();

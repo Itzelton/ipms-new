@@ -59,19 +59,33 @@ async function handleRes(res: Response) {
   return parsed?.data !== undefined ? parsed.data : parsed;
 }
 
+// ── Short-lived GET cache (30 s) ──────────────────────────────────────────────
+// Serves cached responses instantly on repeated navigation, then revalidates.
+const _cache = new Map<string, { data: any; expiresAt: number }>();
+const CACHE_TTL = 30_000;
+
+export function invalidateApiCache(path?: string) {
+  if (path) _cache.delete(buildUrl(path));
+  else _cache.clear();
+}
+
 // ── In-flight deduplication for GET requests ──────────────────────────────────
-// Concurrent calls to the same URL (e.g. /auth/me from multiple components)
-// share a single in-flight request instead of each firing their own.
+// Concurrent calls to the same URL share a single in-flight request.
 const _inFlight = new Map<string, Promise<any>>();
 
 export async function apiGet(path: string): Promise<any> {
   const url = buildUrl(path);
+
+  const cached = _cache.get(url);
+  if (cached && Date.now() < cached.expiresAt) return cached.data;
+
   const existing = _inFlight.get(url);
   if (existing) return existing;
 
   const promise = authHeaders()
     .then(headers => fetch(url, { headers }))
     .then(handleRes)
+    .then(data => { _cache.set(url, { data, expiresAt: Date.now() + CACHE_TTL }); return data; })
     .finally(() => _inFlight.delete(url));
 
   _inFlight.set(url, promise);
@@ -85,7 +99,9 @@ export async function apiPost(path: string, body: any) {
     headers: await authHeaders(),
     body: JSON.stringify(body),
   });
-  return handleRes(res);
+  const data = await handleRes(res);
+  invalidateApiCache(path);
+  return data;
 }
 
 export async function apiPatch(path: string, body: any) {
@@ -95,7 +111,9 @@ export async function apiPatch(path: string, body: any) {
     headers: await authHeaders(),
     body: JSON.stringify(body),
   });
-  return handleRes(res);
+  const data = await handleRes(res);
+  invalidateApiCache(path);
+  return data;
 }
 
 export async function apiUpload(path: string, formData: FormData) {
@@ -113,5 +131,7 @@ export async function apiDelete(path: string) {
     method: 'DELETE',
     headers: await authHeaders(),
   });
-  return handleRes(res);
+  const data = await handleRes(res);
+  invalidateApiCache(path);
+  return data;
 }

@@ -58,10 +58,11 @@ export class ProjectsService {
     const details = await this.projectRepository.findDetails(id);
     if (!details) return null;
 
+    // Pass the already-fetched project data to avoid 3 redundant DB round-trips.
     const [healthRes, riskRes, recRes] = await Promise.allSettled([
-      this.projectHealthService.compute(id),
-      this.projectHealthService.computeRisk(id),
-      this.projectHealthService.computeRecommendations(id),
+      this.projectHealthService.compute(id, details),
+      this.projectHealthService.computeRisk(id, details),
+      this.projectHealthService.computeRecommendations(id, details),
     ]);
 
     details.healthScore      = healthRes.status === 'fulfilled' ? healthRes.value : null;
