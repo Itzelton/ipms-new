@@ -98,13 +98,16 @@ type CreateForm = {
   lastName: string;
   indexNumber: string;
   level: string;
+  course: string;
+  department: string;
+  studentReferenceNumber: string;
   referenceNumber: string;
 };
 
 function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const [form, setForm] = useState<CreateForm>({
     email: '', role: 'STUDENT', firstName: '', lastName: '',
-    indexNumber: '', level: '', referenceNumber: '',
+    indexNumber: '', level: '', course: '', department: '', studentReferenceNumber: '', referenceNumber: '',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -127,6 +130,9 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
       if (form.role === 'STUDENT') {
         if (form.indexNumber) body.indexNumber = form.indexNumber;
         if (form.level) body.level = form.level;
+        if (form.course) body.course = form.course;
+        if (form.department) body.department = form.department;
+        if (form.studentReferenceNumber) body.studentReferenceNumber = form.studentReferenceNumber;
       }
       if (form.role === 'SUPERVISOR') {
         if (form.referenceNumber) body.referenceNumber = form.referenceNumber;
@@ -164,17 +170,27 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
           <input type="email" required value={form.email} onChange={(e) => set('email', e.target.value)} placeholder="user@example.com" className={inputCls} />
         </Field>
 
-        {/* Supervisor: email + ID number only — they set their own name via the invite link */}
+        {/* Supervisor: name + email + staff ID */}
         {form.role === 'SUPERVISOR' && (
-          <Field label="Staff ID / Reference number *">
-            <input
-              required
-              value={form.referenceNumber}
-              onChange={(e) => set('referenceNumber', e.target.value)}
-              placeholder="e.g. LEC-0042"
-              className={inputCls}
-            />
-          </Field>
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="First name *">
+                <input required value={form.firstName} onChange={(e) => set('firstName', e.target.value)} placeholder="e.g. Kofi" className={inputCls} />
+              </Field>
+              <Field label="Last name *">
+                <input required value={form.lastName} onChange={(e) => set('lastName', e.target.value)} placeholder="e.g. Boateng" className={inputCls} />
+              </Field>
+            </div>
+            <Field label="Staff ID / Reference number *">
+              <input
+                required
+                value={form.referenceNumber}
+                onChange={(e) => set('referenceNumber', e.target.value)}
+                placeholder="e.g. LEC-0042"
+                className={inputCls}
+              />
+            </Field>
+          </>
         )}
 
         {/* Student: full details required */}
@@ -188,17 +204,36 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
                 <input required value={form.lastName} onChange={(e) => set('lastName', e.target.value)} placeholder="e.g. Mensah" className={inputCls} />
               </Field>
             </div>
-            <Field label="Index number (8 digits) *">
-              <input
-                required
-                value={form.indexNumber}
-                onChange={(e) => set('indexNumber', e.target.value.replace(/\D/g, ''))}
-                placeholder="12345678"
-                maxLength={8}
-                minLength={8}
-                className={inputCls}
-              />
-            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Course *">
+                <input required value={form.course} onChange={(e) => set('course', e.target.value)} placeholder="e.g. BSc Computer Science" className={inputCls} />
+              </Field>
+              <Field label="Department *">
+                <input required value={form.department} onChange={(e) => set('department', e.target.value)} placeholder="e.g. Computer Science" className={inputCls} />
+              </Field>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Index number (8 digits) *">
+                <input
+                  required
+                  value={form.indexNumber}
+                  onChange={(e) => set('indexNumber', e.target.value.replace(/\D/g, ''))}
+                  placeholder="12345678"
+                  maxLength={8}
+                  minLength={8}
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="Reference number *">
+                <input
+                  required
+                  value={form.studentReferenceNumber}
+                  onChange={(e) => set('studentReferenceNumber', e.target.value)}
+                  placeholder="e.g. REF-2024-001"
+                  className={inputCls}
+                />
+              </Field>
+            </div>
             <Field label="Level *">
               <select required value={form.level} onChange={(e) => set('level', e.target.value)} className={selectCls}>
                 <option value="">— Select level —</option>
@@ -248,11 +283,16 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
 
 function EditUserModal({ user, onClose, onSaved }: { user: User; onClose: () => void; onSaved: () => void }) {
   const role = getRole(user);
+  const sp = (user as any).studentProfile;
+  const svp = (user as any).supervisorProfile;
   const [form, setForm] = useState({
     firstName: user.firstName ?? '',
     lastName: user.lastName ?? '',
-    level: user.studentProfile?.level ?? '',
-    referenceNumber: user.supervisorProfile?.office ?? '',
+    level: sp?.level ?? '',
+    course: sp?.course ?? '',
+    department: sp?.department ?? '',
+    studentReferenceNumber: sp?.referenceNumber ?? '',
+    referenceNumber: svp?.office ?? '',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -270,7 +310,12 @@ function EditUserModal({ user, onClose, onSaved }: { user: User; onClose: () => 
         firstName: form.firstName || undefined,
         lastName: form.lastName || undefined,
       };
-      if (role === 'STUDENT' && form.level) body.level = form.level;
+      if (role === 'STUDENT') {
+        if (form.level) body.level = form.level;
+        if (form.course) body.course = form.course;
+        if (form.department) body.department = form.department;
+        if (form.studentReferenceNumber) body.studentReferenceNumber = form.studentReferenceNumber;
+      }
       if (role === 'SUPERVISOR' && form.referenceNumber) body.referenceNumber = form.referenceNumber;
       await apiPatch(`/users/${user.id}`, body);
       onSaved();
@@ -307,20 +352,35 @@ function EditUserModal({ user, onClose, onSaved }: { user: User; onClose: () => 
         </div>
 
         {role === 'STUDENT' && (
-          <Field label="Level">
-            <select value={form.level} onChange={(e) => set('level', e.target.value)} className={selectCls}>
-              <option value="">— Select level —</option>
-              <option value="100">100</option>
-              <option value="200">200</option>
-              <option value="300">300</option>
-              <option value="400">400</option>
-            </select>
-          </Field>
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Course">
+                <input value={form.course} onChange={(e) => set('course', e.target.value)} placeholder="e.g. BSc Computer Science" className={inputCls} />
+              </Field>
+              <Field label="Department">
+                <input value={form.department} onChange={(e) => set('department', e.target.value)} placeholder="e.g. Computer Science" className={inputCls} />
+              </Field>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Reference number">
+                <input value={form.studentReferenceNumber} onChange={(e) => set('studentReferenceNumber', e.target.value)} placeholder="e.g. REF-2024-001" className={inputCls} />
+              </Field>
+              <Field label="Level">
+                <select value={form.level} onChange={(e) => set('level', e.target.value)} className={selectCls}>
+                  <option value="">— Select level —</option>
+                  <option value="100">100</option>
+                  <option value="200">200</option>
+                  <option value="300">300</option>
+                  <option value="400">400</option>
+                </select>
+              </Field>
+            </div>
+          </>
         )}
 
         {role === 'SUPERVISOR' && (
-          <Field label="Reference number / Office">
-            <input value={form.referenceNumber} onChange={(e) => set('referenceNumber', e.target.value)} placeholder="e.g. REF-001" className={inputCls} />
+          <Field label="Staff ID / Reference number">
+            <input value={form.referenceNumber} onChange={(e) => set('referenceNumber', e.target.value)} placeholder="e.g. LEC-0042" className={inputCls} />
           </Field>
         )}
 

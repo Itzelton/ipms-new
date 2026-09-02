@@ -42,6 +42,18 @@ export class UpdateUserDto {
   @IsString()
   indexNumber?: string;
 
+  @IsOptional()
+  @IsString()
+  course?: string;
+
+  @IsOptional()
+  @IsString()
+  department?: string;
+
+  @IsOptional()
+  @IsString()
+  studentReferenceNumber?: string;
+
   // Supervisor profile
   @IsOptional()
   @IsString()

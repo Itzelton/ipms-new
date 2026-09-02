@@ -75,7 +75,7 @@ export class UserRepository {
       }
     }
 
-    const { role, indexNumber, level, referenceNumber, password: _pw, ...userData } = data;
+    const { role, indexNumber, level, course, department, studentReferenceNumber, referenceNumber, password: _pw, ...userData } = data;
 
     const user = await this.prisma.user.create({
       data: {
@@ -98,6 +98,9 @@ export class UserRepository {
             create: {
               enrollmentId: indexNumber || `IDX-${Date.now()}`,
               level: level || null,
+              course: course || null,
+              department: department || null,
+              referenceNumber: studentReferenceNumber || null,
             },
           },
         }),
@@ -189,7 +192,7 @@ export class UserRepository {
       return user as any;
     }
 
-    const { level, indexNumber, referenceNumber, isActive, ...coreData } = data;
+    const { level, indexNumber, course, department, studentReferenceNumber, referenceNumber, isActive, ...coreData } = data;
 
     // Update core user fields
     await this.prisma.user.update({
@@ -199,11 +202,17 @@ export class UserRepository {
     });
 
     // Update student profile fields if provided
-    if (level !== undefined || indexNumber !== undefined) {
+    if (level !== undefined || indexNumber !== undefined || course !== undefined || department !== undefined || studentReferenceNumber !== undefined) {
+      const profileUpdate: any = {};
+      if (level !== undefined) profileUpdate.level = level;
+      if (indexNumber !== undefined) profileUpdate.enrollmentId = indexNumber;
+      if (course !== undefined) profileUpdate.course = course;
+      if (department !== undefined) profileUpdate.department = department;
+      if (studentReferenceNumber !== undefined) profileUpdate.referenceNumber = studentReferenceNumber;
       await this.prisma.studentProfile.upsert({
         where: { userId: id },
-        create: { userId: id, enrollmentId: indexNumber || `IDX-${Date.now()}`, level: level || null },
-        update: { ...(level !== undefined ? { level } : {}), ...(indexNumber !== undefined ? { enrollmentId: indexNumber } : {}) },
+        create: { userId: id, enrollmentId: indexNumber || `IDX-${Date.now()}`, level: level || null, course: course || null, department: department || null, referenceNumber: studentReferenceNumber || null },
+        update: profileUpdate,
       });
     }
 

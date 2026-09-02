@@ -30,6 +30,18 @@ export class CreateUserDto {
   @IsString()
   level?: string;
 
+  @IsOptional()
+  @IsString()
+  course?: string;
+
+  @IsOptional()
+  @IsString()
+  department?: string;
+
+  @IsOptional()
+  @IsString()
+  studentReferenceNumber?: string;
+
   // Supervisor-only
   @IsOptional()
   @IsString()
