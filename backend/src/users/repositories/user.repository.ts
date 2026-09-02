@@ -21,25 +21,8 @@ function makeSupabaseAdmin() {
   return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
-// Mock users for in-memory fallback
-const mockUsers: any[] = [
-  {
-    id: randomUUID(),
-    email: 'student@example.com',
-    password: bcrypt.hashSync('student123', 10),
-    firstName: 'Student', lastName: 'Example', preferredName: 'Student',
-    phone: '555-0100', isActive: true, createdAt: new Date(), updatedAt: new Date(),
-    roles: [{ role: { name: RoleName.STUDENT } }], studentProfile: null, supervisorProfile: null,
-  },
-  {
-    id: randomUUID(),
-    email: 'admin@example.com',
-    password: bcrypt.hashSync('admin123', 10),
-    firstName: 'Admin', lastName: 'Example', preferredName: 'Admin',
-    phone: '555-0102', isActive: true, createdAt: new Date(), updatedAt: new Date(),
-    roles: [{ role: { name: RoleName.ADMIN } }], studentProfile: null, supervisorProfile: null,
-  },
-];
+// No hardcoded users — all data lives in the database
+const mockUsers: any[] = [];
 
 @Injectable()
 export class UserRepository {
@@ -192,7 +175,10 @@ export class UserRepository {
 
   async findByEmail(email: string) {
     if (this.useInMemoryData) return this.findInMemoryUserByEmail(email) as any;
-    return this.prisma.user.findUnique({ where: { email }, include: userWithRolesInclude });
+    return this.prisma.user.findFirst({
+      where: { email, deletedAt: null },
+      include: userWithRolesInclude,
+    });
   }
 
   async update(id: string, data: UpdateUserDto) {

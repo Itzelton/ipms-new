@@ -2,7 +2,15 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { apiGet, apiPatch, apiDelete } from '../../../services/api';
 
-type PendingUser = { id: string; email: string; firstName?: string; lastName?: string; preferredName?: string; isActive: boolean; roles: string[]; createdAt: string };
+type PendingUser = { id: string; email: string; firstName?: string; lastName?: string; preferredName?: string; isActive: boolean; roles: any[]; createdAt: string };
+
+function roleName(r: any): string {
+  return typeof r === 'string' ? r : (r?.role?.name ?? '');
+}
+
+function hasRole(u: PendingUser, role: string) {
+  return (u.roles ?? []).some((r: any) => roleName(r) === role);
+}
 
 function displayName(u: PendingUser) {
   return u.preferredName || [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email;
@@ -22,7 +30,7 @@ export default function AdminApprovalsPage() {
     setLoading(true);
     try {
       // Fetch all inactive users — these are the "pending approval" accounts
-      const data = await apiGet('/users?role=ALL');
+      const data = await apiGet('/users?limit=500');
       const all = Array.isArray(data) ? data : (data?.items ?? []);
       setPending(all.filter((u: any) => u.isActive === false));
     } catch { setPending([]); }
@@ -71,11 +79,11 @@ export default function AdminApprovalsPage() {
         </div>
         <div className="card p-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Students</p>
-          <p className="mt-2 text-3xl font-bold text-slate-800">{loading ? '—' : pending.filter(u => u.roles?.includes('STUDENT')).length}</p>
+          <p className="mt-2 text-3xl font-bold text-slate-800">{loading ? '—' : pending.filter(u => hasRole(u, 'STUDENT')).length}</p>
         </div>
         <div className="card p-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Supervisors</p>
-          <p className="mt-2 text-3xl font-bold text-slate-800">{loading ? '—' : pending.filter(u => u.roles?.includes('SUPERVISOR')).length}</p>
+          <p className="mt-2 text-3xl font-bold text-slate-800">{loading ? '—' : pending.filter(u => hasRole(u, 'SUPERVISOR')).length}</p>
         </div>
       </div>
 
@@ -107,9 +115,10 @@ export default function AdminApprovalsPage() {
                     <p className="text-sm font-semibold text-slate-800">{displayName(u)}</p>
                     <p className="text-xs text-slate-400">{u.email}</p>
                     <div className="mt-1 flex items-center gap-2">
-                      {(u.roles ?? []).map((r: string) => (
-                        <span key={r} className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{r}</span>
-                      ))}
+                      {(u.roles ?? []).map((r: any) => {
+                        const name = roleName(r);
+                        return <span key={name} className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{name}</span>;
+                      })}
                       <span className="text-[10px] text-slate-400">Registered {fmtDate(u.createdAt)}</span>
                     </div>
                   </div>

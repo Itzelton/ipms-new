@@ -21,7 +21,8 @@ export class UsersService {
 
   async findAll(pagination: PaginationDto, role?: string) {
     const users = await this.userRepository.findAll(pagination, role as any);
-    return users.map((user) => this.sanitizeUser(user));
+    // Strip password but keep full profile structure for admin management
+    return users.map(({ password, ...rest }: any) => rest);
   }
 
   async findOne(id: string) {

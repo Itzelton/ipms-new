@@ -64,7 +64,9 @@ export class UsersController {
   @Get()
   findAll(@Query() query: UserQueryDto) {
     const { role, ...pagination } = query;
-    return this.usersService.findAll(pagination, role);
+    const validRoles = ['STUDENT', 'SUPERVISOR', 'ADMIN'];
+    const filteredRole = role && validRoles.includes(role.toUpperCase()) ? role.toUpperCase() : undefined;
+    return this.usersService.findAll(pagination, filteredRole);
   }
 
   @Get(':id')
@@ -72,6 +74,7 @@ export class UsersController {
     return this.usersService.findOne(id);
   }
 
+  @Roles('ADMIN')
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
@@ -87,6 +90,7 @@ export class UsersController {
     return this.usersService.update(id, updateUserDto);
   }
 
+  @Roles('ADMIN')
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
