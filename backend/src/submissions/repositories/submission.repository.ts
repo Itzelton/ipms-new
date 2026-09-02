@@ -53,8 +53,11 @@ export class SubmissionRepository {
   async findByAuthor(authorId: string, pagination: PaginationDto, projectId?: string) {
     const take = pagination.limit || 20;
     const skip = pagination.page ? (pagination.page - 1) * take : 0;
+    // When projectId is provided, return all submissions for that project (supervisors need this).
+    // When it's not provided, scope to the requesting user's own submissions.
+    const where = projectId ? { projectId } : { authorId };
     return this.prisma.submission.findMany({
-      where: { authorId, ...(projectId ? { projectId } : {}) },
+      where,
       skip,
       take,
       orderBy: { createdAt: 'desc' },

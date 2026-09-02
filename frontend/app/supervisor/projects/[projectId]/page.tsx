@@ -98,13 +98,13 @@ export default function SupervisorProjectDetailsPage({ params }: { params: { pro
               {activeTab === 'overview' && (
                 <>
                   <SupervisorMilestonesPanel projectId={params.projectId} milestones={project.milestones} />
-                  <SupervisorSubmissionsPanel submissions={project.submissions} />
+                  <SupervisorSubmissionsPanel submissions={project.submissions} projectId={params.projectId} />
                   <ProjectDiscussionsPanel discussions={project.discussionThreads ?? project.discussions} />
                   <ActivityHeatmap days={heatmap.days} year={heatmap.year} label="Project activity" />
                 </>
               )}
               {activeTab === 'milestones'    && <SupervisorMilestonesPanel projectId={params.projectId} milestones={project.milestones} />}
-              {activeTab === 'submissions'   && <SupervisorSubmissionsPanel submissions={project.submissions} />}
+              {activeTab === 'submissions'   && <SupervisorSubmissionsPanel submissions={project.submissions} projectId={params.projectId} />}
               {activeTab === 'discussions'   && <ProjectDiscussionsPanel discussions={project.discussionThreads ?? project.discussions} />}
               {activeTab === 'collaborators' && <ProjectCollaboratorsPanel projectId={params.projectId} />}
             </div>

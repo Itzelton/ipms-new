@@ -19,5 +19,9 @@ export class UpdateSubmissionDto {
   status?: string;
 
   @IsOptional()
+  @IsString()
+  feedback?: string;
+
+  @IsOptional()
   metadata?: any;
 }
