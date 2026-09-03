@@ -58,11 +58,12 @@ export class UserRepository {
     // Invite user via Supabase — sends them a password-setup link
     let supabaseId: string | undefined;
     if (this.supabaseAdmin) {
+      const frontendUrl = (process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:3000').replace(/\/$/, '');
       const { data: inviteData, error } = await this.supabaseAdmin.auth.admin.inviteUserByEmail(
         data.email,
         {
           data: { role: data.role, firstName: data.firstName, lastName: data.lastName },
-          redirectTo: 'https://ipm-s.vercel.app/login',
+          redirectTo: `${frontendUrl}/set-password`,
         },
       );
       if (error) {
