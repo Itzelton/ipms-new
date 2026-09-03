@@ -117,7 +117,7 @@ export class ProjectRepository {
         include: {
           student: true, supervisor: true, department: true, cohort: true,
           assignments: { include: { user: true } },
-          milestones: { orderBy: { createdAt: 'asc' } },
+          milestones: { orderBy: { dueDate: 'asc' } },
           submissions: true, discussionThreads: true,
         },
       }),
@@ -125,7 +125,7 @@ export class ProjectRepository {
         where: { id },
         include: {
           student: true, supervisor: true,
-          milestones: { orderBy: { createdAt: 'asc' } },
+          milestones: { orderBy: { dueDate: 'asc' } },
           submissions: true, discussionThreads: true,
         },
       }),
