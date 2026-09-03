@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { apiGet, apiPost, apiPatch, apiDelete } from '../../services/api';
+import { apiGet, apiPost, apiPatch, apiDelete, invalidateApiCache } from '../../services/api';
 
 const STATUS_OPTIONS = ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'OVERDUE'];
 
@@ -17,14 +17,25 @@ function fmtDate(d: string) {
   catch { return d; }
 }
 
+const LIST_URL = (projectId: string) => `/milestones?projectId=${projectId}&limit=100`;
+
 export default function SupervisorMilestonesPanel({ projectId, milestones: initial }: { projectId: string; milestones?: any[] }) {
-  const [milestones, setMilestones] = useState<any[]>(initial ?? []);
+  // Always start empty and fetch fresh — never use potentially-stale prop data.
+  const [milestones, setMilestones] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
 
-  useEffect(() => {
-    apiGet(`/milestones?projectId=${projectId}&limit=100`)
+  function fetchMilestones(silent = false) {
+    invalidateApiCache(LIST_URL(projectId));
+    apiGet(LIST_URL(projectId))
       .then((data) => { if (Array.isArray(data)) setMilestones(data); })
       .catch(() => {});
+  }
+
+  useEffect(() => {
+    fetchMilestones();
+    // Poll every 30 s so student submissions and status changes appear live.
+    const interval = setInterval(() => fetchMilestones(true), 30_000);
+    return () => clearInterval(interval);
   }, [projectId]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -38,16 +49,16 @@ export default function SupervisorMilestonesPanel({ projectId, milestones: initi
     if (!title.trim() || !dueDate) { setError('Title and due date are required.'); return; }
     setSaving(true); setError('');
     try {
-      const m = await apiPost('/milestones', {
+      await apiPost('/milestones', {
         title: title.trim(),
         description: description.trim() || undefined,
         requirements: requirements.trim() || undefined,
         projectId,
         dueDate,
       });
-      setMilestones((prev) => [...prev, m]);
       setTitle(''); setDescription(''); setRequirements(''); setDueDate('');
       setShowForm(false);
+      fetchMilestones();
     } catch (err: any) {
       setError(err?.message || 'Failed to create milestone.');
     } finally { setSaving(false); }
@@ -64,6 +75,7 @@ export default function SupervisorMilestonesPanel({ projectId, milestones: initi
     if (!confirm('Delete this milestone?')) return;
     try {
       await apiDelete(`/milestones/${id}`);
+      invalidateApiCache(LIST_URL(projectId));
       setMilestones((prev) => prev.filter((m) => m.id !== id));
     } catch { /* ignore */ }
   }
