@@ -152,8 +152,9 @@ const exactHrefs = new Set(['/admin', '/supervisor', '/student']);
 export default function Sidebar() {
   const { user } = useAuth();
   const { open, close } = useSidebar();
-  const { persistentSidebar } = useSettings();
+  const { persistentSidebar, resolvedTheme } = useSettings();
   const pathname = usePathname();
+  const isDark = resolvedTheme === 'dark';
 
   if (!user) return null;
 
@@ -188,17 +189,17 @@ export default function Sidebar() {
       >
         {/* ── Brand ── */}
         <div className="px-3 pt-5 pb-2">
-          <div className="relative overflow-hidden rounded-2xl bg-white">
+          <div className={`relative overflow-hidden rounded-2xl ${isDark ? 'bg-transparent' : 'bg-white'}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/logo-inapp.png"
+              src={isDark ? "/logo-dark.png" : "/logo-inapp.png"}
               alt="IPMS"
               className="block w-full h-auto"
             />
             {/* Close — mobile only */}
             <button
               onClick={close}
-              className="lg:hidden absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition"
+              className="lg:hidden absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/20 text-white/70 hover:bg-black/30 hover:text-white transition"
               aria-label="Close menu"
             >
               <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -211,7 +212,10 @@ export default function Sidebar() {
         {/* ── User profile pill ── */}
         <div
           className="mx-3 mb-5 rounded-2xl p-3"
-          style={{
+          style={isDark ? {
+            background: '#252d40',
+            border: '1px solid rgba(255,255,255,0.09)',
+          } : {
             background: 'rgba(255,255,255,0.58)',
             border: '1px solid rgba(255,255,255,0.72)',
             boxShadow: '0 2px 8px rgba(15,23,42,0.05), inset 0 1px 0 rgba(255,255,255,0.85)',
@@ -253,28 +257,38 @@ export default function Sidebar() {
                   'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13.5px] font-medium',
                   'transition-all duration-150',
                   active
-                    ? 'text-sky-700'
-                    : 'text-slate-600 hover:text-slate-900',
+                    ? isDark ? 'text-sky-400' : 'text-sky-700'
+                    : isDark
+                      ? 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.05]'
+                      : 'text-slate-600 hover:text-slate-900',
                 ].join(' ')}
-                style={active ? {
+                style={active ? (isDark ? {
+                  background: 'rgba(14,165,233,0.12)',
+                  borderLeft: '2px solid rgba(14,165,233,0.70)',
+                  paddingLeft: '10px',
+                } : {
                   background: 'rgba(255,255,255,0.78)',
                   boxShadow:
                     '0 2px 10px rgba(14,165,233,0.10), ' +
                     '0 1px 0 rgba(255,255,255,0.9) inset, ' +
                     '0 0 0 1px rgba(14,165,233,0.18)',
-                } : undefined}
+                }) : undefined}
               >
                 <span
                   className={[
                     'flex-shrink-0 transition-colors',
-                    active ? 'text-sky-500' : 'text-slate-400 group-hover:text-slate-500',
+                    active
+                      ? isDark ? 'text-sky-400' : 'text-sky-500'
+                      : isDark
+                        ? 'text-slate-500 group-hover:text-slate-300'
+                        : 'text-slate-400 group-hover:text-slate-500',
                   ].join(' ')}
                 >
                   {it.icon}
                 </span>
                 <span className="flex-1">{it.label}</span>
                 {active && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-sky-500 shadow-[0_0_6px_rgba(14,165,233,0.6)]" />
+                  <span className={`h-1.5 w-1.5 rounded-full ${isDark ? 'bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.7)]' : 'bg-sky-500 shadow-[0_0_6px_rgba(14,165,233,0.6)]'}`} />
                 )}
               </Link>
             );
@@ -284,13 +298,16 @@ export default function Sidebar() {
         {/* ── Footer tip ── */}
         <div
           className="m-3 mt-5 rounded-2xl p-4"
-          style={{
+          style={isDark ? {
+            background: '#0d1117',
+            border: '1px solid rgba(255,255,255,0.08)',
+          } : {
             background: 'rgba(255,255,255,0.45)',
             border: '1px solid rgba(255,255,255,0.6)',
           }}
         >
           <div className="flex items-start gap-2.5">
-            <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-sky-100 text-sky-600">
+            <span className={`mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full ${isDark ? 'bg-sky-900/40 text-sky-400' : 'bg-sky-100 text-sky-600'}`}>
               <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
               </svg>

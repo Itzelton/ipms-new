@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useAuth } from '../auth/auth-context';
 import { useSidebar } from './SidebarContext';
 import { apiGet, apiPatch } from '../../services/api';
+import { useSettings } from '../../contexts/SettingsContext';
 
 const roleGradients: Record<string, string> = {
   ADMIN:      'from-rose-500 to-orange-500',
@@ -102,6 +103,9 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
     } catch { /* network error — leave state unchanged */ }
   }
 
+  const { resolvedTheme } = useSettings();
+  const isDark = resolvedTheme === 'dark';
+
   const gradient = user?.role ? (roleGradients[user.role] ?? roleGradients.STUDENT) : roleGradients.STUDENT;
   const initial = user ? (user.name ?? user.email ?? '?').charAt(0).toUpperCase() : '?';
   const hasNotifications = notifications.length > 0;
@@ -115,7 +119,7 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
           {user && (
             <button
               onClick={toggle}
-              className="lg:hidden flex h-9 w-9 items-center justify-center rounded-xl text-slate-600 hover:bg-white/60 transition"
+              className="lg:hidden flex h-9 w-9 items-center justify-center rounded-xl text-slate-600 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-white/10 transition"
               aria-label="Open sidebar"
             >
               <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -129,9 +133,9 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
               src="/logo-icon.png"
               alt="IPMS"
               className="h-8 w-8 object-contain"
-              style={{ mixBlendMode: 'multiply' }}
+              style={{ mixBlendMode: isDark ? 'normal' : 'multiply' }}
             />
-            <span className="text-[15px] font-bold tracking-tight text-slate-900">IPMS</span>
+            <span className="text-[15px] font-bold tracking-tight text-slate-900 dark:text-slate-100">IPMS</span>
           </Link>
         </div>
 
@@ -142,7 +146,7 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
               {/* Search trigger */}
               <button
                 onClick={onSearchOpen}
-                className="hidden sm:flex items-center gap-2 rounded-xl border border-slate-200/80 bg-white/60 px-3 py-1.5 text-[12px] text-slate-400 hover:bg-white/80 hover:text-slate-600 transition"
+                className="hidden sm:flex items-center gap-2 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/60 dark:bg-white/[0.04] px-3 py-1.5 text-[12px] text-slate-400 dark:text-slate-500 hover:bg-white/80 dark:hover:bg-white/[0.07] hover:text-slate-600 dark:hover:text-slate-300 transition"
                 aria-label="Search"
               >
                 <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
@@ -154,7 +158,7 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
               {/* Mobile search icon-only */}
               <button
                 onClick={onSearchOpen}
-                className="sm:hidden flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-white/60 transition"
+                className="sm:hidden flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 dark:text-slate-500 hover:bg-white/60 dark:hover:bg-white/10 transition"
                 aria-label="Search"
               >
                 <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
@@ -171,8 +175,8 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
                   className={[
                     'relative flex h-9 w-9 items-center justify-center rounded-xl transition',
                     open
-                      ? 'bg-sky-50 text-sky-600 ring-1 ring-sky-200/80'
-                      : 'text-slate-500 hover:bg-white/60 hover:text-slate-700',
+                      ? isDark ? 'bg-sky-900/30 text-sky-400 ring-1 ring-sky-500/30' : 'bg-sky-50 text-sky-600 ring-1 ring-sky-200/80'
+                      : isDark ? 'text-slate-500 hover:bg-white/10 hover:text-slate-300' : 'text-slate-500 hover:bg-white/60 hover:text-slate-700',
                     bellClicked
                       ? 'animate-bell-click'
                       : (unread > 0 && !open)
@@ -194,7 +198,11 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
                 {open && (
                   <div
                     className="animate-dropdown-in absolute right-0 top-full mt-2 w-[340px] overflow-hidden rounded-2xl z-50"
-                    style={{
+                    style={isDark ? {
+                      background: '#1e2535',
+                      border: '1px solid rgba(255,255,255,0.10)',
+                      boxShadow: '0 8px 40px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.05) inset',
+                    } : {
                       background: 'rgba(255,255,255,0.97)',
                       backdropFilter: 'blur(28px) saturate(180%)',
                       WebkitBackdropFilter: 'blur(28px) saturate(180%)',
@@ -309,8 +317,11 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
 
               {/* User chip */}
               <div
-                className="flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-[13px] font-medium text-slate-700"
-                style={{
+                className="flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-[13px] font-medium text-slate-700 dark:text-slate-300"
+                style={isDark ? {
+                  background: '#252d40',
+                  border: '1px solid rgba(255,255,255,0.09)',
+                } : {
                   background: 'rgba(255,255,255,0.60)',
                   border: '1px solid rgba(255,255,255,0.72)',
                   boxShadow: '0 1px 4px rgba(15,23,42,0.05)',
@@ -327,7 +338,7 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
               {/* Logout */}
               <button
                 onClick={() => logout()}
-                className="flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-[13px] font-semibold text-slate-500 hover:text-slate-900 hover:bg-white/60 transition"
+                className="flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-[13px] font-semibold text-slate-500 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-white/10 transition"
                 aria-label="Logout"
               >
                 <svg className="h-4 w-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
