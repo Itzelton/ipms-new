@@ -3,7 +3,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateSubmissionDto } from '../dto/create-submission.dto';
 import { UpdateSubmissionDto } from '../dto/update-submission.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
-import { SubmissionStatus, EvidenceType } from '@prisma/client';
+import { SubmissionStatus, EvidenceType, RoleName } from '@prisma/client';
 
 @Injectable()
 export class SubmissionRepository {
@@ -73,7 +73,7 @@ export class SubmissionRepository {
         project: {
           OR: [
             { supervisorId },
-            { assignments: { some: { userId: supervisorId, role: 'SUPERVISOR' } } },
+            { assignments: { some: { userId: supervisorId, role: RoleName.SUPERVISOR } } },
           ],
         },
       },
