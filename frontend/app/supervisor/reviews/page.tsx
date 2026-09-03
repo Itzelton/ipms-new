@@ -82,7 +82,7 @@ export default function SupervisorReviewsPage() {
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [highlightId, loading]);
 
-  async function act(id: string, status: 'APPROVED' | 'REVISION_REQUESTED') {
+  async function act(id: string, status: 'APPROVED' | 'REVISION_REQUIRED') {
     setActing(id);
     try {
       const updated = await apiPatch(`/submissions/${id}`, { status, feedback: remark || undefined });
