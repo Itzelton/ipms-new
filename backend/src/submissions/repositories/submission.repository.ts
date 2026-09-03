@@ -69,7 +69,14 @@ export class SubmissionRepository {
     const take = pagination.limit || 50;
     const skip = pagination.page ? (pagination.page - 1) * take : 0;
     return this.prisma.submission.findMany({
-      where: { project: { supervisorId } },
+      where: {
+        project: {
+          OR: [
+            { supervisorId },
+            { assignments: { some: { userId: supervisorId, role: 'SUPERVISOR' } } },
+          ],
+        },
+      },
       skip,
       take,
       orderBy: { createdAt: 'desc' },

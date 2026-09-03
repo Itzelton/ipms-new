@@ -1,6 +1,8 @@
 "use client";
 import React, { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { getProjectsForUser } from '../../../services/project';
+import { apiGet } from '../../../services/api';
 import ProjectList from '../../../components/project/ProjectList';
 import FilterBar from '../../../components/ui/FilterBar';
 import { SkeletonProjectGrid } from '../../../components/ui/Skeleton';
@@ -21,18 +23,30 @@ const SORT_OPTIONS = [
   { value: 'due_asc',       label: 'Due date (soonest)' },
 ];
 
+function fmtDate(iso: string) {
+  try { return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' }).format(new Date(iso)); }
+  catch { return '—'; }
+}
+
 export default function SupervisorProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState<any[]>([]);
+  const [pendingSubs, setPendingSubs] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [sort, setSort] = useState('title_asc');
 
   useEffect(() => {
     let mounted = true;
-    getProjectsForUser('SUPERVISOR')
-      .then((p) => { if (mounted) setProjects(Array.isArray(p) ? p : []); })
-      .catch(() => { if (mounted) setProjects([]); })
+    Promise.all([
+      getProjectsForUser('SUPERVISOR'),
+      apiGet('/submissions/for-supervisor?limit=100'),
+    ]).then(([p, subs]) => {
+      if (!mounted) return;
+      setProjects(Array.isArray(p) ? p : []);
+      const all: any[] = Array.isArray(subs) ? subs : subs?.data ?? [];
+      setPendingSubs(all.filter((s: any) => s.status === 'SUBMITTED' || s.status === 'UNDER_REVIEW'));
+    }).catch(() => { if (mounted) setProjects([]); })
       .finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };
   }, []);
@@ -73,6 +87,53 @@ export default function SupervisorProjectsPage() {
           <p className="text-sm text-slate-500">Monitor all projects assigned to you.</p>
         </div>
       </div>
+
+      {/* Pending reviews banner */}
+      {!loading && pendingSubs.length > 0 && (
+        <div className="card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white">{pendingSubs.length}</span>
+              <p className="text-sm font-semibold text-slate-800">Submissions awaiting review</p>
+            </div>
+            <Link href="/supervisor/reviews" className="text-[11px] font-medium text-sky-600 hover:text-sky-700 no-underline">
+              View all reviews →
+            </Link>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {pendingSubs.slice(0, 5).map((s: any) => {
+              const studentName = [s.author?.firstName, s.author?.lastName].filter(Boolean).join(' ') || s.author?.email || 'Student';
+              const title = s.metadata?.title || s.content?.slice(0, 50) || 'Submission';
+              const age = Math.floor((Date.now() - new Date(s.createdAt).getTime()) / 3_600_000);
+              const overdue = age > 168;
+              return (
+                <div key={s.id} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[13px] font-medium text-slate-800 truncate">{studentName}</span>
+                      <span className="text-[11px] text-slate-400">·</span>
+                      <span className="text-[11px] text-slate-500 truncate">{s.project?.title ?? '—'}</span>
+                      {overdue && <span className="rounded-full bg-rose-100 px-1.5 py-0.5 text-[9px] font-bold text-rose-600">OVERDUE</span>}
+                    </div>
+                    <p className="mt-0.5 text-[11px] text-slate-400 line-clamp-1">{title} · {fmtDate(s.createdAt)}</p>
+                  </div>
+                  <Link
+                    href={`/supervisor/reviews?submissionId=${s.id}`}
+                    className="flex-shrink-0 rounded-lg bg-violet-600 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-violet-700 transition no-underline"
+                  >
+                    Review
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
+          {pendingSubs.length > 5 && (
+            <Link href="/supervisor/reviews" className="mt-3 block text-center text-[11px] font-medium text-sky-600 hover:text-sky-700 no-underline">
+              + {pendingSubs.length - 5} more pending
+            </Link>
+          )}
+        </div>
+      )}
 
       <FilterBar
         search={search}

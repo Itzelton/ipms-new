@@ -55,21 +55,25 @@ export default function SupervisorReviewsPage() {
   const highlightId = searchParams.get('submissionId');
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(highlightId);
   const [remark, setRemark] = useState('');
   const [acting, setActing] = useState<string | null>(null);
 
   useEffect(() => {
-    async function load() {
-      try {
-        const res = await apiGet('/submissions/for-supervisor?limit=200');
+    if (!user) return;
+    setLoading(true);
+    setFetchError(null);
+    apiGet('/submissions/for-supervisor?limit=200')
+      .then((res: any) => {
         const all: Submission[] = Array.isArray(res) ? res : res?.data ?? [];
         setSubmissions(all);
-      } catch { /* ignore */ }
-      finally { setLoading(false); }
-    }
-    load();
-  }, [user]);
+      })
+      .catch((err: any) => {
+        setFetchError(err?.message || 'Failed to load submissions');
+      })
+      .finally(() => setLoading(false));
+  }, [user?.id]);
 
   // Scroll highlighted submission into view once loaded
   useEffect(() => {
@@ -102,6 +106,21 @@ export default function SupervisorReviewsPage() {
         <div className="grid gap-4 sm:grid-cols-3">
           {[0,1,2].map(i => <div key={i} className="skeleton h-24" />)}
         </div>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="card p-10 text-center">
+        <p className="text-sm font-medium text-rose-600">Failed to load submissions</p>
+        <p className="mt-1 text-xs text-slate-400">{fetchError}</p>
+        <button
+          onClick={() => { setLoading(true); setFetchError(null); apiGet('/submissions/for-supervisor?limit=200').then((res: any) => { const all: Submission[] = Array.isArray(res) ? res : res?.data ?? []; setSubmissions(all); }).catch((err: any) => setFetchError(err?.message || 'Failed')).finally(() => setLoading(false)); }}
+          className="mt-3 text-xs font-medium text-sky-600 hover:text-sky-700"
+        >
+          Retry
+        </button>
       </div>
     );
   }
