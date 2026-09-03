@@ -23,8 +23,8 @@ function fmtTime(iso: string) {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-  SCHEDULED:  'bg-sky-50 text-sky-700',
-  COMPLETED:  'bg-emerald-50 text-emerald-700',
+  SCHEDULED:  'bg-sky-100 text-sky-700',
+  COMPLETED:  'bg-emerald-100 text-emerald-700',
   CANCELLED:  'bg-slate-100 text-slate-500',
 };
 

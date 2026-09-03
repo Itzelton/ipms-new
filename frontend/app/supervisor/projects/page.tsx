@@ -82,7 +82,7 @@ export default function SupervisorProjectsPage() {
     <div className="space-y-6">
       <div className="card-static p-6">
         <div className="flex flex-col gap-1">
-          <span className="inline-flex w-fit items-center rounded-full bg-violet-100 px-2.5 py-0.5 text-[11px] font-semibold text-violet-700">Supervisor workspace</span>
+          <span className="inline-flex w-fit items-center rounded-full bg-violet-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-violet-600 dark:text-violet-400">Supervisor workspace</span>
           <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">Projects</h2>
           <p className="text-sm text-slate-500">Monitor all projects assigned to you.</p>
         </div>

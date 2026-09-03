@@ -173,7 +173,7 @@ function AssignSupervisorModal({
                     className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 transition-colors ${
                       isSelected
                         ? 'bg-sky-500 text-white'
-                        : 'bg-gradient-to-br from-slate-200 to-slate-300 text-slate-600'
+                        : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
                     }`}
                   >
                     {initials(s)}

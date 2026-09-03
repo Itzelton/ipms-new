@@ -14,8 +14,8 @@ type Meeting = {
 };
 
 const STATUS_STYLES: Record<string, string> = {
-  SCHEDULED:  'bg-sky-50 text-sky-700',
-  COMPLETED:  'bg-emerald-50 text-emerald-700',
+  SCHEDULED:  'bg-sky-100 text-sky-700',
+  COMPLETED:  'bg-emerald-100 text-emerald-700',
   CANCELLED:  'bg-slate-100 text-slate-500',
 };
 
@@ -156,7 +156,7 @@ export default function StudentMeetingsPage() {
 
       {/* Upcoming callout */}
       {upcoming && (
-        <div onClick={() => setSelected(upcoming)} className="card p-5 border-sky-200 bg-sky-50/60 cursor-pointer hover:shadow-md transition-shadow">
+        <div onClick={() => setSelected(upcoming)} className="card p-5 cursor-pointer border-sky-200 bg-sky-50 hover:shadow-md transition-shadow dark:border-sky-900/40 dark:bg-sky-900/10">
           <div className="flex items-start gap-4">
             <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-sky-100">
               <svg className="h-5 w-5 text-sky-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
@@ -171,7 +171,7 @@ export default function StudentMeetingsPage() {
                 {upcoming.location && <> &middot; {upcoming.location}</>}
               </p>
               {upcoming.agenda && (
-                <p className="mt-2 rounded-xl bg-white/70 px-3 py-2 text-xs text-slate-600 border border-sky-100">{upcoming.agenda}</p>
+                <p className="mt-2 rounded-xl border border-sky-100 bg-white px-3 py-2 text-xs text-slate-600 dark:border-sky-900/40 dark:bg-slate-800/60 dark:text-slate-300">{upcoming.agenda}</p>
               )}
             </div>
           </div>

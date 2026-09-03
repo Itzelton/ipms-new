@@ -140,8 +140,7 @@ export default function StudentDashboard() {
                 <Link
                   key={href}
                   href={href}
-                  className="flex-shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-medium text-slate-600 no-underline transition hover:text-slate-900"
-                  style={{ background: 'rgba(248,250,252,0.80)', border: '1px solid rgba(226,232,240,0.80)' }}
+                  className="flex-shrink-0 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-[12px] font-medium text-slate-600 no-underline transition hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:text-slate-100"
                 >
                   {label}
                 </Link>

@@ -10,3 +10,5 @@ skills-lock.json
 **/.DS_Store
 frontend/.next/
 backend/dist/
+.vercel
+.env*

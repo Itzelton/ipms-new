@@ -91,7 +91,7 @@ export default function AdminApprovalsPage() {
         <div className="card p-10 text-center text-sm text-slate-400">Loading…</div>
       ) : pending.length === 0 ? (
         <div className="card p-10 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-emerald-50 mx-auto mb-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-emerald-100 mx-auto mb-4">
             <svg className="h-7 w-7 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
@@ -127,14 +127,14 @@ export default function AdminApprovalsPage() {
                   <button
                     onClick={() => approve(u.id)}
                     disabled={processing === u.id}
-                    className="rounded-full bg-emerald-50 px-4 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-60 transition"
+                    className="rounded-full bg-emerald-100 px-4 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-60 transition"
                   >
                     {processing === u.id ? '…' : 'Approve'}
                   </button>
                   <button
                     onClick={() => reject(u.id)}
                     disabled={processing === u.id}
-                    className="rounded-full bg-rose-50 px-4 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60 transition"
+                    className="rounded-full bg-rose-100 px-4 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-60 transition"
                   >
                     Reject
                   </button>

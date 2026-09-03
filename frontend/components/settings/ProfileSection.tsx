@@ -11,9 +11,9 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const ROLE_COLORS: Record<string, string> = {
-  ADMIN:      'bg-rose-100 text-rose-700',
-  SUPERVISOR: 'bg-violet-100 text-violet-700',
-  STUDENT:    'bg-sky-100 text-sky-700',
+  ADMIN:      'bg-rose-500/15 text-rose-600 dark:text-rose-400',
+  SUPERVISOR: 'bg-violet-500/15 text-violet-600 dark:text-violet-400',
+  STUDENT:    'bg-sky-500/15 text-sky-600 dark:text-sky-400',
 };
 
 export default function ProfileSection() {

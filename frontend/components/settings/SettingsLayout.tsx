@@ -101,13 +101,9 @@ export default function SettingsLayout() {
                     'flex flex-shrink-0 items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium',
                     'transition-all duration-150 text-left whitespace-nowrap lg:w-full',
                     active_
-                      ? 'text-sky-700'
-                      : 'text-slate-600 hover:bg-white/50 hover:text-slate-900',
+                      ? 'bg-white text-sky-700 shadow-sm ring-1 ring-sky-200/80 dark:bg-slate-700 dark:text-sky-400 dark:ring-sky-500/30'
+                      : 'text-slate-600 hover:bg-white/50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-700/50 dark:hover:text-slate-200',
                   ].join(' ')}
-                  style={active_ ? {
-                    background: 'rgba(255,255,255,0.85)',
-                    boxShadow: '0 2px 10px rgba(14,165,233,0.10), 0 0 0 1px rgba(14,165,233,0.18), inset 0 1px 0 rgba(255,255,255,0.9)',
-                  } : undefined}
                 >
                   <span className={active_ ? 'text-sky-500' : 'text-slate-400'}>
                     {s.icon}

@@ -83,8 +83,8 @@ export default function SecuritySection() {
             <div
               className={`rounded-xl px-4 py-3 text-[12px] font-medium ${
                 msg.type === 'success'
-                  ? 'bg-emerald-50 text-emerald-700'
-                  : 'bg-rose-50 text-rose-700'
+                  ? 'bg-emerald-100 text-emerald-700'
+                  : 'bg-rose-100 text-rose-700'
               }`}
             >
               {msg.text}

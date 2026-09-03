@@ -20,7 +20,7 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   PROPOSED:  { label: 'Pending review', color: 'bg-amber-100 text-amber-700' },
   ACTIVE:    { label: 'Active',         color: 'bg-emerald-100 text-emerald-700' },
   ON_HOLD:   { label: 'On hold',        color: 'bg-slate-100 text-slate-600' },
-  COMPLETED: { label: 'Completed',      color: 'bg-blue-100 text-blue-700' },
+  COMPLETED: { label: 'Completed',      color: 'bg-sky-100 text-sky-700' },
   CANCELLED: { label: 'Rejected',       color: 'bg-rose-100 text-rose-700' },
 };
 

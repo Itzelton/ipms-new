@@ -138,7 +138,7 @@ export default function SupervisorMessagesPage() {
       <div className="grid gap-4 lg:grid-cols-[280px_1fr]" style={{ height: 'calc(100vh - 14rem)', maxHeight: '720px' }}>
         {/* Student list */}
         <div className="card overflow-y-auto">
-          <div className="sticky top-0 bg-white/80 backdrop-blur-sm border-b border-slate-100 px-4 py-3">
+          <div className="sticky top-0 border-b border-slate-100 bg-white/80 px-4 py-3 backdrop-blur-sm dark:border-slate-700/60 dark:bg-slate-900/80">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Students</p>
           </div>
           {loading ? (
@@ -209,9 +209,10 @@ export default function SupervisorMessagesPage() {
                         <div className="max-w-[75%]">
                           <div
                             className={`rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed transition-opacity ${
-                              isMe ? 'bg-gradient-to-br from-violet-500 to-indigo-600 text-white rounded-br-sm' : 'text-slate-700 rounded-bl-sm'
+                              isMe
+                                ? 'bg-gradient-to-br from-violet-500 to-indigo-600 text-white rounded-br-sm'
+                                : 'rounded-bl-sm border border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200'
                             } ${m._pending ? 'opacity-60' : 'opacity-100'}`}
-                            style={!isMe ? { background: 'rgba(248,250,252,0.95)', border: '1px solid rgba(226,232,240,0.8)' } : undefined}
                           >
                             {m.content}
                           </div>

@@ -140,12 +140,7 @@ export default function SearchPalette({ open, onClose }: SearchPaletteProps) {
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="w-full max-w-lg overflow-hidden rounded-2xl shadow-2xl"
-        style={{
-          background: 'rgba(255,255,255,0.98)',
-          border: '1px solid rgba(226,232,240,0.80)',
-          boxShadow: '0 24px 80px rgba(15,23,42,0.22)',
-        }}
+        className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900"
       >
         {/* Input */}
         <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3.5">

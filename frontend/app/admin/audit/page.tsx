@@ -16,9 +16,9 @@ function fmtDt(iso: string) {
 }
 
 function actionColor(action: string) {
-  if (action.startsWith('create')) return 'bg-emerald-50 text-emerald-700';
-  if (action.startsWith('delete')) return 'bg-rose-50 text-rose-700';
-  if (action.startsWith('update') || action.startsWith('assign')) return 'bg-sky-50 text-sky-700';
+  if (action.startsWith('create')) return 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400';
+  if (action.startsWith('delete')) return 'bg-rose-500/10 text-rose-700 dark:text-rose-400';
+  if (action.startsWith('update') || action.startsWith('assign')) return 'bg-sky-500/10 text-sky-700 dark:text-sky-400';
   return 'bg-slate-100 text-slate-600';
 }
 
@@ -93,15 +93,15 @@ export default function AdminAuditPage() {
           <div className="overflow-x-auto">
             <table className="min-w-full text-[12px]">
               <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/60">
+                <tr className="border-b border-slate-100 bg-slate-50 dark:border-slate-700/60 dark:bg-slate-800/40">
                   {['Time', 'Actor', 'Action', 'Entity', 'Details'].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-400 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                 {filtered.map((log) => (
-                  <tr key={log.id} className="hover:bg-slate-50/60 transition">
+                  <tr key={log.id} className="transition hover:bg-slate-50 dark:hover:bg-slate-800/40">
                     <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{fmtDt(log.createdAt)}</td>
                     <td className="px-4 py-3">
                       <p className="font-medium text-slate-700 whitespace-nowrap">{displayName(log.actor)}</p>

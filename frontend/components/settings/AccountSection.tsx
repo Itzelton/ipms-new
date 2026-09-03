@@ -121,15 +121,15 @@ export default function AccountSection() {
             </div>
             <button
               onClick={() => setShowDelete(true)}
-              className="flex-shrink-0 rounded-xl bg-rose-50 px-4 py-2 text-[12px] font-semibold text-rose-600 transition-colors hover:bg-rose-100"
+              className="flex-shrink-0 rounded-xl bg-rose-100 px-4 py-2 text-[12px] font-semibold text-rose-600 transition-colors hover:bg-rose-100"
             >
               Delete Account
             </button>
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="rounded-xl bg-rose-50 px-4 py-3">
-              <p className="text-[12px] font-semibold text-rose-800">
+            <div className="rounded-xl bg-rose-100 px-4 py-3">
+              <p className="text-[12px] font-semibold text-rose-700">
                 This action is permanent and cannot be undone.
               </p>
               <p className="mt-0.5 text-[12px] text-rose-600">

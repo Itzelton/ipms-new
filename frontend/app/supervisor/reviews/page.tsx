@@ -169,7 +169,7 @@ export default function SupervisorReviewsPage() {
               const isHighlighted = highlightId === s.id;
               const age = Math.floor((Date.now() - new Date(s.createdAt).getTime()) / 3_600_000);
               return (
-                <div key={s.id} id={`sub-${s.id}`} className={`py-4 rounded-xl transition-colors ${isHighlighted ? 'ring-2 ring-sky-400 ring-offset-2 bg-sky-50/60 px-3' : ''}`}>
+                <div key={s.id} id={`sub-${s.id}`} className={`py-4 rounded-xl transition-colors ${isHighlighted ? 'ring-2 ring-sky-400 ring-offset-2 bg-sky-50 dark:bg-sky-900/20 px-3' : ''}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">

@@ -414,12 +414,76 @@
 .dark .bg-sky-50                   { background-color: rgba(14,165,233,0.08); }
 
 /* Status / badge backgrounds in dark */
+.dark .bg-rose-50    { background-color: rgba(127,29,29,0.25); }
 .dark .bg-rose-100   { background-color: rgba(127,29,29,0.40); }
 .dark .text-rose-600 { color: #f87171; }
+.dark .text-rose-700 { color: #f87171; }
+.dark .text-rose-800 { color: #fca5a5; }
+.dark .border-rose-100 { border-color: rgba(127,29,29,0.35); }
+.dark .border-rose-200 { border-color: rgba(127,29,29,0.45); }
+.dark .hover\:bg-rose-100:hover { background-color: rgba(127,29,29,0.55); }
+
+.dark .bg-emerald-50  { background-color: rgba(6,78,59,0.25); }
 .dark .bg-emerald-100 { background-color: rgba(6,78,59,0.40); }
 .dark .text-emerald-500 { color: #34d399; }
+.dark .text-emerald-600 { color: #34d399; }
+.dark .text-emerald-700 { color: #6ee7b7; }
+.dark .text-emerald-800 { color: #a7f3d0; }
+.dark .border-emerald-100 { border-color: rgba(6,78,59,0.35); }
+.dark .border-emerald-200 { border-color: rgba(6,78,59,0.45); }
+
+.dark .bg-amber-50    { background-color: rgba(120,53,15,0.25); }
 .dark .bg-amber-100   { background-color: rgba(120,53,15,0.40); }
 .dark .text-amber-700 { color: #fcd34d; }
+.dark .text-amber-800 { color: #fde68a; }
+.dark .border-amber-100 { border-color: rgba(120,53,15,0.35); }
+.dark .border-amber-200 { border-color: rgba(120,53,15,0.45); }
+
+.dark .bg-sky-100     { background-color: rgba(14,165,233,0.15); }
+.dark .bg-sky-200     { background-color: rgba(14,165,233,0.25); }
+.dark .text-sky-700   { color: #38bdf8; }
+.dark .text-sky-800   { color: #7dd3fc; }
+.dark .border-sky-100 { border-color: rgba(14,165,233,0.20); }
+.dark .border-sky-200 { border-color: rgba(14,165,233,0.30); }
+.dark .hover\:bg-sky-100:hover { background-color: rgba(14,165,233,0.18); }
+.dark .ring-sky-200   { --tw-ring-color: rgba(14,165,233,0.30); }
+.dark .ring-sky-300   { --tw-ring-color: rgba(14,165,233,0.40); }
+
+.dark .bg-violet-50   { background-color: rgba(109,40,217,0.20); }
+.dark .bg-violet-100  { background-color: rgba(109,40,217,0.30); }
+.dark .text-violet-700 { color: #c4b5fd; }
+.dark .text-violet-800 { color: #ddd6fe; }
+.dark .border-violet-200 { border-color: rgba(109,40,217,0.35); }
+.dark .ring-violet-200 { --tw-ring-color: rgba(109,40,217,0.35); }
+
+.dark .bg-blue-100    { background-color: rgba(30,64,175,0.35); }
+.dark .text-blue-700  { color: #93c5fd; }
+.dark .border-blue-200 { border-color: rgba(30,64,175,0.40); }
+
+.dark .bg-red-50      { background-color: rgba(127,29,29,0.25); }
+.dark .bg-red-100     { background-color: rgba(127,29,29,0.40); }
+.dark .text-red-500   { color: #f87171; }
+.dark .text-red-600   { color: #f87171; }
+.dark .text-red-700   { color: #f87171; }
+.dark .border-red-100 { border-color: rgba(127,29,29,0.35); }
+
+/* text-gray-* aliases (maps to slate equivalents in dark) */
+.dark .text-gray-900  { color: #e8eaf0; }
+.dark .text-gray-800  { color: #d4d8e4; }
+.dark .text-gray-700  { color: #b8c0d0; }
+.dark .text-gray-600  { color: #8892a4; }
+.dark .text-gray-500  { color: #8892a4; }
+
+/* Opacity-variant overrides (Tailwind bg-x/y generates different class names) */
+.dark .bg-sky-50\/60,
+.dark .bg-sky-50\/70    { background-color: rgba(14,165,233,0.10); }
+.dark .bg-slate-50\/60  { background-color: rgba(255,255,255,0.03); }
+.dark .hover\:bg-slate-50\/60:hover { background-color: rgba(255,255,255,0.05); }
+.dark .bg-white\/70,
+.dark .bg-white\/80     { background-color: rgba(255,255,255,0.05); }
+.dark .bg-emerald-50\/60 { background-color: rgba(6,78,59,0.20); }
+.dark .bg-amber-50\/60   { background-color: rgba(120,53,15,0.20); }
+.dark .divide-slate-50 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255,255,255,0.05); }
 
 /* ── Links ───────────────────────────────────────────────────── */
 .dark a { color: #38bdf8; }

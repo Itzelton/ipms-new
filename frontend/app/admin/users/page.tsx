@@ -43,9 +43,9 @@ function getRole(u: User): RoleName {
 
 function roleBadge(role: RoleName) {
   const map: Record<RoleName, { label: string; className: string }> = {
-    STUDENT: { label: 'Student', className: 'bg-sky-50 text-sky-700 ring-1 ring-sky-200' },
-    SUPERVISOR: { label: 'Supervisor', className: 'bg-violet-50 text-violet-700 ring-1 ring-violet-200' },
-    ADMIN: { label: 'Admin', className: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200' },
+    STUDENT: { label: 'Student', className: 'bg-sky-50 text-sky-700 ring-1 ring-sky-200 dark:bg-sky-900/30 dark:text-sky-300 dark:ring-sky-700/50' },
+    SUPERVISOR: { label: 'Supervisor', className: 'bg-violet-50 text-violet-700 ring-1 ring-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:ring-violet-700/50' },
+    ADMIN: { label: 'Admin', className: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:ring-amber-700/50' },
   };
   const { label, className } = map[role] ?? map.STUDENT;
   return (
@@ -494,7 +494,7 @@ function DeleteConfirmModal({ user, onClose, onDeleted }: { user: User; onClose:
   return (
     <Modal onClose={onClose}>
       <div className="flex items-start gap-4">
-        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-red-100">
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-rose-100">
           <svg className="h-5 w-5 text-red-600" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
@@ -791,7 +791,7 @@ export default function AdminUsersPage() {
                         <span
                           className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                             isActive
-                              ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
+                              ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200'
                               : 'bg-slate-100 text-slate-500 ring-1 ring-slate-200'
                           }`}
                         >
