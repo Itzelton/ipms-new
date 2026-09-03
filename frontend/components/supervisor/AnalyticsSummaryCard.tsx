@@ -62,11 +62,7 @@ export default function AnalyticsSummaryCard({ summary }: { summary?: any }) {
         {statConfig.map(({ key, label, icon, gradient, valueClass }) => (
           <div
             key={key}
-            className="flex flex-col gap-3 rounded-xl p-4"
-            style={{
-              background: 'rgba(248,250,252,0.70)',
-              border: '1px solid rgba(226,232,240,0.60)',
-            }}
+            className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700/60 dark:bg-slate-800/60"
           >
             <div className={`flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} shadow-sm`}>
               {icon}

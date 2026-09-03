@@ -1,5 +1,6 @@
 "use client";
 import React from 'react';
+import { useRouter } from 'next/navigation';
 
 const statusStyle: Record<string, string> = {
   REVIEW_PENDING: 'bg-amber-100 text-amber-700',
@@ -15,6 +16,7 @@ function fmtDate(d: string) {
 }
 
 export default function ProjectsUnderReview({ projects }: { projects?: any[] }) {
+  const router = useRouter();
   const isEmpty = !projects || projects.length === 0;
 
   return (
@@ -51,12 +53,15 @@ export default function ProjectsUnderReview({ projects }: { projects?: any[] }) 
                   </div>
                 </div>
                 <div className="flex flex-shrink-0 items-center gap-2">
-                  <button className="rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-blue-700 transition-colors">
+                  <button
+                    onClick={() => router.push(`/supervisor/reviews`)}
+                    className="rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-blue-700 transition-colors"
+                  >
                     Review
                   </button>
                   <button
-                    className="rounded-lg px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition-colors"
-                    style={{ background: 'rgba(248,250,252,0.80)', border: '1px solid rgba(226,232,240,0.80)' }}
+                    onClick={() => router.push(`/supervisor/projects/${project.id}`)}
+                    className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                   >
                     Details
                   </button>
