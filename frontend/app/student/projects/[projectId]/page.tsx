@@ -14,6 +14,7 @@ import ActivityHeatmap from '../../../../components/dashboard/ActivityHeatmap';
 import { apiGet } from '../../../../services/api';
 import { useAuth } from '../../../../components/auth/auth-context';
 import Breadcrumb from '../../../../components/ui/Breadcrumb';
+import { SkeletonProjectDetail } from '../../../../components/ui/Skeleton';
 
 export default function ProjectDetailsPage({ params }: { params: { projectId: string } }) {
   const { user } = useAuth();
@@ -54,7 +55,7 @@ export default function ProjectDetailsPage({ params }: { params: { projectId: st
     return () => { mounted = false; };
   }, [params.projectId]);
 
-  if (loading) return <div className="p-6">Loading project details...</div>;
+  if (loading) return <SkeletonProjectDetail />;
   if (!project) return <div className="p-6 text-gray-600">Project not found.</div>;
 
   return (

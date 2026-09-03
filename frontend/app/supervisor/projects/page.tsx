@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { getProjectsForUser } from '../../../services/project';
 import ProjectList from '../../../components/project/ProjectList';
 import FilterBar from '../../../components/ui/FilterBar';
+import { SkeletonProjectGrid } from '../../../components/ui/Skeleton';
 
 const STATUS_OPTIONS = [
   { value: 'ACTIVE',    label: 'Active' },
@@ -87,9 +88,7 @@ export default function SupervisorProjectsPage() {
       />
 
       {loading ? (
-        <div className="card p-10 text-center">
-          <div className="mx-auto h-7 w-7 animate-spin rounded-full border-4 border-sky-200 border-t-sky-500" />
-        </div>
+        <SkeletonProjectGrid />
       ) : filtered.length === 0 ? (
         <div className="card p-10 text-center">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">

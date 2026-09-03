@@ -9,6 +9,7 @@ import RecentSubmissions from '../../components/dashboard/RecentSubmissions';
 import ActivityTimeline from '../../components/dashboard/ActivityTimeline';
 import HealthScoreCard from '../../components/dashboard/HealthScoreCard';
 import ActivityHeatmap from '../../components/dashboard/ActivityHeatmap';
+import { SkeletonDashboard } from '../../components/ui/Skeleton';
 
 const YEAR = new Date().getFullYear();
 
@@ -50,7 +51,7 @@ export default function StudentDashboard() {
         const hasActive = projectList.some((p: any) => p.status === 'ACTIVE');
         const advisorId = meRes.status === 'fulfilled' ? meRes.value?.studentProfile?.advisorId : null;
 
-        // Fetch project details and supervisor in parallel (neither depends on the other)
+        // Fetch project details and supervisor in parallel
         const [detailsRes, svRes] = await Promise.allSettled([
           firstProject?.id ? apiGet(`/projects/${firstProject.id}/details`) : Promise.resolve(null),
           advisorId ? apiGet(`/users/${advisorId}`) : Promise.resolve(null),
@@ -151,7 +152,7 @@ export default function StudentDashboard() {
       </header>
 
       {loading ? (
-        <div className="p-6 text-slate-500">Loading dashboard...</div>
+        <SkeletonDashboard />
       ) : (
         <>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

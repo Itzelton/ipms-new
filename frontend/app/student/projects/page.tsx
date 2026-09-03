@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { apiGet, apiPost, apiUpload } from '../../../services/api';
 import FilterBar from '../../../components/ui/FilterBar';
+import { SkeletonProjectGrid } from '../../../components/ui/Skeleton';
 import Link from 'next/link';
 
 type Supervisor = { id: string; email: string; firstName?: string; lastName?: string; preferredName?: string };
@@ -266,9 +267,7 @@ export default function StudentProjectsPage() {
 
       {/* Project list */}
       {loading ? (
-        <div className="card p-8 text-center">
-          <div className="mx-auto h-7 w-7 animate-spin rounded-full border-4 border-sky-200 border-t-sky-500" />
-        </div>
+        <SkeletonProjectGrid />
       ) : projects.length === 0 ? (
         <div className="card p-10 text-center">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-sky-50">

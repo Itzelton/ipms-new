@@ -11,6 +11,7 @@ import RiskAlertsPanel from '../../components/supervisor/RiskAlertsPanel';
 import ActivityTimeline from '../../components/dashboard/ActivityTimeline';
 import ActivityHeatmap from '../../components/dashboard/ActivityHeatmap';
 import PendingProposalsCard from '../../components/supervisor/PendingProposalsCard';
+import { SkeletonDashboard } from '../../components/ui/Skeleton';
 
 const YEAR = new Date().getFullYear();
 
@@ -163,7 +164,7 @@ export default function SupervisorIndex() {
       </header>
 
       {loading ? (
-        <div className="p-6 text-slate-500">Loading dashboard...</div>
+        <SkeletonDashboard />
       ) : (
         <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
           <div className="grid gap-6">

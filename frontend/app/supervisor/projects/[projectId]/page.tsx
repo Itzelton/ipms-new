@@ -14,6 +14,7 @@ import ActivityHeatmap from '../../../../components/dashboard/ActivityHeatmap';
 import { apiGet } from '../../../../services/api';
 import { useAuth } from '../../../../components/auth/auth-context';
 import Breadcrumb from '../../../../components/ui/Breadcrumb';
+import { SkeletonProjectDetail } from '../../../../components/ui/Skeleton';
 import Link from 'next/link';
 import ProposalReviewPanel from '../../../../components/supervisor/ProposalReviewPanel';
 
@@ -44,7 +45,7 @@ export default function SupervisorProjectDetailsPage({ params }: { params: { pro
 
   useEffect(() => loadProject(), [loadProject]);
 
-  if (loading) return <div className="p-6">Loading project details...</div>;
+  if (loading) return <SkeletonProjectDetail />;
   if (!project) return (
     <div className="card mx-auto max-w-xl p-8 text-center">
       <h1 className="text-lg font-semibold text-slate-800">Project unavailable</h1>
