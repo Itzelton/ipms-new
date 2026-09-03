@@ -88,17 +88,14 @@ export default function AdminIndex() {
       <header className="card-static p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <span className="inline-flex items-center rounded-full bg-rose-100 px-2.5 py-0.5 text-[11px] font-semibold text-rose-700">
+            <span className="inline-flex items-center rounded-full bg-rose-500/15 px-2.5 py-0.5 text-[11px] font-semibold text-rose-500">
               Admin workspace
             </span>
-            <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">Admin Dashboard</h2>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Admin Dashboard</h2>
             <p className="mt-1 text-sm text-slate-500">Control center for users, projects and system insights.</p>
           </div>
           {!loading && (
-            <div
-              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12px] font-medium text-slate-700"
-              style={{ background: 'rgba(248,250,252,0.80)', border: '1px solid rgba(226,232,240,0.80)' }}
-            >
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-[12px] font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
               <span className={`h-1.5 w-1.5 rounded-full ${alertCount === 0 ? 'bg-emerald-400' : alertCount < 3 ? 'bg-amber-400' : 'bg-rose-400'}`} />
               System health: {alertCount === 0 ? 'Good' : alertCount < 3 ? 'Caution' : 'At Risk'}
             </div>
@@ -118,7 +115,7 @@ export default function AdminIndex() {
                 </p>
                 <p className="mt-1.5 text-[12px] text-slate-400">{stat.detail}</p>
               </div>
-              <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${stat.gradient} opacity-15`} />
+              <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${stat.gradient} opacity-20`} />
             </div>
           </div>
         ))}
@@ -133,12 +130,11 @@ export default function AdminIndex() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="group flex items-center gap-3 rounded-xl px-4 py-3.5 text-[13px] font-medium text-slate-700 no-underline transition-all hover:text-slate-900"
-                style={{ background: 'rgba(248,250,252,0.70)', border: '1px solid rgba(226,232,240,0.60)' }}
+                className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-[13px] font-medium text-slate-700 no-underline transition-all hover:border-slate-300 hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700/60 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-100"
               >
                 <span className="text-base leading-none">{link.icon}</span>
                 {link.label}
-                <svg className="ml-auto h-4 w-4 text-slate-300 transition-colors group-hover:text-slate-400" viewBox="0 0 20 20" fill="currentColor">
+                <svg className="ml-auto h-4 w-4 text-slate-300 transition-colors group-hover:text-slate-500 dark:text-slate-600 dark:group-hover:text-slate-400" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                 </svg>
               </Link>
@@ -154,13 +150,13 @@ export default function AdminIndex() {
           ) : activity.length === 0 ? (
             <p className="text-[13px] text-slate-400">No recent activity.</p>
           ) : (
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-slate-100 dark:divide-slate-700/60">
               {activity.map((item, i) => (
                 <li key={i} className="py-3.5 first:pt-0 last:pb-0">
                   <div className="flex items-start gap-2.5">
                     <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-sky-400" />
                     <div className="min-w-0">
-                      <p className="text-[13px] font-medium text-slate-800 truncate">{item.title}</p>
+                      <p className="text-[13px] font-medium text-slate-800 dark:text-slate-200 truncate">{item.title}</p>
                       <p className="mt-0.5 text-[12px] text-slate-500">{item.body}</p>
                     </div>
                   </div>
