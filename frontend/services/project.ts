@@ -1,9 +1,18 @@
 import { apiGet } from './api';
 
 export async function getProjectDetails(projectId: string) {
+  // Try the rich /details endpoint first; if it errors or times out, fall back
+  // to the simpler /projects/:id endpoint so the page always renders.
+  let details: any = null;
   try {
-    const details = await apiGet(`/projects/${projectId}/details`);
-    if (details) return details;
+    details = await apiGet(`/projects/${projectId}/details`);
+  } catch {
+    // timeout or server error — fall through to the base endpoint
+  }
+
+  if (details) return details;
+
+  try {
     const project = await apiGet(`/projects/${projectId}`);
     if (!project) return null;
     return {
