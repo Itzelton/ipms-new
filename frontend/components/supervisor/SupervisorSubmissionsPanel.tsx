@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { apiGet, apiPatch } from '../../services/api';
 
 const statusStyle: Record<string, string> = {
@@ -72,6 +73,15 @@ export default function SupervisorSubmissionsPanel({ submissions: initial, proje
         </div>
         <p className="text-sm font-medium text-slate-500">No submissions yet</p>
         <p className="mt-1 text-xs text-slate-400">Waiting for the student to submit work.</p>
+        <Link
+          href="/supervisor/reviews"
+          className="mt-3 inline-flex items-center gap-1 text-[12px] font-medium text-sky-600 hover:text-sky-700 no-underline"
+        >
+          Go to submissions page
+          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
       </div>
     );
   }
@@ -80,7 +90,18 @@ export default function SupervisorSubmissionsPanel({ submissions: initial, proje
     <div className="card p-6">
       <div className="flex items-center justify-between mb-5">
         <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">Submissions</p>
-        <span className="text-[11px] text-slate-400">{submissions.length} submission{submissions.length !== 1 ? 's' : ''}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-[11px] text-slate-400">{submissions.length} submission{submissions.length !== 1 ? 's' : ''}</span>
+          <Link
+            href="/supervisor/reviews"
+            className="inline-flex items-center gap-1 text-[11px] font-medium text-sky-600 hover:text-sky-700 no-underline"
+          >
+            View all
+            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+        </div>
       </div>
 
       <ul className="divide-y divide-slate-100">

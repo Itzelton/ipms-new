@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { apiGet, apiPost } from '../../services/api';
+import Link from 'next/link';
+import { apiGet } from '../../services/api';
 
 const statusStyle: Record<string, string> = {
   APPROVED:          'bg-emerald-100 text-emerald-700',
@@ -17,52 +18,16 @@ function fmtDate(d: string) {
 
 export default function ProjectSubmissionsPanel({ submissions: initial, projectId }: { submissions?: any[]; projectId?: string }) {
   const [submissions, setSubmissions] = useState<any[]>(initial ?? []);
-  const [milestones, setMilestones] = useState<any[]>([]);
   const [fetching, setFetching] = useState(!!projectId);
-  const [showForm, setShowForm] = useState(false);
-
-  const [milestoneId, setMilestoneId] = useState('');
-  const [content, setContent] = useState('');
-  const [fileUrl, setFileUrl] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!projectId) return;
     setFetching(true);
-    Promise.allSettled([
-      apiGet(`/submissions?projectId=${projectId}&limit=100`),
-      apiGet(`/milestones?projectId=${projectId}&limit=100`),
-    ]).then(([subRes, msRes]) => {
-      if (subRes.status === 'fulfilled' && Array.isArray(subRes.value)) setSubmissions(subRes.value);
-      if (msRes.status === 'fulfilled' && Array.isArray(msRes.value)) setMilestones(msRes.value);
-    }).finally(() => setFetching(false));
+    apiGet(`/submissions?projectId=${projectId}&limit=100`)
+      .then((data) => { if (Array.isArray(data)) setSubmissions(data); })
+      .catch(() => {})
+      .finally(() => setFetching(false));
   }, [projectId]);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!milestoneId) { setError('Please select a milestone.'); return; }
-    if (!content.trim()) { setError('Please add some notes about your submission.'); return; }
-    setSubmitting(true);
-    setError('');
-    try {
-      const s = await apiPost('/submissions', {
-        projectId,
-        milestoneId,
-        content: content.trim(),
-        fileUrl: fileUrl.trim() || undefined,
-      });
-      setSubmissions((prev) => [s, ...prev]);
-      setMilestoneId('');
-      setContent('');
-      setFileUrl('');
-      setShowForm(false);
-    } catch (err: any) {
-      setError(err?.message || 'Failed to submit. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
-  }
 
   if (fetching) {
     return (
@@ -79,80 +44,36 @@ export default function ProjectSubmissionsPanel({ submissions: initial, projectI
           <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">Submissions</p>
           <p className="text-sm font-semibold text-slate-700 mt-0.5">{submissions.length} submission{submissions.length !== 1 ? 's' : ''}</p>
         </div>
-        {projectId && (
-          <button
-            onClick={() => { setShowForm((v) => !v); setError(''); }}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-sky-600 px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-sky-700 transition"
+        {submissions.length > 0 && (
+          <Link
+            href="/student/submissions"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-sky-600 px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-sky-700 transition no-underline"
           >
             <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
             </svg>
-            {showForm ? 'Cancel' : 'New Submission'}
-          </button>
+            Add Submission
+          </Link>
         )}
       </div>
 
-      {showForm && (
-        <form onSubmit={handleSubmit} className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-          {error && <p className="text-[12px] text-rose-600">{error}</p>}
-
-          <div>
-            <label className="block text-[12px] font-medium text-slate-700 mb-1">
-              Milestone <span className="text-rose-500">*</span>
-            </label>
-            <select
-              value={milestoneId}
-              onChange={(e) => setMilestoneId(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100"
-            >
-              <option value="">— Select a milestone —</option>
-              {milestones.map((m) => (
-                <option key={m.id} value={m.id}>{m.title}</option>
-              ))}
-            </select>
-            {milestones.length === 0 && (
-              <p className="mt-1 text-[11px] text-slate-400">No milestones defined yet. Your supervisor must add milestones before you can submit.</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-[12px] font-medium text-slate-700 mb-1">
-              Notes / Summary <span className="text-rose-500">*</span>
-            </label>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows={3}
-              placeholder="Describe what you've done for this milestone..."
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm resize-none focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100"
-            />
-          </div>
-
-          <div>
-            <label className="block text-[12px] font-medium text-slate-700 mb-1">File / Link URL</label>
-            <input
-              type="url"
-              value={fileUrl}
-              onChange={(e) => setFileUrl(e.target.value)}
-              placeholder="https://drive.google.com/... or GitHub link"
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-100"
-            />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-1">
-            <button type="button" onClick={() => setShowForm(false)} className="rounded-lg border border-slate-200 px-3 py-1.5 text-[12px] font-medium text-slate-600 hover:bg-slate-100 transition">
-              Cancel
-            </button>
-            <button type="submit" disabled={submitting || milestones.length === 0} className="rounded-lg bg-sky-600 px-4 py-1.5 text-[12px] font-semibold text-white hover:bg-sky-700 disabled:opacity-50 transition">
-              {submitting ? 'Submitting…' : 'Submit Work'}
-            </button>
-          </div>
-        </form>
-      )}
-
       {submissions.length === 0 ? (
-        <div className="py-6 text-center">
-          <p className="text-sm text-slate-400">No submissions yet. Click "New Submission" to submit your work.</p>
+        <div className="py-8 text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100">
+            <svg className="h-6 w-6 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <p className="text-sm font-medium text-slate-600">No submissions yet</p>
+          <Link
+            href="/student/submissions"
+            className="mt-2 inline-flex items-center gap-1 text-[13px] font-semibold text-sky-600 hover:text-sky-700 no-underline"
+          >
+            Click here to add a submission
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
         </div>
       ) : (
         <ul className="divide-y divide-slate-100">
