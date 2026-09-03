@@ -27,7 +27,7 @@ export class MilestonesService {
         await this.notificationsService.create({
           recipientId: project.studentId,
           message: `Milestone created: ${m.title}`,
-          link: `/projects/${createMilestoneDto.projectId}/milestones/${m.id}`,
+          link: `/student/projects/${createMilestoneDto.projectId}`,
         });
       }
     }

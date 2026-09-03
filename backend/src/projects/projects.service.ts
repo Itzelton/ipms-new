@@ -95,7 +95,7 @@ export class ProjectsService {
   async assignSupervisor(id: string, supervisorId: string, actorId?: string) {
     const project = await this.projectRepository.assignSupervisor(id, supervisorId);
     await this.auditService.log(actorId || null, 'assign_supervisor', 'Project', id, { supervisorId });
-    await this.notificationsService.create({ recipientId: supervisorId, message: `You were assigned as supervisor to project ${project.title}`, link: `/projects/${id}` });
+    await this.notificationsService.create({ recipientId: supervisorId, message: `You were assigned as supervisor to project ${project.title}`, link: `/supervisor/projects` });
     return project;
   }
 
@@ -159,7 +159,7 @@ export class ProjectsService {
     await this.notificationsService.create({
       recipientId: user.id,
       message: `You have been added as a collaborator on a project.`,
-      link: `/projects/${projectId}`,
+      link: `/student/projects/${projectId}`,
     });
     return result;
   }

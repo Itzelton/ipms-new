@@ -27,7 +27,7 @@ export class SubmissionsService {
         await this.notificationsService.create({
           recipientId: project.supervisorId,
           message: `New submission created for project ${submission.projectId}`,
-          link: `/submissions/${submission.id}`,
+          link: `/supervisor/projects/${submission.projectId}`,
         });
       }
     }
