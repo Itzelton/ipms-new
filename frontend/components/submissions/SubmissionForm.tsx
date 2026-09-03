@@ -63,13 +63,13 @@ export default function SubmissionForm({ onSubmit, isSubmitting }: { onSubmit: (
     return 'Optional File';
   }, [evidenceType]);
 
-  async function handleSubmit(event: React.FormEvent) {
+  async function handleSubmit(event: React.FormEvent, asDraft = false) {
     event.preventDefault();
     const nextErrors: Record<string, string> = {};
     if (!title.trim()) nextErrors.title = 'Title is required.';
     if (!details.trim()) nextErrors.details = 'Details are required.';
     if (!projectId) nextErrors.projectId = 'Select a project.';
-    if ((evidenceType === 'GITHUB' || evidenceType === 'WEBSITE' || evidenceType === 'DEMO_VIDEO') && !sourceUrl.trim()) {
+    if (!asDraft && (evidenceType === 'GITHUB' || evidenceType === 'WEBSITE' || evidenceType === 'DEMO_VIDEO') && !sourceUrl.trim()) {
       nextErrors.sourceUrl = 'A URL is required for this evidence type.';
     }
     if (Object.keys(nextErrors).length > 0) {
@@ -100,7 +100,7 @@ export default function SubmissionForm({ onSubmit, isSubmitting }: { onSubmit: (
       evidenceType,
       fileUrl: uploadedUrl,
       metadata,
-      status: 'SUBMITTED',
+      status: asDraft ? 'DRAFT' : 'SUBMITTED',
     };
     if (milestoneId) payload.milestoneId = milestoneId;
 
@@ -189,10 +189,21 @@ export default function SubmissionForm({ onSubmit, isSubmitting }: { onSubmit: (
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
-        <p className="text-[12px] text-slate-400">Upload evidence and create a versioned entry.</p>
-        <button type="submit" disabled={isSubmitting || !projectId} className="btn-primary px-5 py-2.5 disabled:opacity-50">
-          {isSubmitting ? 'Submitting…' : 'Submit Evidence'}
+      <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
+        <button
+          type="button"
+          disabled={isSubmitting || !projectId}
+          onClick={(e) => handleSubmit(e as any, true)}
+          className="rounded-lg border border-slate-200 px-4 py-2 text-[12px] font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition"
+        >
+          {isSubmitting ? 'Saving…' : 'Save Draft'}
+        </button>
+        <button
+          type="submit"
+          disabled={isSubmitting || !projectId}
+          className="btn-primary px-5 py-2.5 disabled:opacity-50"
+        >
+          {isSubmitting ? 'Submitting…' : 'Submit'}
         </button>
       </div>
     </form>
