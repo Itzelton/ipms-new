@@ -1,5 +1,7 @@
 "use client";
 import React from 'react';
+import Link from 'next/link';
+import { useAuth } from '../auth/auth-context';
 
 function fmtDate(d: string) {
   if (!d) return '—';
@@ -8,10 +10,16 @@ function fmtDate(d: string) {
 }
 
 export default function ProjectDiscussionsPanel({ discussions }: { discussions?: any[] }) {
+  const { user } = useAuth();
+  const discussionsHref = user?.role === 'SUPERVISOR' ? '/supervisor/discussions' : '/student/discussions';
+
   if (!discussions || discussions.length === 0) {
     return (
       <div className="card p-8 text-center">
         <p className="text-sm text-slate-500">No discussion threads yet.</p>
+        <Link href={discussionsHref} className="mt-3 inline-flex items-center gap-1 text-[12px] font-medium text-sky-600 hover:text-sky-700 no-underline">
+          Go to Discussions →
+        </Link>
       </div>
     );
   }
@@ -20,7 +28,9 @@ export default function ProjectDiscussionsPanel({ discussions }: { discussions?:
     <div className="card p-6">
       <div className="flex items-center justify-between mb-5">
         <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">Discussion Threads</p>
-        <span className="text-[11px] text-slate-400">{discussions.length} threads</span>
+        <Link href={discussionsHref} className="text-[11px] font-medium text-sky-600 hover:text-sky-700 no-underline">
+          Open Discussions →
+        </Link>
       </div>
       <ul className="divide-y divide-slate-100">
         {discussions.map((thread) => (
@@ -36,9 +46,12 @@ export default function ProjectDiscussionsPanel({ discussions }: { discussions?:
                 <p className="text-[11px] text-slate-400">Updated {fmtDate(thread.updatedAt)} · {thread.messages ?? 0} messages</p>
               </div>
             </div>
-            <button className="flex-shrink-0 rounded-lg bg-sky-600 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-sky-700 transition-colors">
+            <Link
+              href={discussionsHref}
+              className="flex-shrink-0 rounded-lg bg-sky-600 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-sky-700 transition-colors no-underline"
+            >
               Open
-            </button>
+            </Link>
           </li>
         ))}
       </ul>

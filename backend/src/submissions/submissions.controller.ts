@@ -4,6 +4,7 @@ import { CreateSubmissionDto } from './dto/create-submission.dto';
 import { UpdateSubmissionDto } from './dto/update-submission.dto';
 import { CreateSubmissionVersionDto } from './dto/create-submission-version.dto';
 import { SubmissionQueryDto } from './dto/submission-query.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/user.decorator';
 
@@ -11,6 +12,11 @@ import { CurrentUser } from '../common/decorators/user.decorator';
 @Controller('submissions')
 export class SubmissionsController {
   constructor(private readonly submissionsService: SubmissionsService) {}
+
+  @Get('for-supervisor')
+  findForSupervisor(@CurrentUser('id') userId: string, @Query() pagination: PaginationDto) {
+    return this.submissionsService.findBySupervisor(userId, pagination);
+  }
 
   @Get()
   findAll(@Query() query: SubmissionQueryDto, @CurrentUser('id') userId: string) {

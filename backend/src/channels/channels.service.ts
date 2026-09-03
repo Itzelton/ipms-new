@@ -6,8 +6,12 @@ import { SendMessageDto } from './dto/send-message.dto';
 import { EditMessageDto } from './dto/edit-message.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 
+const MESSAGE_NOTIF_COOLDOWN_MS = 5 * 60 * 1000;
+
 @Injectable()
 export class ChannelsService {
+  private readonly lastMessageNotif = new Map<string, number>();
+
   constructor(
     private readonly repo: ChannelRepository,
     private readonly notificationsService: NotificationsService,
@@ -51,14 +55,19 @@ export class ChannelsService {
     try {
       const channel = await this.repo.findChannel(channelId);
       if (channel?.members) {
+        const now = Date.now();
         for (const member of channel.members) {
           if (member.userId !== userId) {
+            const cooldownKey = `${channelId}:${member.userId}`;
+            const lastSent = this.lastMessageNotif.get(cooldownKey) ?? 0;
+            if (now - lastSent < MESSAGE_NOTIF_COOLDOWN_MS) continue;
+            this.lastMessageNotif.set(cooldownKey, now);
             const role = await this.repo.getUserPrimaryRole(member.userId);
             const link = role === 'SUPERVISOR' ? '/supervisor/messages' : '/student/messages';
             await this.notificationsService.create({
               recipientId: member.userId,
               title: 'New message',
-              message: `New message from ${channel.name}`,
+              message: `New message in ${channel.name}`,
               link,
             });
           }

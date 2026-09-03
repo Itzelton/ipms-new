@@ -103,7 +103,7 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
     } catch { /* network error — leave state unchanged */ }
   }
 
-  const { resolvedTheme } = useSettings();
+  const { resolvedTheme, persistentSidebar } = useSettings();
   const isDark = resolvedTheme === 'dark';
 
   const gradient = user?.role ? (roleGradients[user.role] ?? roleGradients.STUDENT) : roleGradients.STUDENT;
@@ -119,7 +119,7 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
           {user && (
             <button
               onClick={toggle}
-              className="lg:hidden flex h-9 w-9 items-center justify-center rounded-xl text-slate-600 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-white/10 transition"
+              className={`${persistentSidebar ? 'lg:hidden' : ''} flex h-9 w-9 items-center justify-center rounded-xl text-slate-600 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-white/10 transition`}
               aria-label="Open sidebar"
             >
               <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -211,11 +211,11 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
                     }}
                   >
                     {/* Header */}
-                    <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                    <div className={`flex items-center justify-between px-4 py-3 border-b ${isDark ? 'border-white/[0.08]' : 'border-slate-100'}`}>
                       <div className="flex items-center gap-2">
-                        <span className="text-[13px] font-semibold text-slate-800">Notifications</span>
+                        <span className={`text-[13px] font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Notifications</span>
                         {unread > 0 && (
-                          <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-600 leading-none">
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold leading-none ${isDark ? 'bg-rose-500/20 text-rose-400' : 'bg-rose-100 text-rose-600'}`}>
                             {unread} unread
                           </span>
                         )}
@@ -223,7 +223,7 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
                       {unread > 0 && (
                         <button
                           onClick={handleMarkAllRead}
-                          className="text-[11px] font-medium text-sky-600 hover:text-sky-700 transition"
+                          className={`text-[11px] font-medium transition ${isDark ? 'text-sky-400 hover:text-sky-300' : 'text-sky-600 hover:text-sky-700'}`}
                         >
                           Mark all read
                         </button>
@@ -236,23 +236,23 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
                         <div className="py-2">
                           {[0, 1, 2].map((i) => (
                             <div key={i} className="flex items-start gap-3 px-4 py-3">
-                              <div className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-slate-100 animate-pulse" />
+                              <div className={`mt-1.5 h-2 w-2 flex-shrink-0 rounded-full animate-pulse ${isDark ? 'bg-white/10' : 'bg-slate-100'}`} />
                               <div className="flex-1 space-y-2">
-                                <div className="h-3 w-2/3 rounded-md bg-slate-100 animate-pulse" />
-                                <div className="h-2.5 w-1/2 rounded-md bg-slate-100 animate-pulse" />
+                                <div className={`h-3 w-2/3 rounded-md animate-pulse ${isDark ? 'bg-white/10' : 'bg-slate-100'}`} />
+                                <div className={`h-2.5 w-1/2 rounded-md animate-pulse ${isDark ? 'bg-white/[0.07]' : 'bg-slate-100'}`} />
                               </div>
                             </div>
                           ))}
                         </div>
                       ) : !hasNotifications ? (
                         <div className="flex flex-col items-center justify-center gap-2 py-12">
-                          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-100">
-                            <svg className="h-5 w-5 text-emerald-500" viewBox="0 0 20 20" fill="currentColor">
+                          <div className={`flex h-11 w-11 items-center justify-center rounded-full ${isDark ? 'bg-emerald-500/15' : 'bg-emerald-100'}`}>
+                            <svg className={`h-5 w-5 ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} viewBox="0 0 20 20" fill="currentColor">
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>
                           </div>
-                          <p className="text-[13px] font-medium text-slate-600">You're all caught up</p>
-                          <p className="text-[11px] text-slate-400">No notifications yet</p>
+                          <p className={`text-[13px] font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>You're all caught up</p>
+                          <p className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>No notifications yet</p>
                         </div>
                       ) : (
                         <ul>
@@ -262,10 +262,12 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
                               onClick={() => handleNotifClick(n)}
                               className={[
                                 'group cursor-pointer px-4 py-3 transition-colors',
-                                i < notifications.length - 1 ? 'border-b border-slate-50' : '',
+                                i < notifications.length - 1
+                                  ? isDark ? 'border-b border-white/[0.06]' : 'border-b border-slate-100'
+                                  : '',
                                 n.read
-                                  ? 'hover:bg-slate-50'
-                                  : 'bg-sky-50/70 hover:bg-sky-50',
+                                  ? isDark ? 'hover:bg-white/[0.05]' : 'hover:bg-slate-50'
+                                  : isDark ? 'bg-sky-500/[0.08] hover:bg-sky-500/[0.13]' : 'bg-sky-50/70 hover:bg-sky-50',
                               ].join(' ')}
                             >
                               <div className="flex items-start gap-3">
@@ -273,7 +275,7 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
                                 <div className="mt-[5px] flex-shrink-0">
                                   <span className={[
                                     'block h-2 w-2 rounded-full transition-colors',
-                                    n.read ? 'bg-slate-200' : 'bg-sky-500',
+                                    n.read ? isDark ? 'bg-white/20' : 'bg-slate-200' : 'bg-sky-500',
                                   ].join(' ')} />
                                 </div>
 
@@ -281,17 +283,19 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
                                   <div className="flex items-start justify-between gap-2">
                                     <p className={[
                                       'text-[13px] leading-snug',
-                                      n.read ? 'font-normal text-slate-500' : 'font-semibold text-slate-900',
+                                      n.read
+                                        ? isDark ? 'font-normal text-slate-400' : 'font-normal text-slate-500'
+                                        : isDark ? 'font-semibold text-slate-100' : 'font-semibold text-slate-900',
                                     ].join(' ')}>
                                       {n.title}
                                     </p>
-                                    <span className="flex-shrink-0 text-[10px] text-slate-400 leading-5">
+                                    <span className={`flex-shrink-0 text-[10px] leading-5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                                       {fmtTime(n.createdAt)}
                                     </span>
                                   </div>
 
                                   {n.message && (
-                                    <p className="mt-0.5 line-clamp-2 text-[12px] leading-relaxed text-slate-500">
+                                    <p className={`mt-0.5 line-clamp-2 text-[12px] leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                                       {n.message}
                                     </p>
                                   )}
@@ -299,7 +303,9 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
                                   {n.link && (
                                     <p className={[
                                       'mt-1 text-[11px] font-medium transition-colors',
-                                      n.read ? 'text-slate-400 group-hover:text-sky-500' : 'text-sky-500',
+                                      n.read
+                                        ? isDark ? 'text-slate-500 group-hover:text-sky-400' : 'text-slate-400 group-hover:text-sky-500'
+                                        : isDark ? 'text-sky-400' : 'text-sky-500',
                                     ].join(' ')}>
                                       View →
                                     </p>

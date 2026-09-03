@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { apiGet, apiPatch } from '../../services/api';
 
 const statusStyle: Record<string, string> = {
@@ -24,6 +25,7 @@ function fmtDate(d: string) {
 }
 
 export default function SupervisorSubmissionsPanel({ submissions: initial, projectId }: { submissions?: any[]; projectId?: string }) {
+  const router = useRouter();
   const [submissions, setSubmissions] = useState<any[]>(initial ?? []);
   const [fetching, setFetching] = useState(!!projectId);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -147,13 +149,23 @@ export default function SupervisorSubmissionsPanel({ submissions: initial, proje
                     )}
                   </div>
 
-                  {/* Expand toggle hint */}
-                  <button
-                    onClick={() => setExpanded(isExpanded ? null : s.id)}
-                    className="mt-1 text-[11px] text-sky-600 hover:text-sky-700"
-                  >
-                    {isExpanded ? 'Hide details ▲' : 'View details ▼'}
-                  </button>
+                  {/* Expand + full review links */}
+                  <div className="mt-1 flex items-center gap-3">
+                    <button
+                      onClick={() => setExpanded(isExpanded ? null : s.id)}
+                      className="text-[11px] text-sky-600 hover:text-sky-700"
+                    >
+                      {isExpanded ? 'Hide details ▲' : 'View details ▼'}
+                    </button>
+                    {canReview && (
+                      <button
+                        onClick={() => router.push(`/supervisor/reviews?submissionId=${s.id}`)}
+                        className="text-[11px] font-semibold text-violet-600 hover:text-violet-700"
+                      >
+                        Full review →
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 

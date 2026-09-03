@@ -151,10 +151,12 @@ const exactHrefs = new Set(['/admin', '/supervisor', '/student']);
 
 export default function Sidebar() {
   const { user } = useAuth();
-  const { open, close } = useSidebar();
+  const { open, toggle, close } = useSidebar();
   const { persistentSidebar, resolvedTheme } = useSettings();
   const pathname = usePathname();
   const isDark = resolvedTheme === 'dark';
+  const [edgeHovered, setEdgeHovered] = React.useState(false);
+  const [edgeY, setEdgeY] = React.useState(0);
 
   if (!user) return null;
 
@@ -165,11 +167,51 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Backdrop overlay — mobile only */}
+      {/* Left-edge hover strip — visible when sidebar is not persistent and closed */}
+      {!persistentSidebar && !open && (
+        <div
+          className="fixed left-0 top-0 z-30 h-full w-4 cursor-pointer"
+          onMouseEnter={() => setEdgeHovered(true)}
+          onMouseLeave={() => setEdgeHovered(false)}
+          onMouseMove={(e) => setEdgeY(Math.min(Math.max(e.clientY, 28), window.innerHeight - 28))}
+          onClick={toggle}
+        >
+          {/* Arrow tab — follows cursor Y, slides in on hover */}
+          <div
+            className="pointer-events-none absolute left-0 flex items-center transition-all duration-200 ease-out"
+            style={{
+              top: edgeY - 22,
+              opacity: edgeHovered ? 1 : 0,
+              transform: edgeHovered ? 'translateX(0)' : 'translateX(-100%)',
+            }}
+          >
+            <div
+              className="flex h-11 w-6 items-center justify-center rounded-r-xl shadow-lg"
+              style={isDark ? {
+                background: '#252d40',
+                border: '1px solid rgba(255,255,255,0.10)',
+                borderLeft: 'none',
+              } : {
+                background: 'rgba(255,255,255,0.95)',
+                border: '1px solid rgba(148,163,184,0.35)',
+                borderLeft: 'none',
+                boxShadow: '2px 0 12px rgba(15,23,42,0.10)',
+              }}
+            >
+              <svg className={`h-3.5 w-3.5 ${isDark ? 'text-slate-300' : 'text-slate-500'}`} viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Backdrop overlay — hidden on desktop only when sidebar is persistent */}
       <div
         onClick={close}
         className={[
-          'lg:hidden fixed inset-0 z-40',
+          persistentSidebar ? 'lg:hidden' : '',
+          'fixed inset-0 z-40',
           'bg-slate-900/50 backdrop-blur-sm',
           'transition-opacity duration-300',
           open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
@@ -196,10 +238,10 @@ export default function Sidebar() {
               alt="IPMS"
               className="block w-full h-auto"
             />
-            {/* Close — mobile only */}
+            {/* Close — hidden on desktop only when sidebar is persistent */}
             <button
               onClick={close}
-              className="lg:hidden absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/20 text-white/70 hover:bg-black/30 hover:text-white transition"
+              className={`${persistentSidebar ? 'lg:hidden' : ''} absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/20 text-white/70 hover:bg-black/30 hover:text-white transition`}
               aria-label="Close menu"
             >
               <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">

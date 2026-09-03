@@ -65,6 +65,18 @@ export class SubmissionRepository {
     });
   }
 
+  async findBySupervisor(supervisorId: string, pagination: PaginationDto) {
+    const take = pagination.limit || 50;
+    const skip = pagination.page ? (pagination.page - 1) * take : 0;
+    return this.prisma.submission.findMany({
+      where: { project: { supervisorId } },
+      skip,
+      take,
+      orderBy: { createdAt: 'desc' },
+      include: { author: true, project: true, milestone: true },
+    });
+  }
+
   async findOne(id: string) {
     return this.prisma.submission.findUnique({ where: { id }, include: { author: true, project: true } });
   }

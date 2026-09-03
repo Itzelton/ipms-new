@@ -42,10 +42,15 @@ function fmtTime(iso: string) {
 const TABS = ['All', 'Scheduled', 'Completed', 'Cancelled'] as const;
 type Tab = typeof TABS[number];
 
+function isUrl(str: string) {
+  return /^https?:\/\//i.test(str.trim());
+}
+
 export default function StudentMeetingsPage() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>('All');
+  const [selected, setSelected] = useState<Meeting | null>(null);
 
   useEffect(() => {
     apiGet('/meetings')
@@ -69,6 +74,80 @@ export default function StudentMeetingsPage() {
 
   return (
     <div className="space-y-6">
+
+      {/* Detail modal */}
+      {selected && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4" onClick={() => setSelected(null)}>
+          <div className="card w-full max-w-lg p-6 space-y-5" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-1">Meeting details</p>
+                <h3 className="text-lg font-bold text-slate-900 leading-snug">{selected.title}</h3>
+              </div>
+              <span className={`flex-shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold flex items-center gap-1 ${STATUS_STYLES[selected.status]}`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[selected.status]}`} />
+                {selected.status.charAt(0) + selected.status.slice(1).toLowerCase()}
+              </span>
+            </div>
+
+            <div className="divide-y divide-slate-100 rounded-2xl border border-slate-100 overflow-hidden text-sm">
+              {/* Date & time */}
+              <div className="flex gap-3 px-4 py-3">
+                <span className="w-28 flex-shrink-0 text-[11px] font-semibold uppercase tracking-wide text-slate-400 pt-0.5">Date & Time</span>
+                <span className="text-slate-700">{fmtDate(selected.scheduledAt)} at {fmtTime(selected.scheduledAt)}</span>
+              </div>
+
+              {/* Supervisor */}
+              <div className="flex gap-3 px-4 py-3">
+                <span className="w-28 flex-shrink-0 text-[11px] font-semibold uppercase tracking-wide text-slate-400 pt-0.5">Supervisor</span>
+                <span className="text-slate-700">{svName(selected.supervisor)}</span>
+              </div>
+
+              {/* Location / Link */}
+              {selected.location && (
+                <div className="flex gap-3 px-4 py-3">
+                  <span className="w-28 flex-shrink-0 text-[11px] font-semibold uppercase tracking-wide text-slate-400 pt-0.5">
+                    {isUrl(selected.location) ? 'Meeting Link' : 'Location'}
+                  </span>
+                  {isUrl(selected.location) ? (
+                    <a href={selected.location} target="_blank" rel="noopener noreferrer"
+                      className="text-sky-600 hover:text-sky-700 underline underline-offset-2 break-all font-medium">
+                      {selected.location}
+                    </a>
+                  ) : (
+                    <span className="text-slate-700">{selected.location}</span>
+                  )}
+                </div>
+              )}
+
+              {/* Agenda */}
+              {selected.agenda && (
+                <div className="flex gap-3 px-4 py-3">
+                  <span className="w-28 flex-shrink-0 text-[11px] font-semibold uppercase tracking-wide text-slate-400 pt-0.5">Agenda</span>
+                  <span className="text-slate-600 whitespace-pre-wrap">{selected.agenda}</span>
+                </div>
+              )}
+
+              {/* Outcome */}
+              {selected.outcome && (
+                <div className="flex gap-3 px-4 py-3 bg-emerald-50">
+                  <span className="w-28 flex-shrink-0 text-[11px] font-semibold uppercase tracking-wide text-emerald-600 pt-0.5">Outcome</span>
+                  <span className="text-emerald-800 whitespace-pre-wrap">{selected.outcome}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end">
+              <button onClick={() => setSelected(null)}
+                className="rounded-full px-5 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 transition">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="card-static p-6">
         <span className="inline-flex items-center rounded-full bg-sky-100 px-2.5 py-0.5 text-[11px] font-semibold text-sky-700">Meetings</span>
         <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">My Meetings</h2>
@@ -77,7 +156,7 @@ export default function StudentMeetingsPage() {
 
       {/* Upcoming callout */}
       {upcoming && (
-        <div className="card p-5 border-sky-200 bg-sky-50/60">
+        <div onClick={() => setSelected(upcoming)} className="card p-5 border-sky-200 bg-sky-50/60 cursor-pointer hover:shadow-md transition-shadow">
           <div className="flex items-start gap-4">
             <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-sky-100">
               <svg className="h-5 w-5 text-sky-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
@@ -139,7 +218,8 @@ export default function StudentMeetingsPage() {
       ) : (
         <div className="space-y-3">
           {filtered.map((m) => (
-            <div key={m.id} className="card p-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-5">
+            <div key={m.id} onClick={() => setSelected(m)}
+              className="card p-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-5 cursor-pointer hover:shadow-md transition-shadow">
               {/* Date badge */}
               <div className="flex-shrink-0 text-center sm:w-16">
                 <div className="rounded-2xl bg-slate-50 border border-slate-100 px-3 py-2.5 text-center">

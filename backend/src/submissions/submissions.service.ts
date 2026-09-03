@@ -22,12 +22,13 @@ export class SubmissionsService {
     await this.auditService.log(authorId || null, 'create_submission', 'Submission', submission.id, { projectId: submission.projectId });
 
     if (submission.projectId) {
-      const project = await this.submissionRepository.prisma.project.findUnique({ where: { id: submission.projectId }, select: { supervisorId: true } });
+      const project = await this.submissionRepository.prisma.project.findUnique({ where: { id: submission.projectId }, select: { supervisorId: true, title: true } });
       if (project?.supervisorId) {
         await this.notificationsService.create({
           recipientId: project.supervisorId,
-          message: `New submission created for project ${submission.projectId}`,
-          link: `/supervisor/projects/${submission.projectId}`,
+          title: 'New submission',
+          message: `A student submitted work for "${project.title ?? 'a project'}". Review it now.`,
+          link: `/supervisor/reviews`,
         });
       }
     }
@@ -55,6 +56,10 @@ export class SubmissionsService {
     return this.submissionRepository.findByAuthor(authorId, pagination, projectId);
   }
 
+  async findBySupervisor(supervisorId: string, pagination: PaginationDto) {
+    return this.submissionRepository.findBySupervisor(supervisorId, pagination);
+  }
+
   async findOne(id: string) {
     return this.submissionRepository.findOne(id);
   }
@@ -74,6 +79,7 @@ export class SubmissionsService {
           const isApproved = updateSubmissionDto.status === 'APPROVED';
           await this.notificationsService.create({
             recipientId: submission.authorId,
+            title: isApproved ? 'Submission approved' : 'Revision requested',
             message: isApproved
               ? `Your submission for "${submission.project?.title ?? 'your project'}" was approved.`
               : `Revision requested on your submission for "${submission.project?.title ?? 'your project'}".`,

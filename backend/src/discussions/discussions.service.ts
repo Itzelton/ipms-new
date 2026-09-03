@@ -51,10 +51,13 @@ export class DiscussionsService {
     }
 
     for (const recipientId of recipientIds) {
+      const role = await this.discussionRepository.getUserPrimaryRole(recipientId);
+      const link = role === 'SUPERVISOR' ? '/supervisor/discussions' : '/student/discussions';
       await this.notificationsService.create({
         recipientId,
-        message: `New discussion reply in thread ${thread?.title || threadId}`,
-        link: `/discussions/${threadId}`,
+        title: 'Discussion reply',
+        message: `New reply in thread "${thread?.title || 'Untitled'}"`,
+        link,
       });
     }
 

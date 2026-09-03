@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { apiGet, apiPatch } from '../../../services/api';
 import { useAuth } from '../../../components/auth/auth-context';
 
@@ -50,27 +51,32 @@ function avgHours(subs: Submission[]) {
 
 export default function SupervisorReviewsPage() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const highlightId = searchParams.get('submissionId');
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(highlightId);
   const [remark, setRemark] = useState('');
   const [acting, setActing] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
       try {
-        const res = await apiGet('/submissions?limit=200');
+        const res = await apiGet('/submissions/for-supervisor?limit=200');
         const all: Submission[] = Array.isArray(res) ? res : res?.data ?? [];
-        // Only show submissions for projects this supervisor owns
-        const mine = user?.id
-          ? all.filter(s => s.project?.supervisorId === user.id)
-          : all;
-        setSubmissions(mine);
+        setSubmissions(all);
       } catch { /* ignore */ }
       finally { setLoading(false); }
     }
     load();
   }, [user]);
+
+  // Scroll highlighted submission into view once loaded
+  useEffect(() => {
+    if (!highlightId || loading) return;
+    const el = document.getElementById(`sub-${highlightId}`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [highlightId, loading]);
 
   async function act(id: string, status: 'APPROVED' | 'REVISION_REQUESTED') {
     setActing(id);
@@ -140,9 +146,10 @@ export default function SupervisorReviewsPage() {
             {pending.map(s => {
               const name = [s.author?.firstName, s.author?.lastName].filter(Boolean).join(' ') || s.author?.email || 'Student';
               const isOpen = expanded === s.id;
+              const isHighlighted = highlightId === s.id;
               const age = Math.floor((Date.now() - new Date(s.createdAt).getTime()) / 3_600_000);
               return (
-                <div key={s.id} className="py-4">
+                <div key={s.id} id={`sub-${s.id}`} className={`py-4 rounded-xl transition-colors ${isHighlighted ? 'ring-2 ring-sky-400 ring-offset-2 bg-sky-50/60 px-3' : ''}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">

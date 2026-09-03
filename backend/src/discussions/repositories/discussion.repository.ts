@@ -79,6 +79,19 @@ export class DiscussionRepository {
     });
   }
 
+  async getUserPrimaryRole(userId: string): Promise<string | null> {
+    const [svProfile, ur] = await Promise.all([
+      this.prisma.supervisorProfile.findUnique({ where: { userId } }),
+      this.prisma.userRole.findFirst({
+        where: { userId },
+        include: { role: true },
+        orderBy: { assignedAt: 'desc' },
+      }),
+    ]);
+    if (svProfile) return 'SUPERVISOR';
+    return (ur as any)?.role?.name ?? null;
+  }
+
   async updateThread(id: string, data: UpdateDiscussionThreadDto) {
     return this.prisma.discussionThread.update({ where: { id }, data });
   }

@@ -49,7 +49,7 @@ export default function SupervisorMeetingsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [m, s] = await Promise.all([apiGet('/meetings'), apiGet('/users/students')]);
+      const [m, s] = await Promise.all([apiGet('/meetings'), apiGet('/users/my-students')]);
       setMeetings(Array.isArray(m) ? m : []);
       setStudents(Array.isArray(s) ? s : []);
     } catch { /* empty */ }
