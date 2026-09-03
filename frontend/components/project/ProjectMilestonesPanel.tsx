@@ -151,13 +151,15 @@ function UploadForm({ milestone, projectId, onSubmitted }: { milestone: any; pro
 }
 
 export default function ProjectMilestonesPanel({ milestones: initial, projectId }: { milestones?: any[]; projectId?: string }) {
-  const [milestones, setMilestones] = useState<any[]>(initial ?? []);
+  // Always start empty when we have a projectId — never show stale prop data.
+  const [milestones, setMilestones] = useState<any[]>(projectId ? [] : (initial ?? []));
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [fetching, setFetching] = useState(!!projectId);
   const [uploading, setUploading] = useState<string | null>(null);
 
-  function reload() {
+  function reload(silent = false) {
     if (!projectId) return;
+    if (!silent) setFetching(true);
     invalidateApiCache(`/milestones?projectId=${projectId}&limit=100`);
     invalidateApiCache(`/submissions?projectId=${projectId}&limit=100`);
     Promise.allSettled([
@@ -172,6 +174,9 @@ export default function ProjectMilestonesPanel({ milestones: initial, projectId 
   useEffect(() => {
     if (!projectId) return;
     reload();
+    // Poll every 30 s so supervisor changes (add/delete/status) always appear live.
+    const interval = setInterval(() => reload(true), 30_000);
+    return () => clearInterval(interval);
   }, [projectId]);
 
   if (fetching) {
