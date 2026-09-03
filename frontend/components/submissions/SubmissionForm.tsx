@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useMemo, useState } from 'react';
-import { EvidenceType, SubmissionStatus } from '../../services/submission';
+import { EvidenceType } from '../../services/submission';
 import { apiGet, apiUpload } from '../../services/api';
 
 const evidenceOptions: { value: EvidenceType; label: string }[] = [
@@ -13,14 +13,6 @@ const evidenceOptions: { value: EvidenceType; label: string }[] = [
   { value: 'MEETING_RECORD', label: 'Meeting Record' },
 ];
 
-const statusOptions: { value: SubmissionStatus; label: string }[] = [
-  { value: 'DRAFT', label: 'Draft' },
-  { value: 'SUBMITTED', label: 'Submitted' },
-  { value: 'UNDER_REVIEW', label: 'Under Review' },
-  { value: 'APPROVED', label: 'Approved' },
-  { value: 'REVISION_REQUIRED', label: 'Revision Required' },
-];
-
 export default function SubmissionForm({ onSubmit, isSubmitting }: { onSubmit: (payload: any) => Promise<void>; isSubmitting: boolean }) {
   const [projects, setProjects] = useState<{ id: string; title: string }[]>([]);
   const [milestones, setMilestones] = useState<{ id: string; title: string }[]>([]);
@@ -31,7 +23,6 @@ export default function SubmissionForm({ onSubmit, isSubmitting }: { onSubmit: (
   const [details, setDetails] = useState('');
   const [sourceUrl, setSourceUrl] = useState('');
   const [meetingNotes, setMeetingNotes] = useState('');
-  const [status, setStatus] = useState<SubmissionStatus>('DRAFT');
   const [file, setFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -109,7 +100,7 @@ export default function SubmissionForm({ onSubmit, isSubmitting }: { onSubmit: (
       evidenceType,
       fileUrl: uploadedUrl,
       metadata,
-      status,
+      status: 'SUBMITTED',
     };
     if (milestoneId) payload.milestoneId = milestoneId;
 
@@ -119,7 +110,6 @@ export default function SubmissionForm({ onSubmit, isSubmitting }: { onSubmit: (
     setSourceUrl('');
     setMeetingNotes('');
     setFile(null);
-    setStatus('DRAFT');
   }
 
   const fieldLabel = 'mb-1.5 block text-[12px] font-semibold text-slate-600';
@@ -198,15 +188,6 @@ export default function SubmissionForm({ onSubmit, isSubmitting }: { onSubmit: (
           <textarea value={meetingNotes} onChange={(e) => setMeetingNotes(e.target.value)} rows={3} className="input resize-none" />
         </div>
       )}
-
-      <div>
-        <label className={fieldLabel}>Submission Status</label>
-        <select value={status} onChange={(e) => setStatus(e.target.value as SubmissionStatus)} className="input">
-          {statusOptions.map((option) => (
-            <option value={option.value} key={option.value}>{option.label}</option>
-          ))}
-        </select>
-      </div>
 
       <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
         <p className="text-[12px] text-slate-400">Upload evidence and create a versioned entry.</p>

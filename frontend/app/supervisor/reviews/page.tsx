@@ -94,7 +94,6 @@ export default function SupervisorReviewsPage() {
   }
 
   const pending  = submissions.filter(s => s.status === 'SUBMITTED' || s.status === 'UNDER_REVIEW');
-  const drafts   = submissions.filter(s => s.status === 'DRAFT');
   const reviewed = submissions.filter(s => s.status === 'APPROVED' || s.status === 'REVISION_REQUIRED');
   const overdue  = pending.filter(s => {
     const age = Date.now() - new Date(s.createdAt).getTime();
@@ -233,28 +232,6 @@ export default function SupervisorReviewsPage() {
           </div>
         )}
       </div>
-
-      {/* Draft submissions */}
-      {drafts.length > 0 && (
-        <div className="card p-6">
-          <h4 className="mb-4 text-base font-semibold text-slate-900">Drafts ({drafts.length})</h4>
-          <div className="divide-y divide-slate-100">
-            {drafts.map(s => {
-              const name = [s.author?.firstName, s.author?.lastName].filter(Boolean).join(' ') || s.author?.email || 'Student';
-              return (
-                <div key={s.id} className="flex items-center justify-between gap-3 py-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-800">{name}</p>
-                    <p className="text-xs text-slate-500">{s.project?.title ?? '—'}{s.milestone ? ` · ${s.milestone.title}` : ''} · {fmt(s.createdAt)}</p>
-                    {s.content && <p className="mt-0.5 text-xs text-slate-400 line-clamp-1">{s.content}</p>}
-                  </div>
-                  {statusBadge(s.status)}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Recently reviewed */}
       {reviewed.length > 0 && (
