@@ -136,7 +136,7 @@ export class ProjectsService {
   }
 
   async addCollaboratorByEmail(projectId: string, email: string, role?: RoleName, actorId?: string) {
-    const settings = await this.assertSupervisor(projectId, actorId);
+    const settings = await this.assertProjectMember(projectId, actorId);
     const user = await this.usersService.findByEmail(email);
     if (!user) throw new NotFoundException(`No user found with email ${email}`);
     const ownerIds = [settings.studentId, settings.supervisorId].filter(Boolean) as string[];
@@ -227,7 +227,15 @@ export class ProjectsService {
   private async assertSupervisor(projectId: string, actorId?: string) {
     const settings = await this.projectRepository.getCollaborationSettings(projectId);
     if (!settings) throw new NotFoundException('Project not found.');
-    if (!actorId || settings.supervisorId !== actorId) throw new ForbiddenException('Only this project’s supervisor can manage collaborators.');
+    if (!actorId || settings.supervisorId !== actorId) throw new ForbiddenException('Only this project\'s supervisor can manage collaborators.');
+    return settings;
+  }
+
+  private async assertProjectMember(projectId: string, actorId?: string) {
+    const settings = await this.projectRepository.getCollaborationSettings(projectId);
+    if (!settings) throw new NotFoundException('Project not found.');
+    const isOwner = actorId && (settings.supervisorId === actorId || settings.studentId === actorId);
+    if (!isOwner) throw new ForbiddenException('Only this project\'s supervisor or student can manage collaborators.');
     return settings;
   }
 }

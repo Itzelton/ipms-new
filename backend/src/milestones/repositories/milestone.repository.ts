@@ -25,7 +25,7 @@ export class MilestoneRepository {
       skip,
       take,
       where: projectId ? { projectId } : undefined,
-      orderBy: { dueDate: 'asc' },
+      orderBy: { createdAt: 'asc' },
     });
   }
 

@@ -117,14 +117,16 @@ export class ProjectRepository {
         include: {
           student: true, supervisor: true, department: true, cohort: true,
           assignments: { include: { user: true } },
-          milestones: true, submissions: true, discussionThreads: true,
+          milestones: { orderBy: { createdAt: 'asc' } },
+          submissions: true, discussionThreads: true,
         },
       }),
       () => this.prisma.project.findUnique({
         where: { id },
         include: {
           student: true, supervisor: true,
-          milestones: true, submissions: true, discussionThreads: true,
+          milestones: { orderBy: { createdAt: 'asc' } },
+          submissions: true, discussionThreads: true,
         },
       }),
       () => this.prisma.project.findUnique({

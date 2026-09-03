@@ -49,6 +49,7 @@ export default function ProjectCollaboratorsPanel({ projectId }: { projectId: st
   const [collaboratorLimit, setCollaboratorLimit] = useState(1);
   const [savingLimit, setSavingLimit] = useState(false);
   const [invites, setInvites] = useState<Invite[]>([]);
+  const [projectStudentId, setProjectStudentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [newEmail, setNewEmail] = useState('');
@@ -71,8 +72,11 @@ export default function ProjectCollaboratorsPanel({ projectId }: { projectId: st
     ]);
     setCollaborators(collab.status === 'fulfilled' && Array.isArray(collab.value) ? collab.value : []);
     setInvites(inv.status === 'fulfilled' && Array.isArray(inv.value) ? inv.value : []);
-    if (project.status === 'fulfilled' && typeof project.value?.collaboratorLimit === 'number') {
-      setCollaboratorLimit(project.value.collaboratorLimit);
+    if (project.status === 'fulfilled') {
+      if (typeof project.value?.collaboratorLimit === 'number') {
+        setCollaboratorLimit(project.value.collaboratorLimit);
+      }
+      if (project.value?.studentId) setProjectStudentId(project.value.studentId);
     }
     setLoading(false);
   }
@@ -156,6 +160,8 @@ export default function ProjectCollaboratorsPanel({ projectId }: { projectId: st
   }
 
   const isSupervisor = user?.role === 'SUPERVISOR';
+  const isProjectStudent = user?.id === projectStudentId;
+  const canManageCollaborators = isSupervisor || isProjectStudent;
 
   return (
     <div className="space-y-6">
@@ -230,11 +236,13 @@ export default function ProjectCollaboratorsPanel({ projectId }: { projectId: st
         )}
       </div>
 
-      {/* Add by email (supervisor only) */}
-      {isSupervisor && (
+      {/* Add by email (supervisor or project student) */}
+      {canManageCollaborators && (
         <form onSubmit={handleAdd} className="space-y-3 rounded-xl border border-dashed border-slate-200 p-4">
           <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">Add collaborator by email</p>
-          <p className="text-[11px] text-slate-400">Only students supervised by you can be added.</p>
+          <p className="text-[11px] text-slate-400">
+            {isSupervisor ? 'Only students supervised by you can be added.' : 'Invite a teammate by their registered email address.'}
+          </p>
           <div className="flex gap-2">
             <input
               type="email"

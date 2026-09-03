@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { apiGet, apiPost, apiUpload } from '../../services/api';
+import { apiGet, apiPost, apiUpload, invalidateApiCache } from '../../services/api';
 
 function fmtDate(d: string) {
   if (!d) return '—';
@@ -158,6 +158,8 @@ export default function ProjectMilestonesPanel({ milestones: initial, projectId 
 
   function reload() {
     if (!projectId) return;
+    invalidateApiCache(`/milestones?projectId=${projectId}&limit=100`);
+    invalidateApiCache(`/submissions?projectId=${projectId}&limit=100`);
     Promise.allSettled([
       apiGet(`/milestones?projectId=${projectId}&limit=100`),
       apiGet(`/submissions?projectId=${projectId}&limit=100`),
