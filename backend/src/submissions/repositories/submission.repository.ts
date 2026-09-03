@@ -68,15 +68,30 @@ export class SubmissionRepository {
   async findBySupervisor(supervisorId: string, pagination: PaginationDto) {
     const take = pagination.limit || 50;
     const skip = pagination.page ? (pagination.page - 1) * take : 0;
+
+    // Collect all project IDs where this user is supervisor (direct or via assignment)
+    const [directProjects, assignedProjects] = await Promise.all([
+      this.prisma.project.findMany({
+        where: { supervisorId },
+        select: { id: true },
+      }),
+      this.prisma.projectAssignment.findMany({
+        where: { userId: supervisorId, role: RoleName.SUPERVISOR },
+        select: { projectId: true },
+      }),
+    ]);
+
+    const projectIds = [
+      ...new Set([
+        ...directProjects.map((p) => p.id),
+        ...assignedProjects.map((a) => a.projectId),
+      ]),
+    ];
+
+    if (projectIds.length === 0) return [];
+
     return this.prisma.submission.findMany({
-      where: {
-        project: {
-          OR: [
-            { supervisorId },
-            { assignments: { some: { userId: supervisorId, role: RoleName.SUPERVISOR } } },
-          ],
-        },
-      },
+      where: { projectId: { in: projectIds } },
       skip,
       take,
       orderBy: { createdAt: 'desc' },

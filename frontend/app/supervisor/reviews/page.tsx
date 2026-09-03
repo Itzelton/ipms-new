@@ -19,18 +19,18 @@ type Submission = {
 
 function statusBadge(status: string) {
   const map: Record<string, string> = {
-    SUBMITTED:     'badge-blue',
-    UNDER_REVIEW:  'badge-yellow',
-    APPROVED:      'badge-green',
-    REVISION_REQUESTED: 'badge-red',
-    DRAFT:         'badge-gray',
+    SUBMITTED:         'badge-blue',
+    UNDER_REVIEW:      'badge-yellow',
+    APPROVED:          'badge-green',
+    REVISION_REQUIRED: 'badge-red',
+    DRAFT:             'badge-gray',
   };
   const label: Record<string, string> = {
-    SUBMITTED:     'Submitted',
-    UNDER_REVIEW:  'Under Review',
-    APPROVED:      'Approved',
-    REVISION_REQUESTED: 'Revision Requested',
-    DRAFT:         'Draft',
+    SUBMITTED:         'Submitted',
+    UNDER_REVIEW:      'Under Review',
+    APPROVED:          'Approved',
+    REVISION_REQUIRED: 'Revision Required',
+    DRAFT:             'Draft',
   };
   return <span className={map[status] || 'badge-gray'}>{label[status] || status}</span>;
 }
@@ -94,6 +94,8 @@ export default function SupervisorReviewsPage() {
   }
 
   const pending  = submissions.filter(s => s.status === 'SUBMITTED' || s.status === 'UNDER_REVIEW');
+  const drafts   = submissions.filter(s => s.status === 'DRAFT');
+  const reviewed = submissions.filter(s => s.status === 'APPROVED' || s.status === 'REVISION_REQUIRED');
   const overdue  = pending.filter(s => {
     const age = Date.now() - new Date(s.createdAt).getTime();
     return age > 7 * 24 * 3_600_000;
@@ -217,7 +219,7 @@ export default function SupervisorReviewsPage() {
                         </button>
                         <button
                           disabled={acting === s.id}
-                          onClick={() => act(s.id, 'REVISION_REQUESTED')}
+                          onClick={() => act(s.id, 'REVISION_REQUIRED')}
                           className="flex-1 rounded-full border border-rose-200 bg-rose-50 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-50"
                         >
                           Request Revision
@@ -232,26 +234,45 @@ export default function SupervisorReviewsPage() {
         )}
       </div>
 
-      {/* Recently reviewed */}
-      {submissions.filter(s => s.status === 'APPROVED' || s.status === 'REVISION_REQUESTED').length > 0 && (
+      {/* Draft submissions */}
+      {drafts.length > 0 && (
         <div className="card p-6">
-          <h4 className="mb-4 text-base font-semibold text-slate-900">Recently Reviewed</h4>
+          <h4 className="mb-4 text-base font-semibold text-slate-900">Drafts ({drafts.length})</h4>
           <div className="divide-y divide-slate-100">
-            {submissions
-              .filter(s => s.status === 'APPROVED' || s.status === 'REVISION_REQUESTED')
-              .slice(0, 10)
-              .map(s => {
-                const name = [s.author?.firstName, s.author?.lastName].filter(Boolean).join(' ') || s.author?.email || 'Student';
-                return (
-                  <div key={s.id} className="flex items-center justify-between gap-3 py-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-800">{name}</p>
-                      <p className="text-xs text-slate-500">{s.project?.title ?? '—'} · {fmt(s.updatedAt)}</p>
-                    </div>
-                    {statusBadge(s.status)}
+            {drafts.map(s => {
+              const name = [s.author?.firstName, s.author?.lastName].filter(Boolean).join(' ') || s.author?.email || 'Student';
+              return (
+                <div key={s.id} className="flex items-center justify-between gap-3 py-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-slate-800">{name}</p>
+                    <p className="text-xs text-slate-500">{s.project?.title ?? '—'}{s.milestone ? ` · ${s.milestone.title}` : ''} · {fmt(s.createdAt)}</p>
+                    {s.content && <p className="mt-0.5 text-xs text-slate-400 line-clamp-1">{s.content}</p>}
                   </div>
-                );
-              })}
+                  {statusBadge(s.status)}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Recently reviewed */}
+      {reviewed.length > 0 && (
+        <div className="card p-6">
+          <h4 className="mb-4 text-base font-semibold text-slate-900">Recently Reviewed ({reviewed.length})</h4>
+          <div className="divide-y divide-slate-100">
+            {reviewed.slice(0, 10).map(s => {
+              const name = [s.author?.firstName, s.author?.lastName].filter(Boolean).join(' ') || s.author?.email || 'Student';
+              return (
+                <div key={s.id} className="flex items-center justify-between gap-3 py-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-slate-800">{name}</p>
+                    <p className="text-xs text-slate-500">{s.project?.title ?? '—'} · {fmt(s.updatedAt)}</p>
+                  </div>
+                  {statusBadge(s.status)}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

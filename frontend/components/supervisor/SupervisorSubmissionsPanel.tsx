@@ -109,7 +109,7 @@ export default function SupervisorSubmissionsPanel({ submissions: initial, proje
       <ul className="divide-y divide-slate-100">
         {submissions.map((s) => {
           const badge = statusStyle[s.status] ?? 'bg-slate-100 text-slate-600';
-          const canReview = s.status === 'SUBMITTED' || s.status === 'UNDER_REVIEW';
+          const canReview = s.status !== 'APPROVED' && s.status !== 'REVISION_REQUIRED';
           const isUpdating = updating === s.id;
           const isExpanded = expanded === s.id;
           const isRemarking = remarking?.id === s.id;
@@ -214,7 +214,7 @@ export default function SupervisorSubmissionsPanel({ submissions: initial, proje
                   )}
 
                   {/* Review actions */}
-                  {canReview && !isRemarking && (
+                  {(s.status === 'SUBMITTED' || s.status === 'UNDER_REVIEW') && !isRemarking && (
                     <div className="flex gap-2 pt-1">
                       <button
                         onClick={() => { setRemarking({ id: s.id, action: 'APPROVED' }); setRemark(''); }}
