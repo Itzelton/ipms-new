@@ -269,11 +269,16 @@ export class UserRepository {
       const [removed] = this.inMemoryUsers.splice(index, 1);
       return removed as any;
     }
-    // Soft delete — set deletedAt and deactivate
-    return this.prisma.user.update({
+    // Soft delete in DB first
+    const user = await this.prisma.user.update({
       where: { id },
       data: { isActive: false, deletedAt: new Date() },
       include: userWithRolesInclude,
     });
+    // Also remove from Supabase so they cannot log in again
+    if (this.supabaseAdmin) {
+      await this.supabaseAdmin.auth.admin.deleteUser(id).catch(() => {});
+    }
+    return user;
   }
 }
