@@ -73,7 +73,7 @@ export class SubmissionsService {
     await this.auditService.log(actorId || null, 'update_submission', 'Submission', id, updateSubmissionDto);
 
     // Notify student when supervisor approves or requests revision
-    if (updateSubmissionDto.status === 'APPROVED' || updateSubmissionDto.status === 'REVISION_REQUESTED') {
+    if (updateSubmissionDto.status === 'APPROVED' || updateSubmissionDto.status === 'REVISION_REQUIRED') {
       try {
         const submission = await this.submissionRepository.prisma.submission.findUnique({
           where: { id },

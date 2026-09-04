@@ -34,12 +34,12 @@ export default function AdminReportsPage() {
       try {
         const [projectsRes, submissionsRes, discussionsRes] = await Promise.allSettled([
           apiGet('/projects'),
-          apiGet('/submissions'),
+          apiGet('/submissions/admin/all?limit=500'),
           apiGet('/discussions'),
         ]);
 
         const projects: any[] = projectsRes.status === 'fulfilled' && Array.isArray(projectsRes.value) ? projectsRes.value : [];
-        const submissions: any[] = submissionsRes.status === 'fulfilled' && Array.isArray(submissionsRes.value) ? submissionsRes.value : [];
+        const submissions: any[] = submissionsRes.status === 'fulfilled' && Array.isArray(submissionsRes.value) ? submissionsRes.value : (submissionsRes.status === 'fulfilled' ? submissionsRes.value?.data ?? [] : []);
         const discussions: any[] = discussionsRes.status === 'fulfilled' && Array.isArray(discussionsRes.value) ? discussionsRes.value : [];
 
         const totalProjects = projects.length;
