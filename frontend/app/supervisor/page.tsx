@@ -35,31 +35,37 @@ export default function SupervisorIndex() {
     let mounted = true;
     async function load() {
       try {
-        const [projects, submissions, notifications, heatmapRes, myStudentsRes, auditRes] = await Promise.allSettled([
+        const [projects, supervisorSubmissions, notifications, heatmapRes, myStudentsRes] = await Promise.allSettled([
           apiGet('/projects'),
-          apiGet('/submissions'),
+          apiGet('/submissions/for-supervisor?limit=50'),
           apiGet('/notifications'),
           apiGet(`/analytics/heatmap?year=${YEAR}`),
           apiGet('/users/my-students'),
-          apiGet('/audit?limit=10'),
         ]);
 
         const projectList = projects.status === 'fulfilled' && Array.isArray(projects.value) ? projects.value : [];
-        const submissionList = submissions.status === 'fulfilled' && Array.isArray(submissions.value) ? submissions.value : [];
+        const submissionList = supervisorSubmissions.status === 'fulfilled' && Array.isArray(supervisorSubmissions.value) ? supervisorSubmissions.value : [];
         const notificationList = notifications.status === 'fulfilled' && Array.isArray(notifications.value) ? notifications.value : [];
         const myStudentsList = myStudentsRes.status === 'fulfilled' && Array.isArray(myStudentsRes.value) ? myStudentsRes.value : [];
-        const auditList = auditRes.status === 'fulfilled' && Array.isArray(auditRes.value) ? auditRes.value : [];
 
-        const activityFeed = auditList.slice(0, 8).map((a: any) => ({
-          id: a.id,
-          type: a.action ?? 'ACTIVITY',
-          title: `${(a.action ?? '').replace(/_/g, ' ')}${a.entity ? ` — ${a.entity}` : ''}`,
-          detail: a.details ?? '',
-          actor: a.actor
-            ? (a.actor.preferredName || [a.actor.firstName, a.actor.lastName].filter(Boolean).join(' ') || a.actor.email)
-            : 'System',
-          timestamp: a.createdAt,
-        }));
+        const activityFeed = [...submissionList]
+          .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .slice(0, 8)
+          .map((s: any) => {
+            const authorName = s.author?.preferredName
+              || [s.author?.firstName, s.author?.lastName].filter(Boolean).join(' ')
+              || s.author?.email
+              || 'Student';
+            return {
+              id: s.id,
+              type: 'SUBMISSION_UPLOADED' as const,
+              title: s.metadata?.title || s.title || `Submission uploaded`,
+              detail: `By ${authorName}`,
+              actor: authorName,
+              timestamp: s.createdAt,
+              badge: 'Submission',
+            };
+          });
 
         const riskAlerts = projectList
           .filter((p: any) => p.status === 'AT_RISK' || p.riskSignals?.some((r: any) => r.severity === 'CRITICAL' || r.severity === 'HIGH'))

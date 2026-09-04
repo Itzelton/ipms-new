@@ -47,6 +47,7 @@ export class AnalyticsRepository {
         SUM(reviews)     AS reviews,
         0::bigint        AS milestones
       FROM (
+        -- Submissions authored by user (students)
         SELECT DATE("createdAt") AS date, COUNT(*) AS count,
                COUNT(*) AS submissions, 0::bigint AS messages, 0::bigint AS reviews
         FROM "Submission"
@@ -56,6 +57,7 @@ export class AnalyticsRepository {
 
         UNION ALL
 
+        -- Discussion messages sent by user
         SELECT DATE("createdAt") AS date, COUNT(*) AS count,
                0::bigint AS submissions, COUNT(*) AS messages, 0::bigint AS reviews
         FROM "DiscussionMessage"
@@ -65,10 +67,26 @@ export class AnalyticsRepository {
 
         UNION ALL
 
+        -- Submission status updates (reviews) by supervisor — tracked via updatedAt when status changes
+        SELECT DATE("updatedAt") AS date, COUNT(*) AS count,
+               0::bigint AS submissions, 0::bigint AS messages, COUNT(*) AS reviews
+        FROM "Submission"
+        WHERE "status" IN ('APPROVED', 'REVISION_REQUIRED', 'UNDER_REVIEW')
+          AND EXTRACT(YEAR FROM "updatedAt") = ${year}
+          AND "projectId" IN (
+            SELECT id FROM "Project" WHERE "supervisorId" = ${userId}
+            UNION
+            SELECT "projectId" FROM "ProjectAssignment" WHERE "userId" = ${userId}
+          )
+        GROUP BY DATE("updatedAt")
+
+        UNION ALL
+
+        -- Meetings scheduled by supervisor
         SELECT DATE("createdAt") AS date, COUNT(*) AS count,
                0::bigint AS submissions, 0::bigint AS messages, COUNT(*) AS reviews
-        FROM "SubmissionReview"
-        WHERE "reviewerId" = ${userId}
+        FROM "Meeting"
+        WHERE "supervisorId" = ${userId}
           AND EXTRACT(YEAR FROM "createdAt") = ${year}
         GROUP BY DATE("createdAt")
       ) t
