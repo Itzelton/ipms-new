@@ -35,37 +35,64 @@ export default function SupervisorIndex() {
     let mounted = true;
     async function load() {
       try {
-        const [projects, supervisorSubmissions, notifications, heatmapRes, myStudentsRes] = await Promise.allSettled([
+        const [projects, supervisorSubmissions, notifications, heatmapRes, myStudentsRes, meetingsRes] = await Promise.allSettled([
           apiGet('/projects'),
           apiGet('/submissions/for-supervisor?limit=50'),
           apiGet('/notifications'),
           apiGet(`/analytics/heatmap?year=${YEAR}`),
           apiGet('/users/my-students'),
+          apiGet('/meetings'),
         ]);
 
         const projectList = projects.status === 'fulfilled' && Array.isArray(projects.value) ? projects.value : [];
         const submissionList = supervisorSubmissions.status === 'fulfilled' && Array.isArray(supervisorSubmissions.value) ? supervisorSubmissions.value : [];
         const notificationList = notifications.status === 'fulfilled' && Array.isArray(notifications.value) ? notifications.value : [];
         const myStudentsList = myStudentsRes.status === 'fulfilled' && Array.isArray(myStudentsRes.value) ? myStudentsRes.value : [];
+        const meetingList = meetingsRes.status === 'fulfilled' && Array.isArray(meetingsRes.value) ? meetingsRes.value : [];
 
-        const activityFeed = [...submissionList]
-          .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-          .slice(0, 8)
-          .map((s: any) => {
-            const authorName = s.author?.preferredName
-              || [s.author?.firstName, s.author?.lastName].filter(Boolean).join(' ')
-              || s.author?.email
-              || 'Student';
-            return {
-              id: s.id,
-              type: 'SUBMISSION_UPLOADED' as const,
-              title: s.metadata?.title || s.title || `Submission uploaded`,
-              detail: `By ${authorName}`,
-              actor: authorName,
-              timestamp: s.createdAt,
-              badge: 'Submission',
-            };
-          });
+        function studentName(u: any) {
+          if (!u) return 'Student';
+          return u.preferredName || [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email || 'Student';
+        }
+
+        // Student submissions on supervisor's projects
+        const submissionEvents = submissionList.map((s: any) => ({
+          id: `sub-${s.id}`,
+          type: 'SUBMISSION_UPLOADED' as const,
+          title: s.metadata?.title || s.title || 'Submission uploaded',
+          detail: `By ${studentName(s.author)}`,
+          actor: studentName(s.author),
+          timestamp: s.createdAt,
+          badge: 'Submission',
+        }));
+
+        // Supervisor review actions (submissions they approved or requested revision on)
+        const reviewEvents = submissionList
+          .filter((s: any) => s.status === 'APPROVED' || s.status === 'REVISION_REQUIRED')
+          .map((s: any) => ({
+            id: `rev-${s.id}`,
+            type: s.status === 'APPROVED' ? ('APPROVAL' as const) : ('REVISION_REQUEST' as const),
+            title: s.status === 'APPROVED' ? 'Submission approved' : 'Revision requested',
+            detail: `${studentName(s.author)}${s.project?.title ? ` — ${s.project.title}` : ''}`,
+            actor: 'You',
+            timestamp: s.updatedAt,
+            badge: s.status === 'APPROVED' ? 'Approval' : 'Revision',
+          }));
+
+        // Meetings scheduled by supervisor
+        const meetingEvents = meetingList.map((m: any) => ({
+          id: `mtg-${m.id}`,
+          type: 'CUSTOM' as const,
+          title: `Meeting: ${m.title}`,
+          detail: `With ${studentName(m.student)}`,
+          actor: 'You',
+          timestamp: m.createdAt,
+          badge: 'Meeting',
+        }));
+
+        const activityFeed = [...submissionEvents, ...reviewEvents, ...meetingEvents]
+          .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+          .slice(0, 10);
 
         const riskAlerts = projectList
           .filter((p: any) => p.status === 'AT_RISK' || p.riskSignals?.some((r: any) => r.severity === 'CRITICAL' || r.severity === 'HIGH'))
