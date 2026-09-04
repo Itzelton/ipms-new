@@ -18,6 +18,11 @@ export class SubmissionsController {
     return this.submissionsService.findBySupervisor(userId, pagination);
   }
 
+  @Get('admin/reviewed')
+  findReviewed(@Query() pagination: PaginationDto) {
+    return this.submissionsService.findReviewed(pagination);
+  }
+
   @Get()
   findAll(@Query() query: SubmissionQueryDto, @CurrentUser('id') userId: string) {
     const { projectId, ...pagination } = query;

@@ -99,6 +99,21 @@ export class SubmissionRepository {
     });
   }
 
+  async findReviewed(pagination: PaginationDto) {
+    const take = pagination.limit || 40;
+    const skip = pagination.page ? (pagination.page - 1) * take : 0;
+    return this.prisma.submission.findMany({
+      where: { status: { in: ['APPROVED', 'REVISION_REQUIRED'] } },
+      skip,
+      take,
+      orderBy: { updatedAt: 'desc' },
+      include: {
+        author: true,
+        project: { include: { supervisor: true } },
+      },
+    });
+  }
+
   async findOne(id: string) {
     return this.prisma.submission.findUnique({ where: { id }, include: { author: true, project: true } });
   }

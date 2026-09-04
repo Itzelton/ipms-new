@@ -56,6 +56,10 @@ export class SubmissionsService {
     return this.submissionRepository.findByAuthor(authorId, pagination, projectId);
   }
 
+  async findReviewed(pagination: PaginationDto) {
+    return this.submissionRepository.findReviewed(pagination);
+  }
+
   async findBySupervisor(supervisorId: string, pagination: PaginationDto) {
     return this.submissionRepository.findBySupervisor(supervisorId, pagination);
   }

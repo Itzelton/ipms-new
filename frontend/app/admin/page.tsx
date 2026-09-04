@@ -39,7 +39,7 @@ export default function AdminIndex() {
           apiGet('/projects'),
           apiGet('/users?isActive=false'),
           apiGet('/audit?limit=20'),
-          apiGet('/submissions?limit=40'),
+          apiGet('/submissions/admin/reviewed?limit=40'),
         ]);
 
         const users      = usersRes.status     === 'fulfilled' ? (Array.isArray(usersRes.value)     ? usersRes.value     : usersRes.value?.data     ?? []) : [];
@@ -62,13 +62,13 @@ export default function AdminIndex() {
         }
 
         function supervisorName(s: any) {
-          const sup = s.project?.supervisor ?? s.supervisor;
+          const sup = s.project?.supervisor;
           if (!sup) return 'Supervisor';
           return sup.preferredName || [sup.firstName, sup.lastName].filter(Boolean).join(' ') || sup.email || 'Supervisor';
         }
 
         function studentName(s: any) {
-          const stu = s.author ?? s.student;
+          const stu = s.author;
           if (!stu) return 'Student';
           return stu.preferredName || [stu.firstName, stu.lastName].filter(Boolean).join(' ') || stu.email || 'Student';
         }
