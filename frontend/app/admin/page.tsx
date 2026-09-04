@@ -34,17 +34,19 @@ export default function AdminIndex() {
     let mounted = true;
     async function load() {
       try {
-        const [usersRes, projectsRes, approvalsRes, auditRes] = await Promise.allSettled([
+        const [usersRes, projectsRes, approvalsRes, auditRes, submissionsRes] = await Promise.allSettled([
           apiGet('/users'),
           apiGet('/projects'),
           apiGet('/users?isActive=false'),
-          apiGet('/audit?limit=15'),
+          apiGet('/audit?limit=20'),
+          apiGet('/submissions?limit=40'),
         ]);
 
         const users      = usersRes.status     === 'fulfilled' ? (Array.isArray(usersRes.value)     ? usersRes.value     : usersRes.value?.data     ?? []) : [];
         const projects   = projectsRes.status  === 'fulfilled' ? (Array.isArray(projectsRes.value)  ? projectsRes.value  : projectsRes.value?.data  ?? []) : [];
         const inactive   = approvalsRes.status === 'fulfilled' ? (Array.isArray(approvalsRes.value) ? approvalsRes.value : approvalsRes.value?.data ?? []) : [];
         const auditRows  = auditRes.status     === 'fulfilled' ? (Array.isArray(auditRes.value)     ? auditRes.value     : auditRes.value?.data     ?? []) : [];
+        const allSubs    = submissionsRes.status === 'fulfilled' ? (Array.isArray(submissionsRes.value) ? submissionsRes.value : submissionsRes.value?.data ?? []) : [];
 
         const activeUsers    = users.filter((u: any) => u.isActive).length;
         const activeProjects = projects.filter((p: any) => p.status === 'ACTIVE').length;
@@ -59,10 +61,34 @@ export default function AdminIndex() {
           return a.actor.preferredName || [a.actor.firstName, a.actor.lastName].filter(Boolean).join(' ') || a.actor.email || 'User';
         }
 
+        function supervisorName(s: any) {
+          const sup = s.project?.supervisor ?? s.supervisor;
+          if (!sup) return 'Supervisor';
+          return sup.preferredName || [sup.firstName, sup.lastName].filter(Boolean).join(' ') || sup.email || 'Supervisor';
+        }
+
+        function studentName(s: any) {
+          const stu = s.author ?? s.student;
+          if (!stu) return 'Student';
+          return stu.preferredName || [stu.firstName, stu.lastName].filter(Boolean).join(' ') || stu.email || 'Student';
+        }
+
+        // Supervisor review events extracted directly from submissions
+        const reviewEvents: ActivityTimelineItem[] = allSubs
+          .filter((s: any) => s.status === 'APPROVED' || s.status === 'REVISION_REQUIRED')
+          .map((s: any) => ({
+            id: `rev-${s.id}`,
+            type: (s.status === 'APPROVED' ? 'APPROVAL' : 'REVISION_REQUEST') as ActivityTimelineItem['type'],
+            title: s.status === 'APPROVED' ? 'Submission approved' : 'Revision requested',
+            detail: `${studentName(s)}${s.project?.title ? ` — ${s.project.title}` : ''} · by ${supervisorName(s)}`,
+            actor: supervisorName(s),
+            timestamp: s.updatedAt,
+            badge: s.status === 'APPROVED' ? 'Approval' : 'Revision',
+          }));
+
         type AuditActivityType = ActivityTimelineItem['type'];
         const ACTION_MAP: Record<string, { type: AuditActivityType; badge: string; titleFn: (a: any) => string; detailFn: (a: any) => string }> = {
           create_submission:         { type: 'SUBMISSION_UPLOADED', badge: 'Submission', titleFn: () => 'Submission uploaded',     detailFn: (a) => `By ${actorName(a)}` },
-          update_submission:         { type: 'SUBMISSION_UPLOADED', badge: 'Submission', titleFn: (a) => `Submission ${a.data?.status ? `→ ${a.data.status}` : 'updated'}`, detailFn: (a) => `By ${actorName(a)}` },
           create_project:            { type: 'PROJECT_CREATED',     badge: 'Project',    titleFn: (a) => `Project created${a.data?.title ? `: ${a.data.title}` : ''}`, detailFn: (a) => `By ${actorName(a)}` },
           update_project:            { type: 'PROJECT_CREATED',     badge: 'Project',    titleFn: () => 'Project updated',         detailFn: (a) => `By ${actorName(a)}` },
           update_project_status:     { type: 'PROJECT_CREATED',     badge: 'Project',    titleFn: (a) => `Project status → ${a.data?.status ?? 'updated'}`, detailFn: (a) => `By ${actorName(a)}` },
@@ -74,21 +100,31 @@ export default function AdminIndex() {
           create_submission_version: { type: 'SUBMISSION_UPLOADED', badge: 'Version',    titleFn: (a) => `Submission v${a.data?.versionNumber ?? '?'}`, detailFn: (a) => `By ${actorName(a)}` },
         };
 
-        const activityFeed: ActivityTimelineItem[] = auditRows.map((a: any) => {
+        const auditEvents: ActivityTimelineItem[] = auditRows.flatMap((a: any) => {
+          // update_submission with a status change → use review type if supervisor action
+          if (a.action === 'update_submission') {
+            const status = a.data?.status;
+            if (status === 'APPROVED') {
+              return [{ id: `aud-${a.id}`, type: 'APPROVAL' as const, title: 'Submission approved', detail: `By ${actorName(a)}`, actor: actorName(a), timestamp: a.createdAt, badge: 'Approval' }];
+            }
+            if (status === 'REVISION_REQUIRED') {
+              return [{ id: `aud-${a.id}`, type: 'REVISION_REQUEST' as const, title: 'Revision requested', detail: `By ${actorName(a)}`, actor: actorName(a), timestamp: a.createdAt, badge: 'Revision' }];
+            }
+            return [{ id: `aud-${a.id}`, type: 'SUBMISSION_UPLOADED' as const, title: `Submission ${status ? `→ ${status}` : 'updated'}`, detail: `By ${actorName(a)}`, actor: actorName(a), timestamp: a.createdAt, badge: 'Submission' }];
+          }
           const map = ACTION_MAP[a.action];
           if (map) {
-            return { id: a.id, type: map.type, title: map.titleFn(a), detail: map.detailFn(a), actor: actorName(a), timestamp: a.createdAt, badge: map.badge };
+            return [{ id: `aud-${a.id}`, type: map.type, title: map.titleFn(a), detail: map.detailFn(a), actor: actorName(a), timestamp: a.createdAt, badge: map.badge }];
           }
-          return {
-            id: a.id,
-            type: 'CUSTOM' as const,
-            title: (a.action ?? 'Activity').replace(/_/g, ' '),
-            detail: `By ${actorName(a)}${a.entity ? ` — ${a.entity}` : ''}`,
-            actor: actorName(a),
-            timestamp: a.createdAt,
-            badge: a.entity ?? 'System',
-          };
+          return [{ id: `aud-${a.id}`, type: 'CUSTOM' as const, title: (a.action ?? 'Activity').replace(/_/g, ' '), detail: `By ${actorName(a)}${a.entity ? ` — ${a.entity}` : ''}`, actor: actorName(a), timestamp: a.createdAt, badge: a.entity ?? 'System' }];
         });
+
+        // Merge audit + submission review events; deduplicate by stable key, sort newest first
+        const seenKeys = new Set<string>();
+        const activityFeed: ActivityTimelineItem[] = [...reviewEvents, ...auditEvents]
+          .filter((e) => { if (seenKeys.has(e.id)) return false; seenKeys.add(e.id); return true; })
+          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+          .slice(0, 15);
 
         if (mounted) {
           setAlertCount(alertCount);
