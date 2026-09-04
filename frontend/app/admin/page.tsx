@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiGet } from '../../services/api';
+import ActivityTimeline, { ActivityTimelineItem } from '../../components/dashboard/ActivityTimeline';
 
 const quickLinks = [
   { href: '/admin/students',    label: 'Students',            icon: '🎓' },
@@ -25,7 +26,7 @@ export default function AdminIndex() {
     { label: 'Pending Approvals', value: '—', detail: 'Awaiting admin review',          gradient: 'from-amber-400 to-orange-500',  valueColor: 'text-amber-600' },
     { label: 'System Alerts',     value: '—', detail: 'Critical risk signals',          gradient: 'from-rose-400 to-rose-600',     valueColor: 'text-rose-600' },
   ]);
-  const [activity, setActivity] = useState<any[]>([]);
+  const [activity, setActivity] = useState<ActivityTimelineItem[]>([]);
   const [alertCount, setAlertCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -37,22 +38,57 @@ export default function AdminIndex() {
           apiGet('/users'),
           apiGet('/projects'),
           apiGet('/users?isActive=false'),
-          apiGet('/audit?limit=5'),
+          apiGet('/audit?limit=15'),
         ]);
 
-        const users      = usersRes.status      === 'fulfilled' ? (Array.isArray(usersRes.value)      ? usersRes.value      : usersRes.value?.data      ?? []) : [];
-        const projects   = projectsRes.status   === 'fulfilled' ? (Array.isArray(projectsRes.value)   ? projectsRes.value   : projectsRes.value?.data   ?? []) : [];
-        const inactive   = approvalsRes.status  === 'fulfilled' ? (Array.isArray(approvalsRes.value)  ? approvalsRes.value  : approvalsRes.value?.data  ?? []) : [];
-        const auditRows  = auditRes.status       === 'fulfilled' ? (Array.isArray(auditRes.value)       ? auditRes.value       : auditRes.value?.data       ?? []) : [];
+        const users      = usersRes.status     === 'fulfilled' ? (Array.isArray(usersRes.value)     ? usersRes.value     : usersRes.value?.data     ?? []) : [];
+        const projects   = projectsRes.status  === 'fulfilled' ? (Array.isArray(projectsRes.value)  ? projectsRes.value  : projectsRes.value?.data  ?? []) : [];
+        const inactive   = approvalsRes.status === 'fulfilled' ? (Array.isArray(approvalsRes.value) ? approvalsRes.value : approvalsRes.value?.data ?? []) : [];
+        const auditRows  = auditRes.status     === 'fulfilled' ? (Array.isArray(auditRes.value)     ? auditRes.value     : auditRes.value?.data     ?? []) : [];
 
-        const activeUsers   = users.filter((u: any) => u.isActive).length;
+        const activeUsers    = users.filter((u: any) => u.isActive).length;
         const activeProjects = projects.filter((p: any) => p.status === 'ACTIVE').length;
-        const pendingCount  = inactive.length;
+        const pendingCount   = inactive.length;
 
-        // Count critical/high risk signals across all projects that have them
         const alertCount = projects.filter((p: any) =>
           p.riskSignals?.some((r: any) => r.severity === 'CRITICAL' || r.severity === 'HIGH')
         ).length;
+
+        function actorName(a: any) {
+          if (!a?.actor) return 'System';
+          return a.actor.preferredName || [a.actor.firstName, a.actor.lastName].filter(Boolean).join(' ') || a.actor.email || 'User';
+        }
+
+        type AuditActivityType = ActivityTimelineItem['type'];
+        const ACTION_MAP: Record<string, { type: AuditActivityType; badge: string; titleFn: (a: any) => string; detailFn: (a: any) => string }> = {
+          create_submission:         { type: 'SUBMISSION_UPLOADED', badge: 'Submission', titleFn: () => 'Submission uploaded',     detailFn: (a) => `By ${actorName(a)}` },
+          update_submission:         { type: 'SUBMISSION_UPLOADED', badge: 'Submission', titleFn: (a) => `Submission ${a.data?.status ? `→ ${a.data.status}` : 'updated'}`, detailFn: (a) => `By ${actorName(a)}` },
+          create_project:            { type: 'PROJECT_CREATED',     badge: 'Project',    titleFn: (a) => `Project created${a.data?.title ? `: ${a.data.title}` : ''}`, detailFn: (a) => `By ${actorName(a)}` },
+          update_project:            { type: 'PROJECT_CREATED',     badge: 'Project',    titleFn: () => 'Project updated',         detailFn: (a) => `By ${actorName(a)}` },
+          update_project_status:     { type: 'PROJECT_CREATED',     badge: 'Project',    titleFn: (a) => `Project status → ${a.data?.status ?? 'updated'}`, detailFn: (a) => `By ${actorName(a)}` },
+          assign_supervisor:         { type: 'CUSTOM',              badge: 'Assignment', titleFn: () => 'Supervisor assigned',     detailFn: (a) => `By ${actorName(a)}` },
+          add_collaborator:          { type: 'CUSTOM',              badge: 'Assignment', titleFn: () => 'Collaborator added',      detailFn: (a) => `By ${actorName(a)}` },
+          remove_collaborator:       { type: 'CUSTOM',              badge: 'Assignment', titleFn: () => 'Collaborator removed',    detailFn: (a) => `By ${actorName(a)}` },
+          create_milestone:          { type: 'MILESTONE_COMPLETED', badge: 'Milestone',  titleFn: (a) => `Milestone: ${a.data?.title ?? 'created'}`, detailFn: (a) => `By ${actorName(a)}` },
+          update_milestone:          { type: 'MILESTONE_COMPLETED', badge: 'Milestone',  titleFn: () => 'Milestone updated',       detailFn: (a) => `By ${actorName(a)}` },
+          create_submission_version: { type: 'SUBMISSION_UPLOADED', badge: 'Version',    titleFn: (a) => `Submission v${a.data?.versionNumber ?? '?'}`, detailFn: (a) => `By ${actorName(a)}` },
+        };
+
+        const activityFeed: ActivityTimelineItem[] = auditRows.map((a: any) => {
+          const map = ACTION_MAP[a.action];
+          if (map) {
+            return { id: a.id, type: map.type, title: map.titleFn(a), detail: map.detailFn(a), actor: actorName(a), timestamp: a.createdAt, badge: map.badge };
+          }
+          return {
+            id: a.id,
+            type: 'CUSTOM' as const,
+            title: (a.action ?? 'Activity').replace(/_/g, ' '),
+            detail: `By ${actorName(a)}${a.entity ? ` — ${a.entity}` : ''}`,
+            actor: actorName(a),
+            timestamp: a.createdAt,
+            badge: a.entity ?? 'System',
+          };
+        });
 
         if (mounted) {
           setAlertCount(alertCount);
@@ -62,16 +98,7 @@ export default function AdminIndex() {
             { label: 'Pending Approvals', value: fmt(pendingCount),   detail: 'Awaiting admin review',          gradient: 'from-amber-400 to-orange-500',  valueColor: 'text-amber-600' },
             { label: 'System Alerts',     value: fmt(alertCount),     detail: 'Critical risk signals',          gradient: 'from-rose-400 to-rose-600',     valueColor: 'text-rose-600' },
           ]);
-
-          setActivity(
-            auditRows.slice(0, 5).map((a: any) => ({
-              title: `${a.action} — ${a.entity}`,
-              body: a.actor
-                ? `by ${a.actor.preferredName || [a.actor.firstName, a.actor.lastName].filter(Boolean).join(' ') || a.actor.email}`
-                : 'System action',
-              ts: a.createdAt,
-            }))
-          );
+          setActivity(activityFeed);
         }
       } catch {
         // leave placeholder state
@@ -143,28 +170,9 @@ export default function AdminIndex() {
         </section>
 
         {/* Recent activity */}
-        <section className="card p-6">
-          <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">Recent Activity</p>
-          {loading ? (
-            <p className="text-[13px] text-slate-400">Loading…</p>
-          ) : activity.length === 0 ? (
-            <p className="text-[13px] text-slate-400">No recent activity.</p>
-          ) : (
-            <ul className="divide-y divide-slate-100 dark:divide-slate-700/60">
-              {activity.map((item, i) => (
-                <li key={i} className="py-3.5 first:pt-0 last:pb-0">
-                  <div className="flex items-start gap-2.5">
-                    <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-sky-400" />
-                    <div className="min-w-0">
-                      <p className="text-[13px] font-medium text-slate-800 dark:text-slate-200 truncate">{item.title}</p>
-                      <p className="mt-0.5 text-[12px] text-slate-500">{item.body}</p>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-          <Link href="/admin/audit" className="mt-4 inline-block text-[12px] font-medium text-sky-600 hover:text-sky-700 no-underline">
+        <section className="space-y-3">
+          <ActivityTimeline items={loading ? [] : activity} />
+          <Link href="/admin/audit" className="block text-right text-[12px] font-medium text-sky-600 hover:text-sky-700 no-underline">
             View full audit trail →
           </Link>
         </section>
