@@ -37,7 +37,7 @@ export default function AdminSupervisorsPage() {
     setSaving(true);
     try {
       if (modal?.mode === 'create') {
-        await apiPost('/users', { ...form, roles: ['SUPERVISOR'] });
+        await apiPost('/users', { ...form, role: 'SUPERVISOR' });
         showToast('Supervisor created.');
       } else if (modal?.mode === 'edit' && modal.user) {
         const body: any = { firstName: form.firstName, lastName: form.lastName, email: form.email };

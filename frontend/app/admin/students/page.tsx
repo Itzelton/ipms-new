@@ -41,7 +41,7 @@ export default function AdminStudentsPage() {
     setSaving(true);
     try {
       if (modal?.mode === 'create') {
-        await apiPost('/users', { firstName: form.firstName, lastName: form.lastName, email: form.email, roles: ['STUDENT'], role: 'STUDENT' });
+        await apiPost('/users', { firstName: form.firstName, lastName: form.lastName, email: form.email, role: 'STUDENT' });
         setInviteSent(form.email);
         showToast(`Invite sent to ${form.email}`);
       } else if (modal?.mode === 'edit' && modal.user) {
