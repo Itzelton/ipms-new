@@ -1,71 +1,76 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+);
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3333';
 
-type State = 'loading' | 'ready' | 'saving' | 'done' | 'error';
+type State = 'loading' | 'ready' | 'saving' | 'done' | 'expired' | 'error';
 
 export default function SetPasswordPage() {
   const router = useRouter();
   const [state, setState] = useState<State>('loading');
-  const [accessToken, setAccessToken] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
+  const [sessionToken, setSessionToken] = useState('');
 
   useEffect(() => {
-    // Supabase invite redirect includes tokens in the URL hash
     const hash = window.location.hash.slice(1);
     const params = new URLSearchParams(hash);
-    const token = params.get('access_token');
+    const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
     const type = params.get('type');
 
-    if (token && (type === 'invite' || type === 'recovery' || type === 'signup')) {
-      setAccessToken(token);
-      setState('ready');
-    } else {
+    if (!accessToken || !(type === 'invite' || type === 'recovery' || type === 'signup')) {
       setState('error');
-      setError('This link is invalid or has already been used. Please contact your admin.');
+      return;
     }
+
+    // Establish session using both tokens so Supabase can auto-refresh if needed
+    supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken ?? '' })
+      .then(({ data, error }) => {
+        if (error || !data.session) {
+          setState('expired');
+          return;
+        }
+        setSessionToken(data.session.access_token);
+        setState('ready');
+      });
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
-      return;
-    }
-    if (password !== confirm) {
-      setError('Passwords do not match.');
-      return;
-    }
+    if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
+    if (password !== confirm) { setError('Passwords do not match.'); return; }
 
     setState('saving');
     try {
-      const res = await fetch(`${API}/auth/set-password`, {
+      // 1. Update password in Supabase auth
+      const { error: sbError } = await supabase.auth.updateUser({ password });
+      if (sbError) throw new Error(sbError.message);
+
+      // 2. Update password in local DB so local login works too
+      await fetch(`${API}/auth/set-password`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionToken}` },
         body: JSON.stringify({ newPassword: password }),
       });
 
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const msg = Array.isArray(json?.message) ? json.message[0] : (json?.message || 'Failed to set password.');
-        setError(msg);
-        setState('ready');
-        return;
-      }
+      // 3. Sign out — user will log in fresh
+      await supabase.auth.signOut();
 
       setState('done');
       setTimeout(() => router.replace('/login'), 2000);
-    } catch {
-      setError('Network error. Please try again.');
+    } catch (err: any) {
+      setError(err?.message || 'Failed to set password. Please try again.');
       setState('ready');
     }
   }
@@ -73,18 +78,24 @@ export default function SetPasswordPage() {
   if (state === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-slate-400 text-sm">Loading…</p>
+        <p className="text-slate-400 text-sm">Verifying your link…</p>
       </div>
     );
   }
 
-  if (state === 'error' && !accessToken) {
+  if (state === 'expired' || state === 'error') {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="card max-w-md w-full p-8 text-center space-y-4">
-          <div className="text-4xl">🔗</div>
-          <h1 className="text-xl font-semibold text-slate-900">Link unavailable</h1>
-          <p className="text-sm text-slate-500">{error}</p>
+          <div className="text-4xl">{state === 'expired' ? '⏰' : '🔗'}</div>
+          <h1 className="text-xl font-semibold text-slate-900">
+            {state === 'expired' ? 'Invite link expired' : 'Link unavailable'}
+          </h1>
+          <p className="text-sm text-slate-500">
+            {state === 'expired'
+              ? 'This invite link has expired. Please ask your admin to send a new one.'
+              : 'This link is invalid or has already been used. Please contact your admin.'}
+          </p>
           <button onClick={() => router.push('/login')} className="rounded-xl bg-slate-800 px-6 py-2 text-sm font-medium text-white hover:bg-slate-900">
             Go to login
           </button>

@@ -1,10 +1,18 @@
 import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { createClient } from '@supabase/supabase-js';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { AuthenticatedUser } from '../common/types/authenticated-user.interface';
 import { RoleName } from '@prisma/client';
+
+function makeSupabaseAdmin() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
+}
 
 @Injectable()
 export class AuthService {
@@ -135,6 +143,11 @@ export class AuthService {
   async setPassword(userId: string, newPassword: string) {
     const hashed = await bcrypt.hash(newPassword, 10);
     await this.usersService.update(userId, { password: hashed, mustChangePassword: false });
+    // Also update in Supabase so the auth record stays in sync
+    const admin = makeSupabaseAdmin();
+    if (admin) {
+      await admin.auth.admin.updateUserById(userId, { password: newPassword }).catch(() => {});
+    }
     return { message: 'Password updated successfully' };
   }
 
