@@ -38,15 +38,17 @@ export default function AdminSupervisorsPage() {
     try {
       if (modal?.mode === 'create') {
         await apiPost('/users', { ...form, role: 'SUPERVISOR' });
-        showToast('Supervisor created.');
+        setModal(null);
+        showToast(`Invite sent to ${form.email}`);
+        await load();
       } else if (modal?.mode === 'edit' && modal.user) {
         const body: any = { firstName: form.firstName, lastName: form.lastName, email: form.email };
         if (form.password) body.password = form.password;
         await apiPatch(`/users/${modal.user.id}`, body);
+        setModal(null);
         showToast('Supervisor updated.');
+        await load();
       }
-      setModal(null);
-      await load();
     } catch (e: any) { showToast(e?.message || 'Failed.'); }
     setSaving(false);
   }

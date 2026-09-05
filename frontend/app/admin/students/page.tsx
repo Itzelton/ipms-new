@@ -42,16 +42,17 @@ export default function AdminStudentsPage() {
     try {
       if (modal?.mode === 'create') {
         await apiPost('/users', { firstName: form.firstName, lastName: form.lastName, email: form.email, role: 'STUDENT' });
-        setInviteSent(form.email);
+        setModal(null);
         showToast(`Invite sent to ${form.email}`);
+        await load();
       } else if (modal?.mode === 'edit' && modal.user) {
         const body: any = { firstName: form.firstName, lastName: form.lastName, email: form.email };
         if (form.password) body.password = form.password;
         await apiPatch(`/users/${modal.user.id}`, body);
+        setModal(null);
         showToast('Student updated.');
+        await load();
       }
-      setModal(null);
-      await load();
     } catch (e: any) { showToast(e?.message || 'Failed.'); }
     setSaving(false);
   }
@@ -91,39 +92,30 @@ export default function AdminStudentsPage() {
           <div className="card w-full max-w-md p-6 space-y-4">
             <h3 className="text-lg font-semibold text-slate-900">{modal.mode === 'create' ? 'Add Student' : 'Edit Student'}</h3>
 
-            {inviteSent ? (
-              <div className="rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-5 text-center space-y-1">
-                <p className="text-sm font-semibold text-emerald-700">Invite sent!</p>
-                <p className="text-xs text-emerald-600">A password-setup link has been emailed to <span className="font-medium">{inviteSent}</span>.</p>
+            <>
+              {modal.mode === 'create' && (
+                <p className="text-xs text-slate-500 rounded-xl bg-sky-50 border border-sky-100 px-3 py-2">
+                  The student will receive an email with a link to set their own password.
+                </p>
+              )}
+              <div className="grid grid-cols-2 gap-3">
+                <div><label className="block mb-1 text-xs font-semibold text-slate-500">First name</label><input value={form.firstName} onChange={e => setForm(f => ({...f, firstName: e.target.value}))} className="input w-full" /></div>
+                <div><label className="block mb-1 text-xs font-semibold text-slate-500">Last name</label><input value={form.lastName} onChange={e => setForm(f => ({...f, lastName: e.target.value}))} className="input w-full" /></div>
               </div>
-            ) : (
-              <>
-                {modal.mode === 'create' && (
-                  <p className="text-xs text-slate-500 rounded-xl bg-sky-50 border border-sky-100 px-3 py-2">
-                    The student will receive an email with a link to set their own password.
-                  </p>
-                )}
-                <div className="grid grid-cols-2 gap-3">
-                  <div><label className="block mb-1 text-xs font-semibold text-slate-500">First name</label><input value={form.firstName} onChange={e => setForm(f => ({...f, firstName: e.target.value}))} className="input w-full" /></div>
-                  <div><label className="block mb-1 text-xs font-semibold text-slate-500">Last name</label><input value={form.lastName} onChange={e => setForm(f => ({...f, lastName: e.target.value}))} className="input w-full" /></div>
-                </div>
-                <div><label className="block mb-1 text-xs font-semibold text-slate-500">Email</label><input type="email" value={form.email} onChange={e => setForm(f => ({...f, email: e.target.value}))} className="input w-full" /></div>
-                {modal.mode === 'edit' && (
-                  <div><label className="block mb-1 text-xs font-semibold text-slate-500">New password (leave blank to keep)</label><input type="password" value={form.password} onChange={e => setForm(f => ({...f, password: e.target.value}))} className="input w-full" /></div>
-                )}
-              </>
-            )}
+              <div><label className="block mb-1 text-xs font-semibold text-slate-500">Email</label><input type="email" value={form.email} onChange={e => setForm(f => ({...f, email: e.target.value}))} className="input w-full" /></div>
+              {modal.mode === 'edit' && (
+                <div><label className="block mb-1 text-xs font-semibold text-slate-500">New password (leave blank to keep)</label><input type="password" value={form.password} onChange={e => setForm(f => ({...f, password: e.target.value}))} className="input w-full" /></div>
+              )}
+            </>
 
             <div className="flex gap-3 justify-end">
-              <button onClick={() => { setModal(null); setInviteSent(''); }} className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
-                {inviteSent ? 'Close' : 'Cancel'}
+              <button onClick={() => setModal(null)} className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">
+                Cancel
               </button>
-              {!inviteSent && (
-                <button onClick={save} disabled={saving || !form.email}
-                  className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60">
-                  {saving ? 'Saving…' : modal.mode === 'create' ? 'Send Invite' : 'Save'}
-                </button>
-              )}
+              <button onClick={save} disabled={saving || !form.email}
+                className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60">
+                {saving ? 'Saving…' : modal.mode === 'create' ? 'Send Invite' : 'Save'}
+              </button>
             </div>
           </div>
         </div>
