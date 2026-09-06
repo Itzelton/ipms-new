@@ -37,7 +37,7 @@ export default function AdminSupervisorsPage() {
     setSaving(true);
     try {
       if (modal?.mode === 'create') {
-        await apiPost('/users', { ...form, role: 'SUPERVISOR' });
+        await apiPost('/users', { firstName: form.firstName, lastName: form.lastName, email: form.email, role: 'SUPERVISOR' });
         setModal(null);
         showToast(`Invite sent to ${form.email}`);
         await load();
@@ -82,17 +82,24 @@ export default function AdminSupervisorsPage() {
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
           <div className="card w-full max-w-md p-6 space-y-4">
             <h3 className="text-lg font-semibold text-slate-900">{modal.mode === 'create' ? 'Add Supervisor' : 'Edit Supervisor'}</h3>
+            {modal.mode === 'create' && (
+              <p className="text-xs text-slate-500 rounded-xl bg-sky-50 border border-sky-100 px-3 py-2">
+                The supervisor will receive an email with a link to set their own password.
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div><label className="block mb-1 text-xs font-semibold text-slate-500">First name</label><input value={form.firstName} onChange={e => setForm(f => ({...f, firstName: e.target.value}))} className="input w-full" /></div>
               <div><label className="block mb-1 text-xs font-semibold text-slate-500">Last name</label><input value={form.lastName} onChange={e => setForm(f => ({...f, lastName: e.target.value}))} className="input w-full" /></div>
             </div>
             <div><label className="block mb-1 text-xs font-semibold text-slate-500">Email</label><input type="email" value={form.email} onChange={e => setForm(f => ({...f, email: e.target.value}))} className="input w-full" /></div>
-            <div><label className="block mb-1 text-xs font-semibold text-slate-500">{modal.mode === 'create' ? 'Password' : 'New password (leave blank to keep)'}</label><input type="password" value={form.password} onChange={e => setForm(f => ({...f, password: e.target.value}))} className="input w-full" /></div>
+            {modal.mode === 'edit' && (
+              <div><label className="block mb-1 text-xs font-semibold text-slate-500">New password (leave blank to keep)</label><input type="password" value={form.password} onChange={e => setForm(f => ({...f, password: e.target.value}))} className="input w-full" /></div>
+            )}
             <div className="flex gap-3 justify-end">
               <button onClick={() => setModal(null)} className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">Cancel</button>
-              <button onClick={save} disabled={saving || !form.email || (modal.mode === 'create' && !form.password)}
+              <button onClick={save} disabled={saving || !form.email}
                 className="rounded-full bg-sky-600 px-5 py-2 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60">
-                {saving ? 'Saving…' : modal.mode === 'create' ? 'Create' : 'Save'}
+                {saving ? 'Saving…' : modal.mode === 'create' ? 'Send Invite' : 'Save'}
               </button>
             </div>
           </div>
