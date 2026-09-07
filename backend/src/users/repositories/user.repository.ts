@@ -54,8 +54,8 @@ export class UserRepository {
       return user;
     }
 
-    // Reject if already an active user
-    const existingUser = await this.prisma.user.findFirst({ where: { email: data.email } });
+    // Reject if already an active (non-deleted) user
+    const existingUser = await this.prisma.user.findFirst({ where: { email: data.email, deletedAt: null } });
     if (existingUser) {
       throw new ConflictException('A user with this email already exists');
     }
