@@ -76,12 +76,15 @@ export class UserRepository {
       }
     }
 
-    const { role, indexNumber, level, course, department, studentReferenceNumber, referenceNumber, password: _pw, ...userData } = data;
+    const { role, indexNumber, level, course, department, studentReferenceNumber, referenceNumber, password: _pw } = data;
 
     const user = await this.prisma.user.create({
       data: {
         ...(supabaseId ? { id: supabaseId } : {}),
-        ...userData,
+        email: data.email,
+        ...(data.firstName !== undefined ? { firstName: data.firstName } : {}),
+        ...(data.lastName !== undefined ? { lastName: data.lastName } : {}),
+        ...(data.preferredName !== undefined ? { preferredName: data.preferredName } : {}),
         password: hashedPassword,
         mustChangePassword: true,
         roles: {
@@ -193,7 +196,7 @@ export class UserRepository {
       return user as any;
     }
 
-    const { level, indexNumber, course, department, studentReferenceNumber, referenceNumber, isActive, ...coreData } = data;
+    const { level, indexNumber, course, department, studentReferenceNumber, referenceNumber, isActive, role: _role, ...coreData } = data;
 
     // Update core user fields
     await this.prisma.user.update({
