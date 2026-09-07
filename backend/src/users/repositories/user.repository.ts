@@ -66,8 +66,15 @@ export class UserRepository {
       throw new ConflictException('An invite has already been sent to this email. Use Resend Invite to send another.');
     }
 
-    // Send Supabase invite — user gets a password-setup link
+    // Send Supabase invite — user gets a password-setup link.
+    // If a soft-deleted user's email still exists in Supabase auth, delete it first
+    // so inviteUserByEmail creates a fresh record and actually sends the email.
     if (this.supabaseAdmin) {
+      const deletedUser = await this.prisma.user.findFirst({ where: { email: data.email } });
+      if (deletedUser) {
+        await this.supabaseAdmin.auth.admin.deleteUser(deletedUser.id).catch(() => {});
+      }
+
       const frontendUrl = (process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:3000').replace(/\/$/, '');
       const { error } = await this.supabaseAdmin.auth.admin.inviteUserByEmail(
         data.email,
