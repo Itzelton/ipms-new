@@ -1,12 +1,7 @@
 import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
 import { randomUUID, randomBytes } from 'crypto';
-import { setDefaultResultOrder } from 'dns';
 import * as bcrypt from 'bcrypt';
-import * as nodemailer from 'nodemailer';
 import { RoleName } from '@prisma/client';
-
-// Render's network doesn't support IPv6 outbound — force all DNS lookups to IPv4
-setDefaultResultOrder('ipv4first');
 import { createClient } from '@supabase/supabase-js';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateUserDto } from '../dto/create-user.dto';
@@ -24,37 +19,6 @@ function makeSupabaseAdmin() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
   return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
-}
-
-function makeMailer() {
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  if (!user || !pass) return null;
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: false,
-    auth: { user, pass },
-  });
-}
-
-async function sendInviteEmail(to: string, firstName: string | null | undefined, inviteLink: string) {
-  const mailer = makeMailer();
-  if (!mailer) { console.error('[invite] SMTP not configured — SMTP_USER/SMTP_PASS missing'); return; }
-  const name = firstName || to;
-  await mailer.sendMail({
-    from: `"IPMS" <${process.env.SMTP_USER}>`,
-    to,
-    subject: 'You have been invited to IPMS',
-    html: `
-      <p>Hi ${name},</p>
-      <p>You have been invited to the <strong>Integrated Project Management System (IPMS)</strong>.</p>
-      <p>Click the link below to set your password and activate your account:</p>
-      <p><a href="${inviteLink}" style="font-size:16px;font-weight:bold">Accept Invitation</a></p>
-      <p>This link expires in 24 hours. If you did not expect this invitation, you can ignore this email.</p>
-      <p>— The IPMS Team</p>
-    `,
-  });
 }
 
 // No hardcoded users — all data lives in the database
@@ -112,23 +76,18 @@ export class UserRepository {
       }
 
       const frontendUrl = (process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:3000').replace(/\/$/, '');
-      const { data: linkData, error } = await this.supabaseAdmin.auth.admin.generateLink({
-        type: 'invite',
-        email: data.email,
-        options: {
+      const { data: inviteData, error } = await this.supabaseAdmin.auth.admin.inviteUserByEmail(
+        data.email,
+        {
           data: { role: data.role, firstName: data.firstName, lastName: data.lastName },
           redirectTo: `${frontendUrl}/set-password`,
         },
-      });
-      if (error) {
+      );
+      if (error && !error.message?.includes('already been registered') && !error.message?.includes('already exists')) {
         const detail = error.message || JSON.stringify(error);
-        throw new BadRequestException(`Failed to generate invite link: ${detail}`);
+        throw new BadRequestException(`Failed to invite user: ${detail}`);
       }
-      invitedSupabaseId = linkData?.user?.id;
-      const inviteLink = linkData?.properties?.action_link;
-      if (inviteLink) {
-        sendInviteEmail(data.email, data.firstName, inviteLink).catch((e) => console.error('[invite] email send failed:', e.message));
-      }
+      invitedSupabaseId = inviteData?.user?.id;
     }
 
     // Save to pending — user is added to the real users list only after they set their password
@@ -160,20 +119,15 @@ export class UserRepository {
 
     if (this.supabaseAdmin) {
       const frontendUrl = (process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:3000').replace(/\/$/, '');
-      const { data: linkData, error } = await this.supabaseAdmin.auth.admin.generateLink({
-        type: 'invite',
-        email: invite.email,
-        options: {
+      const { error } = await this.supabaseAdmin.auth.admin.inviteUserByEmail(
+        invite.email,
+        {
           data: { role: invite.role, firstName: invite.firstName, lastName: invite.lastName },
           redirectTo: `${frontendUrl}/set-password`,
         },
-      });
-      if (error) {
+      );
+      if (error && !error.message?.includes('already been registered') && !error.message?.includes('already exists')) {
         throw new BadRequestException(`Failed to resend invite: ${error.message || JSON.stringify(error)}`);
-      }
-      const inviteLink = linkData?.properties?.action_link;
-      if (inviteLink) {
-        sendInviteEmail(invite.email, invite.firstName, inviteLink).catch((e) => console.error('[resend] email send failed:', e.message));
       }
     }
 
