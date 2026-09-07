@@ -21,6 +21,19 @@ export default function SetPasswordPage() {
   const [sessionToken, setSessionToken] = useState('');
 
   useEffect(() => {
+    // PKCE flow: Supabase v2 sends ?code= in the query string
+    const searchParams = new URLSearchParams(window.location.search);
+    const code = searchParams.get('code');
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
+        if (error || !data.session) { setState('expired'); return; }
+        setSessionToken(data.session.access_token);
+        setState('ready');
+      });
+      return;
+    }
+
+    // Implicit flow fallback: #access_token= in the hash
     const hash = window.location.hash.slice(1);
     const params = new URLSearchParams(hash);
     const accessToken = params.get('access_token');
@@ -32,13 +45,9 @@ export default function SetPasswordPage() {
       return;
     }
 
-    // Establish session using both tokens so Supabase can auto-refresh if needed
     supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken ?? '' })
       .then(({ data, error }) => {
-        if (error || !data.session) {
-          setState('expired');
-          return;
-        }
+        if (error || !data.session) { setState('expired'); return; }
         setSessionToken(data.session.access_token);
         setState('ready');
       });
