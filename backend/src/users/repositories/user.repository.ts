@@ -30,7 +30,7 @@ function makeMailer() {
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: Number(process.env.SMTP_PORT || 587),
     secure: false,
-    family: 4, // force IPv4 — Render does not support IPv6
+    family: 4 as any, // force IPv4 — Render does not support IPv6
     auth: { user, pass },
   });
 }
