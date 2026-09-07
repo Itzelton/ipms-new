@@ -70,9 +70,11 @@ export class UserRepository {
     // email the link ourselves via Nodemailer.
     let invitedSupabaseId: string | undefined;
     if (this.supabaseAdmin) {
-      const deletedUser = await this.prisma.user.findFirst({ where: { email: data.email } });
-      if (deletedUser) {
-        await this.supabaseAdmin.auth.admin.deleteUser(deletedUser.id).catch(() => {});
+      // Delete any stale Supabase auth record for this email (causes 422 if left)
+      const { data: listData } = await this.supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+      const staleSupabaseUser = listData?.users?.find((u: any) => u.email === data.email);
+      if (staleSupabaseUser) {
+        await this.supabaseAdmin.auth.admin.deleteUser(staleSupabaseUser.id).catch(() => {});
       }
 
       const frontendUrl = (process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:3000').replace(/\/$/, '');
@@ -118,6 +120,13 @@ export class UserRepository {
     if (!invite) throw new BadRequestException('Pending invite not found');
 
     if (this.supabaseAdmin) {
+      // Remove any stale Supabase auth record before re-inviting (avoids 422)
+      const { data: listData } = await this.supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+      const staleSupabaseUser = listData?.users?.find((u: any) => u.email === invite.email);
+      if (staleSupabaseUser) {
+        await this.supabaseAdmin.auth.admin.deleteUser(staleSupabaseUser.id).catch(() => {});
+      }
+
       const frontendUrl = (process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:3000').replace(/\/$/, '');
       const { error } = await this.supabaseAdmin.auth.admin.inviteUserByEmail(
         invite.email,
