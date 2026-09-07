@@ -27,7 +27,9 @@ export class AuthService {
       throw new ConflictException('Profile already exists for this account');
     }
 
-    const user = await this.usersService.create({
+    // Use createFromAuth so a real User record is created immediately,
+    // not a PendingInvite (which is only for admin-initiated invites).
+    const user = await this.usersService.createFromAuth({
       email: authenticatedEmail,
       password: '',
       preferredName: registerDto.name,
@@ -71,11 +73,11 @@ export class AuthService {
       return this.localLogin(email, password);
     }
 
-    const user = await this.usersService.create({
+    const user = await this.usersService.createFromAuth({
       email,
       password,
       preferredName: name,
-      role: role as RoleName,
+      role,
     });
 
     const sanitized = this.usersService.sanitizeUser(user);

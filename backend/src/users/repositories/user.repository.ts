@@ -67,8 +67,9 @@ export class UserRepository {
     }
 
     // Send Supabase invite — user gets a password-setup link.
-    // If a soft-deleted user's email still exists in Supabase auth, delete it first
-    // so inviteUserByEmail creates a fresh record and actually sends the email.
+    // If the email still exists in Supabase auth (e.g. previously deleted user), remove it
+    // first so inviteUserByEmail creates a fresh record and actually sends the email.
+    let invitedSupabaseId: string | undefined;
     if (this.supabaseAdmin) {
       const deletedUser = await this.prisma.user.findFirst({ where: { email: data.email } });
       if (deletedUser) {
@@ -76,7 +77,7 @@ export class UserRepository {
       }
 
       const frontendUrl = (process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:3000').replace(/\/$/, '');
-      const { error } = await this.supabaseAdmin.auth.admin.inviteUserByEmail(
+      const { data: inviteData, error } = await this.supabaseAdmin.auth.admin.inviteUserByEmail(
         data.email,
         {
           data: { role: data.role, firstName: data.firstName, lastName: data.lastName },
@@ -86,6 +87,7 @@ export class UserRepository {
       if (error && !error.message?.includes('already been registered') && !error.message?.includes('already exists')) {
         throw new BadRequestException(`Failed to invite user: ${error.message}`);
       }
+      invitedSupabaseId = inviteData?.user?.id;
     }
 
     // Save to pending — user is added to the real users list only after they set their password
@@ -95,6 +97,7 @@ export class UserRepository {
         firstName: data.firstName ?? null,
         lastName: data.lastName ?? null,
         role: data.role as string,
+        supabaseId: invitedSupabaseId ?? null,
       },
     });
   }
@@ -136,7 +139,43 @@ export class UserRepository {
   }
 
   async deletePendingInvite(id: string) {
+    const invite = await this.prisma.pendingInvite.findUnique({ where: { id } });
+    if (!invite) return null;
+    // Remove from Supabase so the invite link stops working
+    if (this.supabaseAdmin && invite.supabaseId) {
+      await this.supabaseAdmin.auth.admin.deleteUser(invite.supabaseId).catch(() => {});
+    }
     return this.prisma.pendingInvite.delete({ where: { id } });
+  }
+
+  // Creates a User directly — used by auth registration flows (not the admin-invite flow).
+  async createFromAuth(data: { email: string; password: string; preferredName?: string; role: string; supabaseId?: string }) {
+    const hashedPassword = data.password
+      ? bcrypt.hashSync(data.password, 10)
+      : bcrypt.hashSync(randomBytes(16).toString('hex'), 10);
+    const role = data.role as RoleName;
+
+    return this.prisma.user.create({
+      data: {
+        ...(data.supabaseId ? { id: data.supabaseId } : {}),
+        email: data.email,
+        password: hashedPassword,
+        ...(data.preferredName ? { preferredName: data.preferredName } : {}),
+        isActive: true,
+        mustChangePassword: false,
+        roles: {
+          create: {
+            role: {
+              connectOrCreate: {
+                where: { name: role },
+                create: { name: role },
+              },
+            },
+          },
+        },
+      },
+      include: userWithRolesInclude,
+    });
   }
 
   async createUserFromPendingInvite(supabaseId: string, pendingInvite: { id: string; email: string; firstName: string | null; lastName: string | null; role: string }) {

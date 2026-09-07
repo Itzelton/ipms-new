@@ -96,6 +96,10 @@ export class UsersService {
     return this.userRepository.createUserFromPendingInvite(supabaseId, pendingInvite);
   }
 
+  async createFromAuth(data: { email: string; password: string; preferredName?: string; role: string; supabaseId?: string }) {
+    return this.userRepository.createFromAuth(data);
+  }
+
   async setActive(id: string, isActive: boolean) {
     const user = await this.userRepository.update(id, { isActive });
     return this.sanitizeUser(user);
