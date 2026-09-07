@@ -42,6 +42,13 @@ export class UsersController {
     return this.usersService.findStudentsBySupervisor(user.id);
   }
 
+  // Must be before :id routes
+  @Roles('ADMIN')
+  @Get('pending-invites')
+  getPendingInvites(@Query('role') role?: string) {
+    return this.usersService.findPendingInvites(role);
+  }
+
   @Roles('ADMIN')
   @Patch(':id/assign-supervisor')
   assignSupervisor(@Param('id') id: string, @Body() dto: AssignSupervisorDto) {
@@ -58,6 +65,18 @@ export class UsersController {
   @Patch(':id/deactivate')
   deactivate(@Param('id') id: string) {
     return this.usersService.setActive(id, false);
+  }
+
+  @Roles('ADMIN')
+  @Post('pending-invites/:id/resend')
+  resendPendingInvite(@Param('id') id: string) {
+    return this.usersService.resendPendingInvite(id);
+  }
+
+  @Roles('ADMIN')
+  @Delete('pending-invites/:id')
+  deletePendingInvite(@Param('id') id: string) {
+    return this.usersService.deletePendingInvite(id);
   }
 
   @Roles('ADMIN')

@@ -624,3 +624,14 @@ model AuditLog {
   data      Json?
   createdAt DateTime @default(now())
 }
+
+model PendingInvite {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  firstName String?
+  lastName  String?
+  role      String
+  createdAt DateTime @default(now())
+
+  @@map("pending_invites")
+}

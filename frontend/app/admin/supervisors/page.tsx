@@ -3,28 +3,45 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { apiGet, apiPost, apiPatch, apiDelete } from '../../../services/api';
 
 type User = { id: string; email: string; firstName?: string; lastName?: string; preferredName?: string; isActive?: boolean };
+type PendingInvite = { id: string; email: string; firstName?: string | null; lastName?: string | null; role: string; createdAt: string };
 type Modal = { mode: 'create' | 'edit' | 'delete'; user?: User } | null;
 
-function displayName(u: User) {
-  return u.preferredName || [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email;
+function displayName(u: User | PendingInvite) {
+  return [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email;
+}
+
+function timeAgo(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
 }
 
 export default function AdminSupervisorsPage() {
   const [supervisors, setSupervisors] = useState<User[]>([]);
   const [students, setStudents] = useState<any[]>([]);
+  const [pending, setPending] = useState<PendingInvite[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [modal, setModal] = useState<Modal>(null);
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '' });
   const [saving, setSaving] = useState(false);
+  const [resending, setResending] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [sv, st] = await Promise.all([apiGet('/users/supervisors'), apiGet('/users/students')]);
+      const [sv, st, pend] = await Promise.all([
+        apiGet('/users/supervisors'),
+        apiGet('/users/students'),
+        apiGet('/users/pending-invites?role=SUPERVISOR'),
+      ]);
       setSupervisors(Array.isArray(sv) ? sv : []);
       setStudents(Array.isArray(st) ? st : []);
+      setPending(Array.isArray(pend) ? pend : []);
     } catch { /* empty */ }
     setLoading(false);
   }, []);
@@ -63,6 +80,24 @@ export default function AdminSupervisorsPage() {
       await load();
     } catch (e: any) { showToast(e?.message || 'Failed.'); }
     setSaving(false);
+  }
+
+  async function resendInvite(invite: PendingInvite) {
+    setResending(invite.id);
+    try {
+      await apiPost(`/users/pending-invites/${invite.id}/resend`, {});
+      showToast(`Invite resent to ${invite.email}`);
+      await load();
+    } catch (e: any) { showToast(e?.message || 'Failed to resend.'); }
+    setResending(null);
+  }
+
+  async function cancelInvite(invite: PendingInvite) {
+    try {
+      await apiDelete(`/users/pending-invites/${invite.id}`);
+      showToast('Invite cancelled.');
+      await load();
+    } catch (e: any) { showToast(e?.message || 'Failed.'); }
   }
 
   const filtered = supervisors.filter(s =>
@@ -135,6 +170,46 @@ export default function AdminSupervisorsPage() {
         </div>
       </header>
 
+      {/* Pending invites */}
+      {pending.length > 0 && (
+        <div className="card overflow-hidden">
+          <div className="px-6 py-4 border-b border-amber-100 bg-amber-50/60 flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+            <span className="text-sm font-semibold text-amber-800">Pending Invites</span>
+            <span className="ml-auto text-xs text-amber-600">{pending.length} awaiting</span>
+          </div>
+          <ul className="divide-y divide-slate-100">
+            {pending.map((inv) => (
+              <li key={inv.id} className="flex items-center justify-between px-6 py-4 hover:bg-slate-50/50 transition">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 text-sm font-bold text-amber-600">
+                    {displayName(inv).charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">{displayName(inv)}</p>
+                    <p className="text-xs text-slate-400">{inv.email} · invited {timeAgo(inv.createdAt)}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => resendInvite(inv)}
+                    disabled={resending === inv.id}
+                    className="rounded-full border border-sky-200 px-3 py-1 text-xs font-medium text-sky-600 hover:border-sky-300 hover:bg-sky-50 transition disabled:opacity-50">
+                    {resending === inv.id ? 'Sending…' : 'Resend Invite'}
+                  </button>
+                  <button
+                    onClick={() => cancelInvite(inv)}
+                    className="rounded-full border border-rose-100 px-3 py-1 text-xs font-medium text-rose-500 hover:border-rose-200 hover:bg-rose-50 transition">
+                    Cancel
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Active supervisors */}
       <div className="card overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
           <svg className="h-4 w-4 text-slate-400 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" /></svg>
@@ -144,7 +219,7 @@ export default function AdminSupervisorsPage() {
         {loading ? (
           <div className="p-10 text-center text-sm text-slate-400">Loading…</div>
         ) : filtered.length === 0 ? (
-          <div className="p-10 text-center text-sm text-slate-400">No supervisors found.</div>
+          <div className="p-10 text-center text-sm text-slate-400">No supervisors yet.</div>
         ) : (
           <ul className="divide-y divide-slate-100">
             {filtered.map((sv) => {

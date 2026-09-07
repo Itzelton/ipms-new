@@ -140,13 +140,26 @@ export class AuthService {
     return this.usersService.getDirectory();
   }
 
-  async setPassword(userId: string, newPassword: string) {
+  async setPassword(userId: string, email: string, newPassword: string) {
+    let user = await this.usersService.findOne(userId);
+
+    if (!user && email) {
+      // Brand-new invitee — not in DB yet; promote them from the pending list
+      const pending = await this.usersService.findPendingInviteByEmail(email);
+      if (pending) {
+        user = await this.usersService.createUserFromPendingInvite(userId, pending);
+      }
+    }
+
+    if (!user) throw new UnauthorizedException('User not found');
+
     const hashed = await bcrypt.hash(newPassword, 10);
-    await this.usersService.update(userId, { password: hashed, mustChangePassword: false });
+    await this.usersService.update(user.id, { password: hashed, mustChangePassword: false });
+
     // Also update in Supabase so the auth record stays in sync
     const admin = makeSupabaseAdmin();
     if (admin) {
-      await admin.auth.admin.updateUserById(userId, { password: newPassword }).catch(() => {});
+      await admin.auth.admin.updateUserById(user.id, { password: newPassword }).catch(() => {});
     }
     return { message: 'Password updated successfully' };
   }

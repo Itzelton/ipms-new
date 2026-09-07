@@ -41,10 +41,9 @@ export class UserRepository {
   }
 
   async create(data: CreateUserDto) {
-    const tempPassword = data.password || randomBytes(16).toString('hex');
-    const hashedPassword = bcrypt.hashSync(tempPassword, 10);
-
     if (this.useInMemoryData) {
+      const tempPassword = data.password || randomBytes(16).toString('hex');
+      const hashedPassword = bcrypt.hashSync(tempPassword, 10);
       const user = {
         id: randomUUID(), ...data, password: hashedPassword,
         isActive: true, createdAt: new Date(), updatedAt: new Date(),
@@ -55,75 +54,122 @@ export class UserRepository {
       return user;
     }
 
-    // Reject if the email is already in the DB
-    const existing = await this.prisma.user.findFirst({ where: { email: data.email } });
-    if (existing) {
+    // Reject if already an active user
+    const existingUser = await this.prisma.user.findFirst({ where: { email: data.email } });
+    if (existingUser) {
       throw new ConflictException('A user with this email already exists');
     }
 
-    // Invite user via Supabase — sends them a password-setup link
-    let supabaseId: string | undefined;
+    // Reject if already a pending invite
+    const existingInvite = await this.prisma.pendingInvite.findUnique({ where: { email: data.email } });
+    if (existingInvite) {
+      throw new ConflictException('An invite has already been sent to this email. Use Resend Invite to send another.');
+    }
+
+    // Send Supabase invite — user gets a password-setup link
     if (this.supabaseAdmin) {
       const frontendUrl = (process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:3000').replace(/\/$/, '');
-      const { data: inviteData, error } = await this.supabaseAdmin.auth.admin.inviteUserByEmail(
+      const { error } = await this.supabaseAdmin.auth.admin.inviteUserByEmail(
         data.email,
         {
           data: { role: data.role, firstName: data.firstName, lastName: data.lastName },
           redirectTo: `${frontendUrl}/set-password`,
         },
       );
-      if (error) {
-        // If user already exists in Supabase, continue — just create the DB record
-        if (!error.message?.includes('already been registered') && !error.message?.includes('already exists')) {
-          throw new BadRequestException(`Failed to invite user: ${error.message}`);
-        }
-      } else {
-        supabaseId = inviteData?.user?.id;
+      if (error && !error.message?.includes('already been registered') && !error.message?.includes('already exists')) {
+        throw new BadRequestException(`Failed to invite user: ${error.message}`);
       }
     }
 
-    const { role, indexNumber, level, course, department, studentReferenceNumber, referenceNumber, password: _pw } = data;
+    // Save to pending — user is added to the real users list only after they set their password
+    return this.prisma.pendingInvite.create({
+      data: {
+        email: data.email,
+        firstName: data.firstName ?? null,
+        lastName: data.lastName ?? null,
+        role: data.role as string,
+      },
+    });
+  }
+
+  async findPendingInvites(role?: string) {
+    return this.prisma.pendingInvite.findMany({
+      where: role ? { role } : undefined,
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async findPendingInviteByEmail(email: string) {
+    return this.prisma.pendingInvite.findUnique({ where: { email } });
+  }
+
+  async resendPendingInvite(id: string) {
+    const invite = await this.prisma.pendingInvite.findUnique({ where: { id } });
+    if (!invite) throw new BadRequestException('Pending invite not found');
+
+    if (this.supabaseAdmin) {
+      const frontendUrl = (process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:3000').replace(/\/$/, '');
+      const { error } = await this.supabaseAdmin.auth.admin.inviteUserByEmail(
+        invite.email,
+        {
+          data: { role: invite.role, firstName: invite.firstName, lastName: invite.lastName },
+          redirectTo: `${frontendUrl}/set-password`,
+        },
+      );
+      if (error && !error.message?.includes('already been registered') && !error.message?.includes('already exists')) {
+        throw new BadRequestException(`Failed to resend invite: ${error.message}`);
+      }
+    }
+
+    // Update createdAt so the "invited X ago" timestamp resets
+    return this.prisma.pendingInvite.update({
+      where: { id },
+      data: { createdAt: new Date() },
+    });
+  }
+
+  async deletePendingInvite(id: string) {
+    return this.prisma.pendingInvite.delete({ where: { id } });
+  }
+
+  async createUserFromPendingInvite(supabaseId: string, pendingInvite: { id: string; email: string; firstName: string | null; lastName: string | null; role: string }) {
+    const tempPassword = randomBytes(16).toString('hex');
+    const hashedPassword = bcrypt.hashSync(tempPassword, 10);
+    const role = pendingInvite.role as RoleName;
 
     const user = await this.prisma.user.create({
       data: {
-        ...(supabaseId ? { id: supabaseId } : {}),
-        email: data.email,
-        ...(data.firstName !== undefined ? { firstName: data.firstName } : {}),
-        ...(data.lastName !== undefined ? { lastName: data.lastName } : {}),
-        ...(data.preferredName !== undefined ? { preferredName: data.preferredName } : {}),
+        id: supabaseId,
+        email: pendingInvite.email,
+        ...(pendingInvite.firstName ? { firstName: pendingInvite.firstName } : {}),
+        ...(pendingInvite.lastName ? { lastName: pendingInvite.lastName } : {}),
         password: hashedPassword,
         mustChangePassword: true,
         roles: {
           create: {
             role: {
               connectOrCreate: {
-                where: { name: role as RoleName },
-                create: { name: role as RoleName },
+                where: { name: role },
+                create: { name: role },
               },
             },
           },
         },
-        ...(role === 'STUDENT' && {
+        ...(role === RoleName.STUDENT && {
           studentProfile: {
-            create: {
-              enrollmentId: indexNumber || `IDX-${Date.now()}`,
-              level: level || null,
-              course: course || null,
-              department: department || null,
-              referenceNumber: studentReferenceNumber || null,
-            },
+            create: { enrollmentId: `IDX-${Date.now()}` },
           },
         }),
-        ...(role === 'SUPERVISOR' && {
+        ...(role === RoleName.SUPERVISOR && {
           supervisorProfile: {
-            create: {
-              office: referenceNumber || null,
-            },
+            create: { office: null },
           },
         }),
       },
       include: userWithRolesInclude,
     });
+
+    await this.prisma.pendingInvite.delete({ where: { id: pendingInvite.id } });
 
     return user;
   }

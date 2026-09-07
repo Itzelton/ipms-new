@@ -76,6 +76,26 @@ export class UsersService {
     return this.sanitizeUser(user);
   }
 
+  async findPendingInvites(role?: string) {
+    return this.userRepository.findPendingInvites(role);
+  }
+
+  async findPendingInviteByEmail(email: string) {
+    return this.userRepository.findPendingInviteByEmail(email);
+  }
+
+  async resendPendingInvite(id: string) {
+    return this.userRepository.resendPendingInvite(id);
+  }
+
+  async deletePendingInvite(id: string) {
+    return this.userRepository.deletePendingInvite(id);
+  }
+
+  async createUserFromPendingInvite(supabaseId: string, pendingInvite: any) {
+    return this.userRepository.createUserFromPendingInvite(supabaseId, pendingInvite);
+  }
+
   async setActive(id: string, isActive: boolean) {
     const user = await this.userRepository.update(id, { isActive });
     return this.sanitizeUser(user);

@@ -110,6 +110,6 @@ export class AuthController {
 
   @Post('set-password')
   setPassword(@CurrentUser() user: AuthenticatedUser, @Body() dto: SetPasswordDto) {
-    return this.authService.setPassword(user.id, dto.newPassword);
+    return this.authService.setPassword(user.id, user.email, dto.newPassword);
   }
 }
