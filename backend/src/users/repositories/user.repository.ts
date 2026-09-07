@@ -1,8 +1,12 @@
 import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
 import { randomUUID, randomBytes } from 'crypto';
+import { setDefaultResultOrder } from 'dns';
 import * as bcrypt from 'bcrypt';
 import * as nodemailer from 'nodemailer';
 import { RoleName } from '@prisma/client';
+
+// Render's network doesn't support IPv6 outbound — force all DNS lookups to IPv4
+setDefaultResultOrder('ipv4first');
 import { createClient } from '@supabase/supabase-js';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { CreateUserDto } from '../dto/create-user.dto';
@@ -30,9 +34,8 @@ function makeMailer() {
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: Number(process.env.SMTP_PORT || 587),
     secure: false,
-    family: 4,
     auth: { user, pass },
-  } as any); // cast needed because `family` is not in @types/nodemailer but is valid at runtime
+  });
 }
 
 async function sendInviteEmail(to: string, firstName: string | null | undefined, inviteLink: string) {
