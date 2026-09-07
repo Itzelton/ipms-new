@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
 import { randomUUID, randomBytes } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { RoleName } from '@prisma/client';
@@ -53,6 +53,12 @@ export class UserRepository {
       } as any;
       this.inMemoryUsers.push(user);
       return user;
+    }
+
+    // Reject if the email is already in the DB
+    const existing = await this.prisma.user.findFirst({ where: { email: data.email } });
+    if (existing) {
+      throw new ConflictException('A user with this email already exists');
     }
 
     // Invite user via Supabase — sends them a password-setup link
