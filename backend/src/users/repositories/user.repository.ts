@@ -36,7 +36,7 @@ function makeMailer() {
 
 async function sendInviteEmail(to: string, firstName: string | null | undefined, inviteLink: string) {
   const mailer = makeMailer();
-  if (!mailer) return; // fall through silently if SMTP not configured
+  if (!mailer) { console.error('[invite] SMTP not configured — SMTP_USER/SMTP_PASS missing'); return; }
   const name = firstName || to;
   await mailer.sendMail({
     from: `"IPMS" <${process.env.SMTP_USER}>`,
@@ -123,7 +123,7 @@ export class UserRepository {
       invitedSupabaseId = linkData?.user?.id;
       const inviteLink = linkData?.properties?.action_link;
       if (inviteLink) {
-        sendInviteEmail(data.email, data.firstName, inviteLink).catch(() => {});
+        sendInviteEmail(data.email, data.firstName, inviteLink).catch((e) => console.error('[invite] email send failed:', e.message));
       }
     }
 
@@ -169,7 +169,7 @@ export class UserRepository {
       }
       const inviteLink = linkData?.properties?.action_link;
       if (inviteLink) {
-        sendInviteEmail(invite.email, invite.firstName, inviteLink).catch(() => {});
+        sendInviteEmail(invite.email, invite.firstName, inviteLink).catch((e) => console.error('[resend] email send failed:', e.message));
       }
     }
 
