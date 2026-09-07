@@ -42,6 +42,12 @@ export class UsersController {
     return this.usersService.findStudentsBySupervisor(user.id);
   }
 
+  @Roles('ADMIN')
+  @Get('stats')
+  getStats() {
+    return this.usersService.getStats();
+  }
+
   // Must be before :id routes
   @Roles('ADMIN')
   @Get('pending-invites')

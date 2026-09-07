@@ -34,23 +34,21 @@ export default function AdminIndex() {
     let mounted = true;
     async function load() {
       try {
-        const [usersRes, projectsRes, approvalsRes, auditRes, submissionsRes] = await Promise.allSettled([
-          apiGet('/users'),
+        const [statsRes, projectsRes, auditRes, submissionsRes] = await Promise.allSettled([
+          apiGet('/users/stats'),
           apiGet('/projects'),
-          apiGet('/users?isActive=false'),
           apiGet('/audit?limit=20'),
           apiGet('/submissions/admin/reviewed?limit=40'),
         ]);
 
-        const users      = usersRes.status     === 'fulfilled' ? (Array.isArray(usersRes.value)     ? usersRes.value     : usersRes.value?.data     ?? []) : [];
+        const statsRaw   = statsRes.status     === 'fulfilled' ? (statsRes.value?.data ?? statsRes.value ?? {}) : {};
         const projects   = projectsRes.status  === 'fulfilled' ? (Array.isArray(projectsRes.value)  ? projectsRes.value  : projectsRes.value?.data  ?? []) : [];
-        const inactive   = approvalsRes.status === 'fulfilled' ? (Array.isArray(approvalsRes.value) ? approvalsRes.value : approvalsRes.value?.data ?? []) : [];
         const auditRows  = auditRes.status     === 'fulfilled' ? (Array.isArray(auditRes.value)     ? auditRes.value     : auditRes.value?.data     ?? []) : [];
         const allSubs    = submissionsRes.status === 'fulfilled' ? (Array.isArray(submissionsRes.value) ? submissionsRes.value : submissionsRes.value?.data ?? []) : [];
 
-        const activeUsers    = users.filter((u: any) => u.isActive).length;
+        const activeUsers    = (statsRaw.total as number) ?? 0;
+        const pendingCount   = (statsRaw.pending as number) ?? 0;
         const activeProjects = projects.filter((p: any) => p.status === 'ACTIVE').length;
-        const pendingCount   = inactive.length;
 
         const alertCount = projects.filter((p: any) =>
           p.riskSignals?.some((r: any) => r.severity === 'CRITICAL' || r.severity === 'HIGH')
@@ -129,9 +127,9 @@ export default function AdminIndex() {
         if (mounted) {
           setAlertCount(alertCount);
           setStats([
-            { label: 'Active Users',      value: fmt(activeUsers),    detail: 'Students, supervisors, admins', gradient: 'from-sky-400 to-blue-600',      valueColor: 'text-sky-600' },
+            { label: 'Active Users',      value: fmt(activeUsers),    detail: `${statsRaw.students ?? 0} students · ${statsRaw.supervisors ?? 0} supervisors`, gradient: 'from-sky-400 to-blue-600',      valueColor: 'text-sky-600' },
             { label: 'Projects',          value: fmt(activeProjects), detail: 'Active capstone projects',      gradient: 'from-violet-400 to-indigo-600', valueColor: 'text-violet-600' },
-            { label: 'Pending Approvals', value: fmt(pendingCount),   detail: 'Awaiting admin review',          gradient: 'from-amber-400 to-orange-500',  valueColor: 'text-amber-600' },
+            { label: 'Pending Invites',   value: fmt(pendingCount),   detail: 'Invited, awaiting password set', gradient: 'from-amber-400 to-orange-500',  valueColor: 'text-amber-600' },
             { label: 'System Alerts',     value: fmt(alertCount),     detail: 'Critical risk signals',          gradient: 'from-rose-400 to-rose-600',     valueColor: 'text-rose-600' },
           ]);
           setActivity(activityFeed);

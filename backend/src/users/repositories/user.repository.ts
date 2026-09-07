@@ -254,6 +254,16 @@ export class UserRepository {
     });
   }
 
+  async getStats() {
+    const [students, supervisors, admins, pending] = await Promise.all([
+      this.prisma.user.count({ where: { deletedAt: null, isActive: true, roles: { some: { role: { name: RoleName.STUDENT } } } } }),
+      this.prisma.user.count({ where: { deletedAt: null, isActive: true, roles: { some: { role: { name: RoleName.SUPERVISOR } } } } }),
+      this.prisma.user.count({ where: { deletedAt: null, isActive: true, roles: { some: { role: { name: RoleName.ADMIN } } } } }),
+      this.prisma.pendingInvite.count(),
+    ]);
+    return { students, supervisors, admins, total: students + supervisors + admins, pending };
+  }
+
   async findAll(pagination: PaginationDto, role?: RoleName) {
     if (this.useInMemoryData) {
       const take = pagination.limit || 20;

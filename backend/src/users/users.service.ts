@@ -100,6 +100,10 @@ export class UsersService {
     return this.userRepository.createFromAuth(data);
   }
 
+  async getStats() {
+    return this.userRepository.getStats();
+  }
+
   async setActive(id: string, isActive: boolean) {
     const user = await this.userRepository.update(id, { isActive });
     return this.sanitizeUser(user);
