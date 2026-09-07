@@ -170,6 +170,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    // /set-password handles its own Supabase session (invite/recovery tokens in hash).
+    // Letting the global listener process those tokens would sign the user in before
+    // they've set a password, routing them to the dashboard and skipping the form.
+    if (typeof window !== 'undefined' && window.location.pathname === '/set-password') {
+      setHydrated(true);
+      return;
+    }
+
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       if (session?.access_token) {
@@ -195,6 +203,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      // Same guard: don't intercept auth events on the set-password page.
+      if (typeof window !== 'undefined' && window.location.pathname === '/set-password') return;
+
       setSession(session);
       if (session?.access_token) {
         try {
