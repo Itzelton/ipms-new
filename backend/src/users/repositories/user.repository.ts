@@ -123,7 +123,7 @@ export class UserRepository {
       invitedSupabaseId = linkData?.user?.id;
       const inviteLink = linkData?.properties?.action_link;
       if (inviteLink) {
-        await sendInviteEmail(data.email, data.firstName, inviteLink);
+        sendInviteEmail(data.email, data.firstName, inviteLink).catch(() => {});
       }
     }
 
@@ -169,7 +169,7 @@ export class UserRepository {
       }
       const inviteLink = linkData?.properties?.action_link;
       if (inviteLink) {
-        await sendInviteEmail(invite.email, invite.firstName, inviteLink);
+        sendInviteEmail(invite.email, invite.firstName, inviteLink).catch(() => {});
       }
     }
 
