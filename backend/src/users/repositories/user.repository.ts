@@ -30,9 +30,9 @@ function makeMailer() {
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: Number(process.env.SMTP_PORT || 587),
     secure: false,
-    family: 4 as any, // force IPv4 — Render does not support IPv6
+    family: 4,
     auth: { user, pass },
-  });
+  } as any); // cast needed because `family` is not in @types/nodemailer but is valid at runtime
 }
 
 async function sendInviteEmail(to: string, firstName: string | null | undefined, inviteLink: string) {
