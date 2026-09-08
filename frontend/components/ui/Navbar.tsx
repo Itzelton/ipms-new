@@ -199,7 +199,7 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
                 {/* Dropdown */}
                 {open && (
                   <div
-                    className="animate-dropdown-in absolute right-0 top-full mt-2 w-[340px] max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl z-50"
+                    className="animate-dropdown-in fixed md:absolute top-[60px] md:top-full md:mt-2 left-2 right-2 md:left-auto md:right-0 md:w-[340px] w-auto overflow-hidden rounded-2xl z-50"
                     style={isDark ? {
                       background: '#1e2535',
                       border: '1px solid rgba(255,255,255,0.10)',

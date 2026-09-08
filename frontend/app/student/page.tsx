@@ -129,7 +129,7 @@ export default function StudentDashboard() {
             <p className="mt-1 text-sm text-slate-500">Track your project, submissions and advisor feedback.</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex gap-2 overflow-x-auto pb-0.5 flex-nowrap"
+            <div className="dash-pills flex gap-2 overflow-x-auto pb-0.5 flex-nowrap"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' } as React.CSSProperties}>
               {[
                 { href: '/student', label: 'Overview' },

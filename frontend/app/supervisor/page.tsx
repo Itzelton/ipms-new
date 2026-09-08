@@ -176,7 +176,7 @@ export default function SupervisorIndex() {
             <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">Dashboard</h2>
             <p className="mt-1 text-sm text-slate-500">Monitor students, reviews, discussions and project risks.</p>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+          <div className="dash-pills flex gap-2 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
             {[
               { href: '/supervisor', label: 'Overview' },
               { href: '/supervisor/projects', label: 'Projects' },
