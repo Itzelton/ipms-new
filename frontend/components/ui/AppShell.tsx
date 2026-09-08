@@ -31,7 +31,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       >
         <div className={persistentSidebar ? 'lg:ml-[260px]' : ''}>
           <Navbar onSearchOpen={() => setSearchOpen(true)} />
-          <main className={`max-w-[1400px] ${compact ? 'p-3 sm:p-4' : 'p-4 sm:p-6'}`}>
+          <main className={`max-w-[1400px] ${compact ? 'p-2 sm:p-4' : 'p-3 sm:p-6'}`}>
             {children}
             {/* Spacer so content isn't hidden behind the mobile bottom nav */}
             <div

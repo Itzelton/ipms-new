@@ -320,6 +320,41 @@
 }
 
 /* ══════════════════════════════════════════════════════════════
+   Mobile (< 768px): larger text + tighter card spacing
+   ══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 767px) {
+  /* Scale up base font so rem-based text reads comfortably on phone */
+  html { font-size: 18px; }
+
+  /* Compact card padding — overrides Tailwind utilities (unlayered CSS wins over @layer utilities) */
+  .card.p-6,       .card-static.p-6,       .glass-card.p-6       { padding: 0.875rem; }
+  .card.p-5,       .card-static.p-5,       .glass-card.p-5       { padding: 0.75rem; }
+  .card.px-6,      .card-static.px-6                             { padding-left: 0.875rem; padding-right: 0.875rem; }
+  .card.py-6,      .card-static.py-6                             { padding-top: 0.875rem; padding-bottom: 0.875rem; }
+
+  /* Tighter empty-state vertical space inside cards */
+  .card .py-16, .card-static .py-16 { padding-top: 2rem;    padding-bottom: 2rem; }
+  .card .py-12, .card-static .py-12 { padding-top: 1.5rem;  padding-bottom: 1.5rem; }
+  .card .py-10, .card-static .py-10 { padding-top: 1.25rem; padding-bottom: 1.25rem; }
+  .card .py-8,  .card-static .py-8  { padding-top: 1rem;    padding-bottom: 1rem; }
+  .card .py-6,  .card-static .py-6  { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+
+  /* Section header bottom margin */
+  .card .mb-6, .card-static .mb-6 { margin-bottom: 0.875rem; }
+  .card .mb-5, .card-static .mb-5 { margin-bottom: 0.75rem; }
+
+  /* Inter-section gaps on dashboard grids */
+  .card .gap-4, .card-static .gap-4 { gap: 0.625rem; }
+  .card .gap-3, .card-static .gap-3 { gap: 0.5rem; }
+
+  /* Tighter inter-card spacing on dashboard pages */
+  .space-y-6 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.875rem; }
+  .space-y-5 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.75rem; }
+  .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.625rem; }
+}
+
+/* ══════════════════════════════════════════════════════════════
    Notification bell animations
    ══════════════════════════════════════════════════════════════ */
 
