@@ -66,14 +66,22 @@ export default function SetPasswordPage() {
       const { error: sbError } = await supabase.auth.updateUser({ password });
       if (sbError) throw new Error(sbError.message);
 
-      // 2. Update password in local DB so local login works too
-      await fetch(`${API}/auth/set-password`, {
+      // 2. Get fresh session token after updateUser
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token || sessionToken;
+
+      // 3. Promote user from pending → active in our DB
+      const res = await fetch(`${API}/auth/set-password`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionToken}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ newPassword: password }),
       });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.message || `Server error (${res.status})`);
+      }
 
-      // 3. Sign out — user will log in fresh
+      // 4. Sign out — user will log in fresh
       await supabase.auth.signOut();
 
       setState('done');
