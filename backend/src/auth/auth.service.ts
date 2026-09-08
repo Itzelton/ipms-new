@@ -146,7 +146,12 @@ export class AuthService {
     let user = await this.usersService.findOne(userId);
 
     if (!user && email) {
-      // Brand-new invitee — not in DB yet; promote them from the pending list
+      // May exist under a different ID (e.g. from a previous partial invite attempt)
+      user = await this.usersService.findByEmail(email);
+    }
+
+    if (!user && email) {
+      // Brand-new invitee — promote them from the pending list
       const pending = await this.usersService.findPendingInviteByEmail(email);
       if (pending) {
         user = await this.usersService.createUserFromPendingInvite(userId, pending);
