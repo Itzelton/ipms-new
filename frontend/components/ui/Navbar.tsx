@@ -121,7 +121,7 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
           {user && (
             <button
               onClick={toggle}
-              className={`${persistentSidebar ? 'lg:hidden' : ''} flex h-9 w-9 items-center justify-center rounded-xl text-slate-600 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-white/10 transition`}
+              className={`hidden md:flex h-9 w-9 items-center justify-center rounded-xl text-slate-600 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-white/10 transition ${persistentSidebar ? 'lg:hidden' : ''}`}
               aria-label="Open sidebar"
             >
               <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -199,7 +199,7 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
                 {/* Dropdown */}
                 {open && (
                   <div
-                    className="animate-dropdown-in absolute right-0 top-full mt-2 w-[340px] overflow-hidden rounded-2xl z-50"
+                    className="animate-dropdown-in absolute right-0 top-full mt-2 w-[340px] max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl z-50"
                     style={isDark ? {
                       background: '#1e2535',
                       border: '1px solid rgba(255,255,255,0.10)',

@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import Sidebar from './Sidebar';
+import BottomNav from './BottomNav';
 import Navbar from './Navbar';
 import SearchPalette from './SearchPalette';
 import { useSettings } from '../../contexts/SettingsContext';
@@ -30,9 +31,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       >
         <div className={persistentSidebar ? 'lg:ml-[260px]' : ''}>
           <Navbar onSearchOpen={() => setSearchOpen(true)} />
-          <main className={`max-w-[1400px] ${compact ? 'p-3 sm:p-4' : 'p-4 sm:p-6'}`}>{children}</main>
+          <main className={`max-w-[1400px] ${compact ? 'p-3 sm:p-4' : 'p-4 sm:p-6'}`}>
+            {children}
+            {/* Spacer so content isn't hidden behind the mobile bottom nav */}
+            <div
+              className="md:hidden"
+              style={{ height: 'calc(60px + env(safe-area-inset-bottom))' }}
+            />
+          </main>
         </div>
       </div>
+      <BottomNav />
       <SearchPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
