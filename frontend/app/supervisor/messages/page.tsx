@@ -28,6 +28,7 @@ export default function SupervisorMessagesPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [selected, setSelected] = useState<Student | null>(null);
   const [channel, setChannel] = useState<Channel | null>(null);
+  const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -135,9 +136,9 @@ export default function SupervisorMessagesPage() {
         <p className="mt-1 text-sm text-slate-500">Direct message your students.</p>
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-[280px_1fr]" style={{ height: 'calc(100vh - 14rem)', maxHeight: '720px' }}>
-        {/* Student list */}
-        <div className="card overflow-y-auto">
+      <div className="flex gap-4" style={{ height: 'calc(100vh - 14rem)', maxHeight: '720px' }}>
+        {/* Student list — full width on mobile, fixed on desktop */}
+        <div className={`card overflow-y-auto flex-shrink-0 w-full lg:w-[280px] ${mobileView === 'list' ? 'flex flex-col' : 'hidden lg:flex lg:flex-col'}`}>
           <div className="sticky top-0 border-b border-slate-100 bg-white/80 px-4 py-3 backdrop-blur-sm dark:border-slate-700/60 dark:bg-slate-900/80">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Students</p>
           </div>
@@ -150,7 +151,7 @@ export default function SupervisorMessagesPage() {
               {students.map((s) => (
                 <li key={s.id}>
                   <button
-                    onClick={() => setSelected(s)}
+                    onClick={() => { setSelected(s); setMobileView('chat'); }}
                     className={`w-full flex items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50 ${selected?.id === s.id ? 'bg-sky-50' : ''}`}
                   >
                     <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-400 to-blue-500 text-sm font-bold text-white">
@@ -167,8 +168,8 @@ export default function SupervisorMessagesPage() {
           )}
         </div>
 
-        {/* Chat panel */}
-        <div className="card flex flex-col">
+        {/* Chat panel — full width on mobile, flex-1 on desktop */}
+        <div className={`card flex-1 flex flex-col min-w-0 ${mobileView === 'chat' ? 'flex' : 'hidden lg:flex'}`}>
           {!selected ? (
             <div className="flex flex-col items-center justify-center flex-1 gap-3 text-center p-10">
               <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-slate-100">
@@ -181,13 +182,22 @@ export default function SupervisorMessagesPage() {
           ) : (
             <>
               {/* Header */}
-              <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
+              <div className="flex items-center gap-3 border-b border-slate-100 px-3 py-3 md:px-5 md:py-4">
+                <button
+                  className="lg:hidden flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 transition"
+                  onClick={() => setMobileView('list')}
+                  aria-label="Back to student list"
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </button>
                 <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-400 to-blue-500 text-sm font-bold text-white">
                   {displayName(selected).charAt(0).toUpperCase()}
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-slate-800">{displayName(selected)}</p>
-                  <p className="text-[11px] text-slate-400">{selected.email}</p>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-800 truncate">{displayName(selected)}</p>
+                  <p className="text-[11px] text-slate-400 truncate">{selected.email}</p>
                 </div>
               </div>
 

@@ -533,6 +533,8 @@ export default function DiscussionsLayout({ userId, userName, role = 'STUDENT' }
   const [typingUsers, setTypingUsers] = useState<Record<string, { name: string; timer: any }>>({});
   const [dmModalOpen, setDmModalOpen] = useState(false);
   const [activeProject, setActiveProject] = useState<{ title: string; milestones: Array<{ id: string; title: string; status: string }> } | null>(null);
+  // Mobile: toggle between channel list and feed (single-column view on small screens)
+  const [mobileView, setMobileView] = useState<'channels' | 'feed'>('channels');
   const feedRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -683,32 +685,42 @@ export default function DiscussionsLayout({ userId, userName, role = 'STUDENT' }
     <div className="flex h-[calc(100vh-64px)] overflow-hidden rounded-2xl border border-slate-200/60 shadow-sm"
       style={{ background: 'rgba(255,255,255,0.80)', backdropFilter: 'blur(24px)' }}>
 
-      {/* Column 1 — Channel sidebar */}
-      <div className="w-56 flex-shrink-0">
+      {/* Column 1 — Channel sidebar: full-width on mobile (hidden when feed is active), fixed-width on desktop */}
+      <div className={`flex-shrink-0 w-full md:w-56 ${mobileView === 'channels' ? 'flex md:flex' : 'hidden md:flex'} flex-col`}>
         <ChannelSidebar
           channels={channels}
           activeId={activeChannel?.id ?? null}
           meId={userId}
-          onSelect={(ch) => { setActiveChannel(ch); setThreadMsg(null); }}
+          onSelect={(ch) => { setActiveChannel(ch); setThreadMsg(null); setMobileView('feed'); }}
           onNewDm={() => setDmModalOpen(true)}
         />
       </div>
 
-      {/* Column 2 — Message feed */}
-      <div className="flex min-w-0 flex-1 flex-col">
+      {/* Column 2 — Message feed: hidden on mobile when showing channel list */}
+      <div className={`flex min-w-0 flex-1 flex-col ${mobileView === 'feed' ? 'flex' : 'hidden md:flex'}`}>
         {/* Channel header */}
         {activeChannel ? (
-          <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-3.5">
+          <div className="flex items-center gap-3 border-b border-slate-100 px-3 py-3 md:px-5 md:py-3.5">
+            {/* Back to channels button — mobile only */}
+            <button
+              className="md:hidden flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 transition"
+              onClick={() => setMobileView('channels')}
+              aria-label="Back to channels"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            </button>
             <span className="text-[15px] text-slate-400">{CHANNEL_ICON[activeChannel.type] ?? '#'}</span>
-            <div>
-              <p className="text-[14px] font-semibold text-slate-800">
+            <div className="min-w-0 flex-1">
+              <p className="text-[14px] font-semibold text-slate-800 truncate">
                 {activeChannel.type === 'DIRECT' ? dmDisplayName(activeChannel, userId) : `${activeProject?.title ?? activeChannel.project?.title ?? 'Project'} · ${activeChannel.name}`}
               </p>
               {activeChannel.description && activeChannel.type !== 'DIRECT' && (
-                <p className="text-[11px] text-slate-400">{activeChannel.description}</p>
+                <p className="text-[11px] text-slate-400 truncate">{activeChannel.description}</p>
               )}
             </div>
-            <span className="ml-auto rounded-full px-2 py-0.5 text-[10px] font-medium text-slate-400 bg-slate-100">
+            <span className="flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium text-slate-400 bg-slate-100">
               {channelTypeLabel[activeChannel.type] ?? 'channel'}
             </span>
             {activeProject && activeProject.milestones.length > 0 && (
@@ -723,7 +735,16 @@ export default function DiscussionsLayout({ userId, userName, role = 'STUDENT' }
             )}
           </div>
         ) : (
-          <div className="border-b border-slate-100 px-5 py-3.5">
+          <div className="border-b border-slate-100 px-3 py-3 md:px-5 md:py-3.5 flex items-center gap-2">
+            <button
+              className="md:hidden flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 transition"
+              onClick={() => setMobileView('channels')}
+              aria-label="Back to channels"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            </button>
             <p className="text-[14px] font-semibold text-slate-400">Select a channel</p>
           </div>
         )}
@@ -812,9 +833,9 @@ export default function DiscussionsLayout({ userId, userName, role = 'STUDENT' }
         )}
       </div>
 
-      {/* Column 3 — Thread panel (slides in) */}
+      {/* Column 3 — Thread panel (slides in, desktop only) */}
       {threadMsg && activeChannel && (
-        <div className="w-72 flex-shrink-0">
+        <div className="hidden md:flex w-72 flex-shrink-0 flex-col">
           <ThreadPanel
             parentMsg={threadMsg}
             channelId={activeChannel.id}
