@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../auth/auth-context';
 import { useSidebar } from './SidebarContext';
 import { apiGet, apiPatch } from '../../services/api';
@@ -80,16 +81,16 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
     setTimeout(() => setBellClicked(false), 560);
   }
 
-  // Click a notification: mark it read, navigate if it has a link
-  function handleNotifClick(n: any) {
+  // Click a notification: mark it read (await so navigation doesn't cancel the request), then navigate
+  async function handleNotifClick(n: any) {
     if (!n.read) {
-      apiPatch(`/notifications/${n.id}`, { read: true }).catch(() => {});
       setNotifications((prev) => prev.map((x) => x.id === n.id ? { ...x, read: true } : x));
       setUnread((prev) => Math.max(0, prev - 1));
+      await apiPatch(`/notifications/${n.id}`, { read: true }).catch(() => {});
     }
     if (n.link) {
       setOpen(false);
-      window.location.href = n.link;
+      router.push(n.link);
     }
     // No link → just mark read, keep dropdown open so user can read others
   }
@@ -103,6 +104,7 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
     } catch { /* network error — leave state unchanged */ }
   }
 
+  const router = useRouter();
   const { resolvedTheme, persistentSidebar } = useSettings();
   const isDark = resolvedTheme === 'dark';
 
