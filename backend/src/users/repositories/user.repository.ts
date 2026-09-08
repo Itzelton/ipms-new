@@ -199,6 +199,7 @@ export class UserRepository {
         ...(pendingInvite.firstName ? { firstName: pendingInvite.firstName } : {}),
         ...(pendingInvite.lastName ? { lastName: pendingInvite.lastName } : {}),
         password: hashedPassword,
+        isActive: true,
         mustChangePassword: true,
         roles: {
           create: {
