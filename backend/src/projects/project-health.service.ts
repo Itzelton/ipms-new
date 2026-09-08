@@ -40,6 +40,31 @@ export type ProjectRecommendationsResult = {
 export class ProjectHealthService {
   constructor(private readonly projectRepository: ProjectRepository) {}
 
+  /**
+   * Discussion-message counts for a project (total, and by the supervisor).
+   * When a hydrated `project` object is supplied the in-flight promise is
+   * cached on it, so that compute() / computeRisk() / computeRecommendations()
+   * — which run concurrently for the same project in findDetails() — share a
+   * single pair of queries instead of each issuing its own.
+   */
+  private getDiscussionCounts(
+    projectId: string,
+    supervisorId: string | null | undefined,
+    project?: any,
+  ): Promise<{ total: number; bySupervisor: number }> {
+    if (project?.__discussionCounts) return project.__discussionCounts;
+
+    const promise = Promise.all([
+      this.projectRepository.countDiscussionMessages(projectId),
+      supervisorId
+        ? this.projectRepository.countDiscussionMessagesByAuthor(projectId, supervisorId)
+        : Promise.resolve(0),
+    ]).then(([total, bySupervisor]) => ({ total, bySupervisor }));
+
+    if (project) project.__discussionCounts = promise;
+    return promise;
+  }
+
   async compute(projectId: string, project?: any): Promise<ProjectHealthScoreResult | null> {
     if (!project) project = await this.projectRepository.findDetails(projectId);
     if (!project) return null;
@@ -57,10 +82,8 @@ export class ProjectHealthService {
     const expectedSubmissions = Math.max(1, totalMilestones);
     const submissionConsistency = Math.min(1, submissionCount / expectedSubmissions);
 
-    const totalDiscussionMessages = await this.projectRepository.countDiscussionMessages(projectId);
-    const supervisorMessageCount = project.supervisorId
-      ? await this.projectRepository.countDiscussionMessagesByAuthor(projectId, project.supervisorId)
-      : 0;
+    const { total: totalDiscussionMessages, bySupervisor: supervisorMessageCount } =
+      await this.getDiscussionCounts(projectId, project.supervisorId, project);
     const supervisorEngagement = totalDiscussionMessages === 0 ? 0 : Math.min(1, supervisorMessageCount / totalDiscussionMessages + (supervisorMessageCount > 0 ? 0.2 : 0));
 
     const recentThreshold = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -117,10 +140,8 @@ export class ProjectHealthService {
     }, null as Date | null);
 
     const noActivityRisk = latestActivityDate && latestActivityDate < inactiveThreshold ? 25 : (latestActivityDate ? 0 : 15);
-    const communicationCount = await this.projectRepository.countDiscussionMessages(projectId);
-    const supervisorMessageCount = project.supervisorId
-      ? await this.projectRepository.countDiscussionMessagesByAuthor(projectId, project.supervisorId)
-      : 0;
+    const { total: communicationCount, bySupervisor: supervisorMessageCount } =
+      await this.getDiscussionCounts(projectId, project.supervisorId, project);
     const communicationRisk = communicationCount === 0
       ? 20
       : (supervisorMessageCount / communicationCount < 0.2 ? 15 : 0);
@@ -184,14 +205,12 @@ export class ProjectHealthService {
       return current > latest ? current : latest;
     }, null as Date | null);
 
-    const communicationCount = await this.projectRepository.countDiscussionMessages(projectId);
-    const supervisorMessageCount = project.supervisorId
-      ? await this.projectRepository.countDiscussionMessagesByAuthor(projectId, project.supervisorId)
-      : 0;
+    const { total: communicationCount, bySupervisor: supervisorMessageCount } =
+      await this.getDiscussionCounts(projectId, project.supervisorId, project);
     const communicationRatio = communicationCount === 0 ? 0 : supervisorMessageCount / communicationCount;
     const communicationIssue = communicationCount === 0 || communicationRatio < 0.2;
 
-    const riskStatus = await this.computeRisk(projectId);
+    const riskStatus = await this.computeRisk(projectId, project);
 
     const studentRecommendations: string[] = [];
     const supervisorRecommendations: string[] = [];

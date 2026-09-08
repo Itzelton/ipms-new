@@ -33,8 +33,12 @@ export default function SupervisorMilestonesPanel({ projectId, milestones: initi
 
   useEffect(() => {
     fetchMilestones();
-    // Poll every 30 s so student submissions and status changes appear live.
-    const interval = setInterval(() => fetchMilestones(true), 30_000);
+    // Poll so student submissions and status changes appear without a refresh.
+    // Skipped while the tab is hidden.
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      fetchMilestones(true);
+    }, 45_000);
     return () => clearInterval(interval);
   }, [projectId]);
   const [title, setTitle] = useState('');

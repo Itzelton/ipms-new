@@ -1,0 +1,35 @@
+name: Keep backend warm
+
+# The API runs on Render's free tier, which sleeps after ~15 minutes with no
+# inbound traffic. The first request after that takes 30–60s while the
+# container spins up. The client-side keep-alive in providers.tsx only runs
+# while a browser tab is open, so this workflow pings the health endpoint
+# around the clock.
+#
+# Notes:
+#  - GitHub's scheduled runs can be delayed by several minutes under load, so
+#    the interval is deliberately tighter than 15 minutes.
+#  - Scheduled workflows are paused after 60 days with no repo activity.
+#  - For a hard guarantee, also add a free monitor (e.g. UptimeRobot) hitting
+#    the same URL.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping API health endpoint
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 90 \
+              "https://ipms-newback.onrender.com/")
+            echo "attempt $i -> HTTP $code"
+            [ "$code" = "200" ] && exit 0
+            sleep 20
+          done
+          echo "API did not return 200 after 3 attempts"
+          exit 1

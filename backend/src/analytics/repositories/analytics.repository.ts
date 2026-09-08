@@ -38,6 +38,12 @@ export class AnalyticsRepository {
   }
 
   async userHeatmap(userId: string, year: number): Promise<HeatmapDay[]> {
+    // Range predicates (col >= start AND col < end) instead of
+    // EXTRACT(YEAR FROM col) = year, so Postgres can use a b-tree index
+    // on the timestamp column rather than scanning the whole table.
+    const start = `${year}-01-01`;
+    const end = `${year + 1}-01-01`;
+
     const rows = await this.prisma.$queryRaw<HeatmapRow[]>`
       SELECT
         date::text,
@@ -52,7 +58,7 @@ export class AnalyticsRepository {
                COUNT(*) AS submissions, 0::bigint AS messages, 0::bigint AS reviews
         FROM "Submission"
         WHERE "authorId" = ${userId}
-          AND EXTRACT(YEAR FROM "createdAt") = ${year}
+          AND "createdAt" >= ${start}::date AND "createdAt" < ${end}::date
         GROUP BY DATE("createdAt")
 
         UNION ALL
@@ -62,7 +68,7 @@ export class AnalyticsRepository {
                0::bigint AS submissions, COUNT(*) AS messages, 0::bigint AS reviews
         FROM "DiscussionMessage"
         WHERE "authorId" = ${userId}
-          AND EXTRACT(YEAR FROM "createdAt") = ${year}
+          AND "createdAt" >= ${start}::date AND "createdAt" < ${end}::date
         GROUP BY DATE("createdAt")
 
         UNION ALL
@@ -72,7 +78,7 @@ export class AnalyticsRepository {
                0::bigint AS submissions, 0::bigint AS messages, COUNT(*) AS reviews
         FROM "Submission"
         WHERE "status" IN ('APPROVED', 'REVISION_REQUIRED', 'UNDER_REVIEW')
-          AND EXTRACT(YEAR FROM "updatedAt") = ${year}
+          AND "updatedAt" >= ${start}::date AND "updatedAt" < ${end}::date
           AND "projectId" IN (
             SELECT id FROM "Project" WHERE "supervisorId" = ${userId}
             UNION
@@ -87,7 +93,7 @@ export class AnalyticsRepository {
                0::bigint AS submissions, 0::bigint AS messages, COUNT(*) AS reviews
         FROM "Meeting"
         WHERE "supervisorId" = ${userId}
-          AND EXTRACT(YEAR FROM "createdAt") = ${year}
+          AND "createdAt" >= ${start}::date AND "createdAt" < ${end}::date
         GROUP BY DATE("createdAt")
       ) t
       GROUP BY date
@@ -107,6 +113,10 @@ export class AnalyticsRepository {
   }
 
   async projectHeatmap(projectId: string, year: number): Promise<HeatmapDay[]> {
+    // See userHeatmap — range predicates keep these filters sargable.
+    const start = `${year}-01-01`;
+    const end = `${year + 1}-01-01`;
+
     const rows = await this.prisma.$queryRaw<HeatmapRow[]>`
       SELECT
         date::text,
@@ -120,7 +130,7 @@ export class AnalyticsRepository {
                COUNT(*) AS submissions, 0::bigint AS messages, 0::bigint AS milestones
         FROM "Submission"
         WHERE "projectId" = ${projectId}
-          AND EXTRACT(YEAR FROM "createdAt") = ${year}
+          AND "createdAt" >= ${start}::date AND "createdAt" < ${end}::date
         GROUP BY DATE("createdAt")
 
         UNION ALL
@@ -130,7 +140,7 @@ export class AnalyticsRepository {
         FROM "DiscussionMessage" dm
         JOIN "DiscussionThread" dt ON dm."threadId" = dt.id
         WHERE dt."projectId" = ${projectId}
-          AND EXTRACT(YEAR FROM dm."createdAt") = ${year}
+          AND dm."createdAt" >= ${start}::date AND dm."createdAt" < ${end}::date
         GROUP BY DATE(dm."createdAt")
 
         UNION ALL
@@ -140,7 +150,7 @@ export class AnalyticsRepository {
         FROM "Milestone"
         WHERE "projectId" = ${projectId}
           AND "completedAt" IS NOT NULL
-          AND EXTRACT(YEAR FROM "completedAt") = ${year}
+          AND "completedAt" >= ${start}::date AND "completedAt" < ${end}::date
         GROUP BY DATE("completedAt")
       ) t
       GROUP BY date

@@ -37,7 +37,7 @@ export default function SupervisorMessagesPage() {
   const [msgLoading, setMsgLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const { joinChannel, on, off } = useSocket(user?.id ?? null, []);
+  const { status: socketStatus, joinChannel, on, off } = useSocket(user?.id ?? null, []);
 
   // Join channel room and listen for real-time messages whenever channel changes
   useEffect(() => {
@@ -80,12 +80,17 @@ export default function SupervisorMessagesPage() {
       .catch(() => {});
   }, [channel?.id]);
 
-  // Initial load + fallback poll (WebSocket handles real-time)
+  // Initial load. The WebSocket delivers messages in real time, so only poll
+  // as a fallback while the socket is not connected.
   useEffect(() => {
     loadMessages();
-    const interval = setInterval(loadMessages, 10000);
+    if (socketStatus === 'connected') return;
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      loadMessages();
+    }, 15000);
     return () => clearInterval(interval);
-  }, [loadMessages]);
+  }, [loadMessages, socketStatus]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });

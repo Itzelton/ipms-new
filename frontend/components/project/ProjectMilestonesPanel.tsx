@@ -174,8 +174,12 @@ export default function ProjectMilestonesPanel({ milestones: initial, projectId 
   useEffect(() => {
     if (!projectId) return;
     reload();
-    // Poll every 30 s so supervisor changes (add/delete/status) always appear live.
-    const interval = setInterval(() => reload(true), 30_000);
+    // Poll so supervisor changes (add/delete/status) appear without a refresh.
+    // Skipped while the tab is hidden.
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      reload(true);
+    }, 45_000);
     return () => clearInterval(interval);
   }, [projectId]);
 

@@ -42,7 +42,8 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
     setUnread(list.filter((n: any) => !n.read).length);
   }
 
-  // Fetch on mount, then poll every 30 s for new notifications
+  // Fetch on mount, then poll every 30 s for new notifications.
+  // Background polls (tab hidden) are skipped to avoid needless load.
   useEffect(() => {
     if (!user) return;
     let mounted = true;
@@ -55,7 +56,10 @@ export default function Navbar({ onSearchOpen }: { onSearchOpen?: () => void }) 
         .finally(() => { if (mounted) setInitialLoad(false); });
     }
     fetchNotifs();
-    const id = setInterval(fetchNotifs, 30_000);
+    const id = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      fetchNotifs();
+    }, 30_000);
     return () => { mounted = false; clearInterval(id); };
   }, [user]);
 

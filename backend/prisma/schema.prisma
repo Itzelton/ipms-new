@@ -379,6 +379,12 @@ model Project {
   recommendations AIRecommendation[]
   forecasts       Forecast[]
   reports         Report[]
+
+  @@index([supervisorId])
+  @@index([studentId])
+  @@index([status])
+  @@index([departmentId])
+  @@index([cohortId])
 }
 
 model ProjectAssignment {
@@ -391,6 +397,7 @@ model ProjectAssignment {
   assignedAt  DateTime @default(now())
 
   @@unique([projectId, userId, role])
+  @@index([userId])
 }
 
 model ProjectInvite {
@@ -420,6 +427,8 @@ model Milestone {
   updatedAt    DateTime        @updatedAt
 
   submissions Submission[]
+
+  @@index([projectId])
 }
 
 model Submission {
@@ -446,6 +455,11 @@ model Submission {
   discussionThread DiscussionThread?
   reviews     SubmissionReview[]
   versions    SubmissionVersion[]
+
+  @@index([projectId])
+  @@index([authorId])
+  @@index([milestoneId])
+  @@index([status])
 }
 
 model SubmissionReview {
@@ -460,6 +474,9 @@ model SubmissionReview {
   reviewedAt   DateTime  @default(now())
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+
+  @@index([submissionId])
+  @@index([reviewerId])
 }
 
 model SubmissionVersion {
@@ -495,6 +512,7 @@ model DiscussionThread {
   messages      DiscussionMessage[]
 
   @@index([submissionId])
+  @@index([projectId])
 }
 
 model DiscussionMessage {
@@ -509,6 +527,9 @@ model DiscussionMessage {
 
   parentMessage   DiscussionMessage? @relation("MessageParent", fields: [parentMessageId], references: [id])
   replies         DiscussionMessage[] @relation("MessageParent")
+
+  @@index([threadId, authorId])
+  @@index([authorId, createdAt])
 }
 
 model Notification {
@@ -524,6 +545,8 @@ model Notification {
   read        Boolean           @default(false)
   createdAt   DateTime          @default(now())
   deliveredAt DateTime?
+
+  @@index([recipientId, read])
 }
 
 model AnalyticsSnapshot {
@@ -623,6 +646,9 @@ model AuditLog {
   entityId  String?
   data      Json?
   createdAt DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([entity, entityId])
 }
 
 model PendingInvite {
