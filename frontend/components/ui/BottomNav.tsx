@@ -5,10 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '../auth/auth-context';
 import { useSidebar } from './SidebarContext';
 import { useSettings } from '../../contexts/SettingsContext';
-import { navItems, exactHrefs } from './navConfig';
-
-// Show 4 primary tabs + "More" (opens sidebar drawer for the rest)
-const VISIBLE_TABS = 4;
+import { navItems, exactHrefs, bottomNavHrefs } from './navConfig';
 
 export default function BottomNav() {
   const { user } = useAuth();
@@ -21,8 +18,12 @@ export default function BottomNav() {
 
   const role = user.role as string;
   const allItems = navItems[role] ?? navItems.STUDENT;
-  const tabItems = allItems.slice(0, VISIBLE_TABS);
-  const hasMore = allItems.length > VISIBLE_TABS;
+  const selectedHrefs = bottomNavHrefs[role] ?? [];
+  // Pick specifically chosen items for the bottom bar (preserves sidebar order)
+  const tabItems = selectedHrefs.length > 0
+    ? selectedHrefs.map(href => allItems.find(item => item.href === href)).filter(Boolean) as typeof allItems
+    : allItems.slice(0, 4);
+  const hasMore = allItems.length > tabItems.length;
 
   const tabCount = tabItems.length + (hasMore ? 1 : 0);
 

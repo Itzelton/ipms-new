@@ -123,12 +123,19 @@ export const navItems: Record<string, { href: string; label: string; icon: React
   STUDENT: [
     { href: '/student',               label: 'Dashboard',    icon: <HomeIcon /> },
     { href: '/student/projects',      label: 'Projects',     icon: <FolderIcon /> },
-    { href: '/student/messages',      label: 'Messages',     icon: <MessageIcon /> },
     { href: '/student/submissions',   label: 'Submissions',  icon: <UploadIcon /> },
     { href: '/student/meetings',      label: 'Meetings',     icon: <CalendarIcon /> },
+    { href: '/student/messages',      label: 'Messages',     icon: <MessageIcon /> },
     { href: '/student/discussions',   label: 'Discussions',  icon: <ChatIcon /> },
     { href: '/student/settings',      label: 'Settings',     icon: <CogIcon /> },
   ],
+};
+
+// Which hrefs appear in the mobile bottom tab bar per role (most commonly used 4)
+export const bottomNavHrefs: Record<string, string[]> = {
+  ADMIN:      ['/admin', '/admin/students', '/admin/projects', '/admin/approvals'],
+  SUPERVISOR: ['/supervisor', '/supervisor/projects', '/supervisor/messages', '/supervisor/reviews'],
+  STUDENT:    ['/student', '/student/projects', '/student/messages', '/student/submissions'],
 };
 
 // hrefs that must match exactly (root dashboard routes)
