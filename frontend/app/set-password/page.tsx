@@ -62,15 +62,11 @@ export default function SetPasswordPage() {
 
     setState('saving');
     try {
-      // 1. Update password in Supabase auth
-      const { error: sbError } = await supabase.auth.updateUser({ password });
-      if (sbError) throw new Error(sbError.message);
-
-      // 2. Get fresh session token after updateUser
+      // Backend sets the password in both Supabase (via admin API) and local DB,
+      // and promotes the user from pending → active. No client-side updateUser needed.
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token || sessionToken;
 
-      // 3. Promote user from pending → active in our DB
       const res = await fetch(`${API}/auth/set-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
