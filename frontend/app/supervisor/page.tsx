@@ -176,7 +176,7 @@ export default function SupervisorIndex() {
             <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">Dashboard</h2>
             <p className="mt-1 text-sm text-slate-500">Monitor students, reviews, discussions and project risks.</p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2 overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
             {[
               { href: '/supervisor', label: 'Overview' },
               { href: '/supervisor/projects', label: 'Projects' },
@@ -186,7 +186,7 @@ export default function SupervisorIndex() {
               <Link
                 key={href}
                 href={href}
-                className="rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-[12px] font-medium text-slate-600 no-underline transition hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:text-slate-100"
+                className="flex-shrink-0 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-1.5 text-[12px] font-medium text-slate-600 no-underline whitespace-nowrap transition hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:text-slate-100"
               >
                 {label}
               </Link>

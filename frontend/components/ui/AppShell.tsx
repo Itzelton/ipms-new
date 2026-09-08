@@ -26,12 +26,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex">
       <Sidebar />
       <div
-        className="flex-1 transition-[margin] duration-300 ease-in-out"
+        className="flex-1 min-w-0 transition-[margin] duration-300 ease-in-out"
         style={{ marginLeft: persistentSidebar ? undefined : 0 }}
       >
         <div className={persistentSidebar ? 'lg:ml-[260px]' : ''}>
           <Navbar onSearchOpen={() => setSearchOpen(true)} />
-          <main className={`max-w-[1400px] ${compact ? 'p-2 sm:p-4' : 'p-3 sm:p-6'}`}>
+          <main className={`w-full max-w-[1400px] ${compact ? 'p-2 sm:p-4' : 'p-3 sm:p-6'}`}>
             {children}
             {/* Spacer so content isn't hidden behind the mobile bottom nav */}
             <div
